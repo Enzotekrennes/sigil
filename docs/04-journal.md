@@ -108,3 +108,10 @@
 - Preuves : 5 scénarios OK ; 0 lettre nettement lisible / 15 (2 limites), « Yeux » exempté ; centre de gravité 50/50, tous les points dans le disque de rayon 40 ; premier affichage 22–39 ms (217 ms max à CPU ×4) ; confidentialité, CSP, 375 px, clavier OK.
 - Bugs mineurs planifiés : B2 compositions plus horizontales et répétitives (ratio moyen 1,37) → T18 ; B3 tracé animé de ~5,4 s sur 124 lettres → T19.
 - Tests e2e : `e2e/f2-acceptance.spec.ts` inchangé, 10/10.
+
+## 2026-11-08 — T17 Marques kamea et épaisseur
+- Rôle : dev (passage bloqué puis décision de pilotage : plafonds par case + recul fixe)
+- Fait : plafonds des marques par rapport à la case, placement de la boucle finale partagé méthode/rendu, `fitEndLoop` dans `frameFit.ts` (réduction ≥ 0,63, plus d'effondrement), boucles affichées à leur étape dans le pas-à-pas.
+- Vérifications : eslint + vitest kamea/sigil → 242/242 verts (revérifié) ; 378 cas (9 intentions × 7 carrés × 3 épaisseurs × cercle) : écart > 0, boucle attachée.
+- Écarts au plan : décision D15 ; 2 tests existants ajustés (épaisseur ×1,5, plafond du cercle de départ).
+- Points ouverts : Lune illisible à l'épaisseur 4 → curseur plafonné à 2,4 (T19) ; chevauchement de deux boucles voisines avec cercle à forte épaisseur (rare).
