@@ -2,11 +2,45 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
+    <!--
+      Content Security Policy. GitHub Pages cannot send custom HTTP headers, so
+      the policy is declared here; it must stay before any script or stylesheet.
+      The intention typed by the user must never leave the browser: everything
+      is restricted to the site's own origin and no third party is allowed.
+      - default-src 'self': fallback for every other fetch, same origin only.
+      - script-src 'self': bundled scripts and the service worker registration
+        file only; no inline script, no eval.
+      - style-src 'self': bundled stylesheet only. React applies the `style`
+        prop through the CSSOM (element.style), which the policy does not
+        restrict, so 'unsafe-inline' is not needed. It still blocks <style>
+        elements and style="" attributes written into markup.
+      - img-src 'self' data: blob:: PNG export rasterises the sigil from an
+        in-memory SVG (data: or blob: URL).
+      - font-src 'self': the two font families are served by the site.
+      - connect-src 'self': no request to any other origin, ever.
+      - worker-src 'self' and manifest-src 'self': the offline service worker
+        and the web app manifest are served by the site.
+      - object-src 'none': no plugin content.
+      - base-uri 'none': a <base> element cannot redirect relative URLs.
+      - form-action 'none': a form can never be submitted, so the intention
+        cannot end up in a URL even if script-side handling fails.
+      frame-ancestors is ignored in a <meta> policy: framing cannot be blocked
+      on GitHub Pages (accepted limit: the page has no account or action worth
+      hijacking).
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <!-- Never tell another site which page a visitor came from. -->
+    <meta name="referrer" content="no-referrer" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
       content="Deterministic sigil generator: kamea and Spare methods, drawn in SVG in your browser."
     />
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png" />
     <title>Sigil</title>
   </head>
   <body>
