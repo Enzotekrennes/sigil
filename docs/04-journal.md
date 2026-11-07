@@ -96,3 +96,9 @@
 - Vérifications : eslint + vitest sur ses dossiers → 107/107 verts (revérifié) ; e2e 58/58 sur un build sans tsc ; captures 375–1440 clair/sombre.
 - Écarts au plan : aucun ; seuils fin/moyen/épais 1,4 / 2,6 ; « Style » ouvert d'office dès 1024 px.
 - Points ouverts : boucle finale kamea touche le trait d'arrivée dès 1,6 d'épaisseur → T17 ajoutée ; export (T12) doit retirer `--settled` et appliquer `frameFitScale` ; panneau non synchronisé au tracé (plus tard).
+
+## 2026-11-08 — T9 reprise : lisibilité Spare (retour test F2 n° 1)
+- Rôle : dev
+- Fait : mesure de lisibilité par lettre (`legibility.ts` : recouvrement à 3 unités, orientations familières), nouveau score D13, superposition accrue, nombre de candidats adaptatif, cadrage dans un disque de rayon 40, fusion des segments qui se longent.
+- Vérifications : eslint + vitest spare → 216/216 verts (revérifié) ; planche des 16 cas du test : 1 lettre lisible / 15 (+1 limite), « Yeux » exempté ; ≈ 64 ms à CPU ×4.
+- Points ouverts : `App.test.tsx` figeait « 24 façons » (correctif en cours) ; un trait colinéaire compte comme recouvrement ; compositions plus horizontales et denses qu'avant (à juger au test F2 n° 2).
