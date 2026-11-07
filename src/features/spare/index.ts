@@ -1,15 +1,13 @@
 /**
- * Public API of the Spare method: seed derivation and generation of the
- * candidate compositions of the letters' skeletons.
+ * Public API of the Spare method: the sigil builder, plus the seed derivation
+ * and candidate generation it relies on.
  *
- * Other features import from this file only. Scoring, stroke merging,
- * simplification and the final `Sigil` builder are not part of it yet.
+ * Other features import from this file only. Scoring and simplification
+ * (`score.ts`, `simplify.ts`) are internal steps of `buildSpareSigil`.
  */
-export {
-  CANDIDATE_COUNT,
-  FRAME_MARGIN,
-  generateSpareCandidates,
-} from './generateSpareCandidates.ts';
+export { buildSpareSigil } from './buildSpareSigil.ts';
+export type { SpareError, SpareOptions, SpareResult } from './buildSpareSigil.ts';
+export { CANDIDATE_COUNT, generateSpareCandidates } from './generateSpareCandidates.ts';
 export type {
   SpareCandidate,
   SpareCandidateOptions,

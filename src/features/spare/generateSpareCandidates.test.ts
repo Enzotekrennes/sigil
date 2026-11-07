@@ -6,7 +6,8 @@
 import { describe, expect, it } from 'vitest';
 
 import { getGlyph } from './glyphs/index.ts';
-import { CANDIDATE_COUNT, FRAME_MARGIN, generateSpareCandidates, spareSeed } from './index.ts';
+import { FRAME_MARGIN } from '../sigil/frame.ts';
+import { CANDIDATE_COUNT, generateSpareCandidates, spareSeed } from './index.ts';
 import type { SpareCandidateOptions, SpareCandidates, SpareCompositionError } from './index.ts';
 
 /** Retained letters of "Je suis calme" with vowels removed. */

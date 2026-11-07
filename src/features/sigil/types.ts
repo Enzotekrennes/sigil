@@ -120,11 +120,101 @@ export interface KameaSquarePathStep {
   readonly cells: readonly GridCell[];
 }
 
-/**
- * One step of the "how it is made" panel, discriminated by `kind`.
- * Spare adds its own variants when that method lands.
- */
-export type ExplanationStep = KameaConversionRuleStep | KameaLetterTableStep | KameaSquarePathStep;
+/** A letter removed by the Spare reduction (decision D4). */
+export interface SpareRemovedLetter {
+  /** The removed letter, A–Z. */
+  readonly letter: string;
+  /** Zero-based index in the normalised letters of the intention. */
+  readonly position: number;
+  /** `duplicate`: it already appeared earlier; `vowel`: A E I O U, vowels not kept (D11). */
+  readonly reason: 'duplicate' | 'vowel';
+}
+
+/** Spare step: the normalised letters, those removed with the reason, and those retained. */
+export interface SpareLetterReductionStep {
+  readonly kind: 'spare-letter-reduction';
+  /** Normalised letters of the intention, in order, repetitions included. */
+  readonly letters: readonly string[];
+  /** Whether vowels were kept (only duplicates removed). */
+  readonly keepVowels: boolean;
+  /** Removed letters in input order. */
+  readonly removed: readonly SpareRemovedLetter[];
+  /** Retained letters, in order of first appearance: the letters composed. */
+  readonly kept: readonly string[];
+}
+
+/** How one letter was transformed and where it lands, before the strokes are merged. */
+export interface SpareLetterPlacement {
+  /** The letter, A–Z. */
+  readonly letter: string;
+  /** True when the letter is flipped left to right, applied before the turn. */
+  readonly mirrored: boolean;
+  /** Clockwise quarter turn on screen, in degrees, applied after the mirror. */
+  readonly rotation: 0 | 90 | 180 | 270;
+  /** Size relative to the other letters (1 = largest possible), about 0.55–1. */
+  readonly scale: number;
+  /** Index in `letters` of the letter whose vertical stem this one shares, or `null`. */
+  readonly sharedStemWith: number | null;
+  /**
+   * The upright, untransformed skeleton, centred in the 0–100 frame with its
+   * larger side spanning the drawing area: what the letter looks like alone.
+   */
+  readonly glyph: readonly (readonly Point[])[];
+  /**
+   * The letter's strokes once transformed and placed, in the sigil's 0–100
+   * frame (same position as in the final sigil), before merging: drawing every
+   * letter's `strokes` on top of each other shows the superimposition.
+   */
+  readonly strokes: readonly (readonly Point[])[];
+}
+
+/** Spare step: each retained letter, its skeleton and its transforms, in input order. */
+export interface SpareLetterPlacementsStep {
+  readonly kind: 'spare-letter-placements';
+  readonly letters: readonly SpareLetterPlacement[];
+}
+
+/** Spare step: which candidate composition was chosen, and why. */
+export interface SpareCandidateChoiceStep {
+  readonly kind: 'spare-candidate-choice';
+  /** Number of compositions drawn from the seed and scored. */
+  readonly candidateCount: number;
+  /** Zero-based index of the chosen composition, in draw order. */
+  readonly chosenIndex: number;
+  /**
+   * Distance of the chosen composition's centre of gravity from the frame
+   * centre before recentring, as a fraction of the frame side (0.03 = 3 %).
+   * The final sigil is recentred on it.
+   */
+  readonly centreOffset: number;
+  /** Share of the drawing area covered by the recentred bounding box, 0–1. */
+  readonly fill: number;
+  /** Indices in the retained letters of the letters touching no other one. */
+  readonly isolatedLetters: readonly number[];
+  /** Indices in the retained letters of the letters drawn exactly as written (upright or symmetric). */
+  readonly uprightLetters: readonly number[];
+  /** Total penalty of the chosen composition (lower is better), the lowest of all. */
+  readonly penalty: number;
+}
+
+/** Spare step: the superimposed strokes merged and simplified into the sigil. */
+export interface SpareSimplificationStep {
+  readonly kind: 'spare-simplification';
+  /** Segments of the superimposed letters before merging. */
+  readonly segmentCountBefore: number;
+  /** Segments of the final sigil, once overlaps and duplicates are drawn once. */
+  readonly segmentCountAfter: number;
+}
+
+/** One step of the "how it is made" panel, discriminated by `kind`. */
+export type ExplanationStep =
+  | KameaConversionRuleStep
+  | KameaLetterTableStep
+  | KameaSquarePathStep
+  | SpareLetterReductionStep
+  | SpareLetterPlacementsStep
+  | SpareCandidateChoiceStep
+  | SpareSimplificationStep;
 
 /** A finished sigil, independent of the method that produced it and of any styling. */
 export interface Sigil {

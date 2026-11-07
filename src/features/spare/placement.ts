@@ -5,7 +5,8 @@
  * superimposed rather than written side by side.
  *
  * Exposes `composeLetters`, the `LetterPlacement` trace it records for the
- * explanation panel, and the bounds of every draw. Works in "composition
+ * explanation panel, the bounds of every draw, and `looksUpright`, which
+ * tells whether an orientation leaves a letter as readable as written. Works in "composition
  * units" (a glyph's larger side measures 1 at scale 1, centred on 0, y
  * downwards); fitting the result into the 0–100 sigil frame belongs to
  * `generateSpareCandidates`. Does not score, merge or simplify strokes.
@@ -103,6 +104,13 @@ const MIN_STEM_LENGTH = 0.5;
 
 /** Horizontal tolerance for a segment to count as vertical; glyph points are integers, so tiny. */
 const VERTICAL_TOLERANCE = 1e-9;
+
+/**
+ * Decimals kept when comparing two orientations of a skeleton. Unit-frame
+ * coordinates are exact ratios of small integers, so a millionth only absorbs
+ * floating-point noise.
+ */
+const SHAPE_COMPARISON_DECIMALS = 6;
 
 /** Sine and cosine of each quarter turn, exact so that vertical lines stay exactly vertical. */
 const TURN_MATRIX: Readonly<Record<QuarterTurn, { readonly cos: number; readonly sin: number }>> = {
@@ -227,4 +235,56 @@ function longestStemX(strokes: readonly (readonly Point[])[]): number | undefine
     }
   }
   return best?.x;
+}
+
+/**
+ * Tells whether a letter, once mirrored and turned, still has exactly the
+ * shape it has upright: the identity, or a symmetry of the letter (a reversed
+ * M, an X or a Z turned by a half turn). Such a letter stays readable inside
+ * the sigil, which the balance score penalises.
+ *
+ * @param letter - Upper-case letter A–Z.
+ * @param mirrored - Whether the letter is flipped left to right.
+ * @param rotation - Clockwise quarter turn applied after the mirror.
+ * @returns True when the transformed skeleton draws the same set of segments
+ *   as the upright one, whatever their direction or order.
+ */
+export function looksUpright(
+  letter: CapitalLetter,
+  mirrored: boolean,
+  rotation: QuarterTurn,
+): boolean {
+  const upright = unitStrokes(getGlyph(letter));
+  const oriented = upright.map((stroke) =>
+    stroke.map((point) => orient(point, mirrored, rotation)),
+  );
+  const uprightShape = segmentKeys(upright);
+  const orientedShape = segmentKeys(oriented);
+  return (
+    uprightShape.size === orientedShape.size &&
+    [...orientedShape].every((key) => uprightShape.has(key))
+  );
+}
+
+/**
+ * Describes a drawing as a set of direction-free segment keys, for comparing shapes.
+ *
+ * @param strokes - Strokes in the unit frame.
+ * @returns One key per segment, its endpoints rounded and sorted.
+ */
+function segmentKeys(strokes: readonly (readonly Point[])[]): Set<string> {
+  const factor = 10 ** SHAPE_COMPARISON_DECIMALS;
+  // `+ 0` turns −0 into 0, so that a point on an axis gets one key only.
+  const rounded = (value: number): string => String(Math.round(value * factor) + 0);
+  const pointKey = (point: Point): string => `${rounded(point.x)},${rounded(point.y)}`;
+  const keys = new Set<string>();
+  for (const stroke of strokes) {
+    for (let index = 1; index < stroke.length; index += 1) {
+      const from = stroke[index - 1];
+      const to = stroke[index];
+      if (from === undefined || to === undefined) continue;
+      keys.add([pointKey(from), pointKey(to)].sort().join(' '));
+    }
+  }
+  return keys;
 }

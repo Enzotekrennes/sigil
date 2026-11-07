@@ -8,6 +8,12 @@
  * explanation steps. Pure and deterministic: no randomness, no I/O.
  * Does not normalise the intention: letters arrive already reduced to A–Z.
  */
+import {
+  DRAWING_SIZE,
+  FRAME_MARGIN,
+  FRAME_SIZE,
+  MARK_REFERENCE_STROKE_WIDTH,
+} from '../sigil/frame.ts';
 import type {
   EndBarMark,
   ExplanationStep,
@@ -22,24 +28,20 @@ import type {
 import { CONVERSION_RULE, letterRank, rankToNumber } from './conversion.ts';
 import { KAMEA_SQUARES } from './squares.ts';
 
-/** Side of the normalised square frame shared by every sigil. */
-const FRAME_SIZE = 100;
-
 /**
  * Empty band around the grid, so that marks near the border stay inside the
- * frame. Same 10 % as the design's 800-in-1000 drawing area.
+ * frame: the shared frame margin.
  */
-const GRID_MARGIN = 10;
+const GRID_MARGIN = FRAME_MARGIN;
 
-/** Side of the grid the path is drawn on. */
-const GRID_SIZE = FRAME_SIZE - 2 * GRID_MARGIN;
+/** Side of the grid the path is drawn on: the shared drawing area. */
+const GRID_SIZE = DRAWING_SIZE;
 
 /**
- * Default stroke width in frame units: the design's default of 12 in a
- * 1000-unit frame. Mark sizes are expressed as multiples of it, as in the
+ * Stroke width mark sizes are expressed in, as multiples of it, as in the
  * "Sigil stroke" section of the design document.
  */
-const REFERENCE_STROKE_WIDTH = 1.2;
+const REFERENCE_STROKE_WIDTH = MARK_REFERENCE_STROKE_WIDTH;
 
 /** Start circle radius: 2.5 stroke widths, large enough to read as hollow. */
 const START_CIRCLE_RADIUS = 2.5 * REFERENCE_STROKE_WIDTH;

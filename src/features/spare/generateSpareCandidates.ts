@@ -10,7 +10,9 @@
  * `Sigil` come after it.
  */
 import { createRandom } from '../../lib/random.ts';
+import { DRAWING_SIZE, FRAME_MARGIN } from '../sigil/frame.ts';
 import type { Point } from '../sigil/types.ts';
+import { roundCoordinate } from './geometry.ts';
 import { isCapitalLetter } from './glyphs/index.ts';
 import type { CapitalLetter } from './glyphs/index.ts';
 import { composeLetters } from './placement.ts';
@@ -24,26 +26,6 @@ import { spareSeed } from './seed.ts';
  * intention) stays within a few milliseconds on a phone.
  */
 export const CANDIDATE_COUNT = 24;
-
-/** Side of the normalised square frame shared by every sigil. */
-const FRAME_SIZE = 100;
-
-/**
- * Empty band around the drawing, so that the stroke width and the optional
- * framing circle never touch the border: the design's 800-in-1000 drawing
- * area ("Sigil stroke" section of the design document), as for kamea.
- */
-export const FRAME_MARGIN = 10;
-
-/** Side of the square the composition is fitted into. */
-const DRAWING_SIZE = FRAME_SIZE - 2 * FRAME_MARGIN;
-
-/**
- * Decimals kept on frame coordinates: 1/10 000 of the frame is far below a
- * printed hair-line, and rounding keeps SVG output short and points on the
- * margin exactly on it.
- */
-const COORDINATE_DECIMALS = 4;
 
 /** Settings of a Spare sigil, besides its letters. */
 export interface SpareCandidateOptions {
@@ -171,20 +153,9 @@ function fitToFrame(composition: Composition): SpareCandidate {
 
   const strokes = composition.strokes.map((stroke) =>
     stroke.map((point) => ({
-      x: round(left + (point.x - minX) * factor),
-      y: round(top + (point.y - minY) * factor),
+      x: roundCoordinate(left + (point.x - minX) * factor),
+      y: roundCoordinate(top + (point.y - minY) * factor),
     })),
   );
   return { strokes, strokeLetters: composition.strokeLetters, placements: composition.placements };
-}
-
-/**
- * Rounds a frame coordinate to `COORDINATE_DECIMALS` decimals.
- *
- * @param value - Coordinate in frame units.
- * @returns The rounded value, with −0 turned into 0 so equal shapes compare equal.
- */
-function round(value: number): number {
-  const factor = 10 ** COORDINATE_DECIMALS;
-  return Math.round(value * factor) / factor + 0;
 }

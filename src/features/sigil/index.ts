@@ -3,7 +3,8 @@
  * pure geometry the export feature may reuse.
  *
  * Model types (`Sigil`, `Mark`, `StyleOptions`…) stay importable from
- * `types.ts`, where the methods already take them.
+ * `types.ts`, and the frame constants from `frame.ts`, where the methods take
+ * them without loading the renderer.
  */
 export { SigilRenderer } from './SigilRenderer.tsx';
 export type { SigilRendererProps } from './SigilRenderer.tsx';

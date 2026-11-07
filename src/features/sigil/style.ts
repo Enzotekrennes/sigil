@@ -6,14 +6,11 @@
  * Pure values and functions; colours are not here, they come from the CSS
  * tokens (see `SigilRenderer.css`).
  */
+import { MARK_REFERENCE_STROKE_WIDTH } from './frame.ts';
 import type { Box, Mark, Point, StyleOptions } from './types.ts';
 
-/**
- * Stroke width the methods size their marks for, in frame units: the design
- * default of 12 in a 1000-unit frame. Must match `REFERENCE_STROKE_WIDTH` in
- * `features/kamea/buildKameaSigil.ts`.
- */
-export const MARK_REFERENCE_STROKE_WIDTH = 1.2;
+// Re-exported so that the renderer's public API keeps offering it; the value lives in `frame.ts`.
+export { MARK_REFERENCE_STROKE_WIDTH };
 
 /**
  * Framing circle radius in frame units: 460 in the design's 1000-unit frame,
