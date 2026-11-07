@@ -20,3 +20,11 @@
 - Vérifications : eslint + vitest sur kamea et sigil → 72/72 verts (revérifié au contrôle).
 - Écarts au plan : erreur `INVALID_LETTER` ajoutée ; une boucle par suite (AAA → 1 boucle) ; kamea `seed = 0`.
 - Points ouverts : tailles des marques figées pour l'épaisseur 1,2 → mise à l'échelle confiée à T4 ; boucle débordant des cases de la Lune → à juger en T7 ; lint global rouge à cause de `vite.config.ts` (T5 en cours).
+
+## 2026-11-07 — T6 Glyphes Hershey
+- Rôle : dev
+- Fait : 26 majuscules Roman Simplex converties en polylignes (unités Hershey, base y = 0) ; `getGlyph` ; script `scripts/generate-hershey-glyphs.js` (logique testée dans `hersheyConversion.ts`) ; `NOTICE` (Hershey + OFL).
+- Licence : avis Usenet mod.sources vol. 4 n° 42 (1986) — usage libre y compris commercial, à condition de joindre les mentions A. V. Hershey (NBS) et James Hurt (Cognition, Inc.) et de ne pas convertir au format NTIS. Compatible MIT. Données identiques octet pour octet à la publication de 1986.
+- Vérifications : eslint + vitest spare → 103/103 verts (revérifié) ; régénération idempotente (sha256 identique).
+- Écarts au plan : script en `.js` important le `.ts` (évite de toucher tsconfig/eslint).
+- Points ouverts : script npm `glyphs:generate` à ajouter ; mise à l'échelle Hershey → repère 0–100 en T8 ; lien NOTICE dans le README (phase 6).
