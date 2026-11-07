@@ -4,8 +4,9 @@
  *
  * Exposes geometry types (`Point`, `Box`), the marks drawn on top of the
  * strokes (`Mark`), the explanation steps (`ExplanationStep`) and the `Sigil`
- * itself. Pure types only: no computation and no rendering concerns such as
- * colours or stroke width.
+ * itself, plus the style settings of its rendering (`StyleOptions`). Pure
+ * types only: no computation, and the `Sigil` carries no rendering concern
+ * such as colours or stroke width.
  *
  * Coordinates live in a square frame normalised to 0–100 on both axes, with
  * the SVG convention: x grows to the right, y grows downwards.
@@ -139,4 +140,31 @@ export interface Sigil {
    * Methods without randomness, such as kamea, set it to 0.
    */
   readonly seed: number;
+}
+
+/**
+ * How the sigil is coloured: `screen` follows the current theme tokens,
+ * `stencil` is pure black for a tattoo stencil, without the decorative framing
+ * circle.
+ */
+export type RenderMode = 'screen' | 'stencil';
+
+/**
+ * Visual settings of a rendered sigil. They never change the shape, only how
+ * it is drawn, so changing them does not replay the tracing animation.
+ */
+export interface StyleOptions {
+  /**
+   * Stroke width in units of the 0–100 frame; 1.2 is the design default
+   * (12 in the design's 1000-unit frame). Marks are resized with it.
+   */
+  readonly strokeWidth: number;
+  /**
+   * Rounded line ends and joins when true; flat ends with mitred joins when
+   * false (`butt` + `miter`).
+   */
+  readonly roundEnds: boolean;
+  /** Draws the framing circle around the sigil. Ignored in `stencil` mode. */
+  readonly frameCircle: boolean;
+  readonly mode: RenderMode;
 }

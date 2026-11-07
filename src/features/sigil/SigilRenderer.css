@@ -1,0 +1,121 @@
+/*
+ * Colours and tracing animation of SigilRenderer.tsx.
+ * Every colour, duration and easing comes from tokens.css.
+ *
+ * Tracing (see "Animation du tracé" in docs/design.md): each animated path
+ * and the framing circle have pathLength="1", so stroke-dashoffset goes from
+ * 1 (hidden) to 0 (fully drawn). The component sets per stroke:
+ *   --trace-share     fraction of --duration-trace spent on the stroke;
+ *   --trace-offset    fraction of --duration-trace elapsed before it;
+ *   --trace-pen-lifts number of pen lifts before it;
+ * and on the root --trace-pen-lifts-total. Order: start mark (fade), strokes,
+ * other marks (fade), framing circle (--duration-frame).
+ */
+
+.sigil-renderer {
+  display: block;
+  width: 100%;
+  height: auto;
+
+  /* Moment the last stroke ends, shared by the marks and the framing circle. */
+  --trace-end: calc(
+    var(--duration-fade) + var(--duration-trace) + var(--duration-pen-lift) *
+      var(--trace-pen-lifts-total)
+  );
+}
+
+.sigil-renderer__stroke,
+.sigil-renderer__frame,
+.sigil-renderer__mark {
+  fill: none;
+}
+
+.sigil-renderer__stroke {
+  stroke: var(--sigil-stroke);
+}
+
+.sigil-renderer__mark {
+  stroke: var(--sigil-marker);
+}
+
+.sigil-renderer__frame {
+  stroke: var(--sigil-frame);
+}
+
+/* Tattoo stencil: pure black whatever the theme. */
+.sigil-renderer--stencil .sigil-renderer__stroke,
+.sigil-renderer--stencil .sigil-renderer__mark {
+  stroke: var(--stencil-stroke);
+}
+
+/* Reduced motion: the final sigil fades in, nothing is traced. */
+.sigil-renderer--static .sigil-renderer__ink {
+  animation: sigil-renderer-fade var(--duration-fade) var(--ease-standard) both;
+}
+
+/*
+ * Hidden until their turn: `visibility` keeps a round cap from showing a dot
+ * at the start of a path whose dash has not started yet.
+ */
+.sigil-renderer--trace .sigil-renderer__stroke,
+.sigil-renderer--trace .sigil-renderer__frame {
+  visibility: hidden;
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: 1;
+  animation-name: sigil-renderer-draw;
+  animation-fill-mode: forwards;
+}
+
+.sigil-renderer--trace .sigil-renderer__stroke {
+  animation-duration: calc(var(--duration-trace) * var(--trace-share));
+  animation-delay: calc(
+    var(--duration-fade) + var(--duration-trace) * var(--trace-offset) + var(--duration-pen-lift) *
+      var(--trace-pen-lifts)
+  );
+}
+
+/* A single path (kamea) is traced with a settled start and a slowing end. */
+.sigil-renderer--single-stroke .sigil-renderer__stroke {
+  animation-timing-function: var(--ease-trace);
+}
+
+/* Several strokes (Spare) are each traced at constant speed. */
+.sigil-renderer--multi-stroke .sigil-renderer__stroke {
+  animation-timing-function: linear;
+}
+
+.sigil-renderer--trace .sigil-renderer__frame {
+  animation-duration: var(--duration-frame);
+  animation-delay: calc(var(--trace-end) + var(--duration-fade));
+  animation-timing-function: var(--ease-standard);
+}
+
+.sigil-renderer--trace .sigil-renderer__mark {
+  animation: sigil-renderer-fade var(--duration-fade) var(--ease-standard) both;
+}
+
+.sigil-renderer--trace .sigil-renderer__mark--after {
+  animation-delay: var(--trace-end);
+}
+
+@keyframes sigil-renderer-draw {
+  from {
+    visibility: visible;
+    stroke-dashoffset: 1;
+  }
+
+  to {
+    visibility: visible;
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes sigil-renderer-fade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
