@@ -153,3 +153,10 @@
 - Preuves : ordre départ → tracé → arrivée chronométré ; mouvement réduit sans tracé ; `d` identique quel que soit le style, cercle = même dessin réduit (résidu < 0,01) ; Rejouer relance ; durée 2,70 s (kamea, 7 planètes) et 2,85 s (Spare 120+ lettres) ; écart dessin / cercle ≥ 2 ; boucle finale / arrivée > 0 de 0,4 à 2,4 ; pas-à-pas correct ; CSP, 375 px, clavier OK.
 - Bugs : aucun. Observations : Spare long à 2,4 très dense ; Lune à 2,4 écart boucle / arrivée étroit (1,2).
 - Tests e2e ajoutés : `e2e/f3-acceptance.spec.ts` (37 tests), en revalidation sur HEAD avant commit.
+
+## 2026-11-08 — F4 Exports SVG et PNG : test
+- Verdict : VALIDÉ (passage n° 1, commit 2aa51b2 en worktree)
+- Preuves : 43 SVG en XML strict, autonomes (couleurs littérales, ni classe ni style), < 0,3 % de pixels d'écart avec l'écran ; PNG 2048×2048 opaques, fond exact selon le thème, sans métadonnées texte ; 194 noms de fichiers sans intention ; boutons désactivés sans sigil ; CSP, 375 px, clavier OK ; contrôle de mutation.
+- Bug mineur renvoyé à T13 : B1 focus perdu après export PNG au clavier (`disabled` pendant la rastérisation).
+- Tests e2e : `e2e/f4-acceptance.spec.ts` (42 tests) — commit différé : à adapter au dialogue d'export de T13 et au sélecteur de langue.
+- Non testé : éditeur vectoriel réel (aucun installé), autres navigateurs.

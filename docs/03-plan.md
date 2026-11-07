@@ -105,7 +105,7 @@ Voir `docs/design.md` et `src/styles/tokens.css`. Page de grimoire : beaucoup de
 - Étant donné un sigil affiché, quand j'exporte en PNG, alors j'obtiens une image carrée nette (2048 px), fond selon le thème.
 - Étant donné un export, quand je regarde le nom du fichier et son contenu, alors l'intention n'y figure pas.
 - Étant donné qu'aucun sigil n'est affiché, quand je regarde les boutons d'export, alors ils sont désactivés.
-- Test : [ ] VALIDÉ
+- Test : [x] VALIDÉ (2026-11-08)
 
 ### F5 — Mode pochoir et PDF à taille réelle (Important)
 - Étant donné le mode pochoir, quand il est activé, alors le sigil est en noir pur, trait unique, sans cercle décoratif ni fond.
