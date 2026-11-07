@@ -143,7 +143,7 @@ Voir `docs/design.md` et `src/styles/tokens.css`. Page de grimoire : beaucoup de
 | T13 | F5 | Mode pochoir et PDF A4 à taille réelle avec règle de contrôle | dev | T12 | `features/export/`, `features/sigil/` | Test : dimensions du chemin dans le PDF = taille demandée ± 0,5 mm ; plage refusée | [ ] |
 | T14 | F6 | i18n FR/EN (dictionnaire typé, détection, persistance) sur toutes les chaînes | dev | T10, T11 | `features/i18n/`, chaînes de l'UI | Test : aucune chaîne en dur hors dictionnaires ; bascule et persistance | [ ] |
 | T15 | F6 | Sélecteur de thème encre / or, finition des deux thèmes | design | T14 | `styles/`, `app/` | Captures des deux thèmes aux 3 largeurs, contrastes AA chiffrés | [ ] |
-| T16 | F1 | Boucles kamea proportionnées à la taille des cases (lisibles du 3×3 au 9×9), pas de boucles superposées sur une même case, pas de collision boucle / trait d'arrivée | dev | T7 | `features/kamea/` | Tests sur les 7 carrés + capture Lune « Belle allée » lisible | [ ] |
+| T16 | F1 | Boucles kamea proportionnées à la taille des cases (lisibles du 3×3 au 9×9), pas de boucles superposées sur une même case, pas de collision boucle / trait d'arrivée | dev | T7 | `features/kamea/` | Tests sur les 7 carrés + capture Lune « Belle allée » lisible || [x] |
 
 Ordre : T1 → (T2, T3, T5, T6 en parallèle, 3 max) → T4 → T7 → test F1 (J2) → T8 → T9 → T10 → test F2 (J3) → T11 → test F3 → T12 → test F4 → test F7 → T13, T14, T15 → tests F5, F6 (J4).
 

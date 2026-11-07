@@ -63,3 +63,9 @@
 - Vérifications : suite complète, lint, typecheck, build, e2e 11/11 verts (revérifié) ; captures 375/768/1440, animation réelle chronométrée (départ → tracé → arrivée), parcours clavier, contrastes AA chiffrés.
 - Écarts au plan : grille kamea seulement dans le panneau ; panneau repliable à toutes largeurs ; nombres de la grille en coin de case (lisibilité) ; pas de retracé automatique au changement de planète.
 - Points ouverts : boucles trop grandes sur la Lune 9×9 → tâche T16 ajoutée ; avertissement « caractères ignorés » affiché deux fois (à dédoublonner en T10) ; panneau synchronisé au tracé et pas-à-pas en mouvement réduit → T11.
+
+## 2026-11-07 — T16 Boucles kamea
+- Rôle : dev
+- Fait : marques × min(1, case / 18) (Saturne et Jupiter inchangés ; Lune : boucle 3,6 → 1,78 de rayon), cercle de départ plancher 2,4 ; une seule boucle par case ; boucle finale reculée et placée à l'opposé du trait d'arrivée.
+- Vérifications : eslint kamea + vitest `src/features` → 386/386 verts (revérifié) ; capture Lune « Belle allée » lisible.
+- Points ouverts : boucle sur la case de départ croise le cercle de départ (préexistant) ; écart boucle / trait d'arrivée à revérifier avec un trait épais (T11).
