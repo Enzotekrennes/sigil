@@ -148,7 +148,7 @@ Voir `docs/design.md` et `src/styles/tokens.css`. Page de grimoire : beaucoup de
 | T16 | F1 | Boucles kamea proportionnées à la taille des cases (lisibles du 3×3 au 9×9), pas de boucles superposées sur une même case, pas de collision boucle / trait d'arrivée | dev | T7 | `features/kamea/` | Tests sur les 7 carrés + capture Lune « Belle allée » lisible || [x] |
 | T17 | F3 | Recul de la boucle finale kamea exprimé en fraction de l'épaisseur du trait : pas de contact boucle / trait d'arrivée de 0,4 à 4 | dev | T11 | `features/kamea/` (+ `sigil/style.ts` si l'API `scaleMark` doit l'exprimer) | Test sur 7 carrés × épaisseurs 0,4 / 1,2 / 4 : écart bord à bord > 0 || [x] |
 | T18 | F2 | Variété des compositions Spare : éviter la dérive horizontale et les structures répétées d'une variante à l'autre (terme d'allongement, diversité des orientations) sans perdre la lisibilité acquise | dev | — | `features/spare/` | Planche 16 cas : ratio largeur/hauteur moyen ≤ 1,15 ; variantes de silhouettes distinctes ; critère lisibilité F2 inchangé | [ ] |
-| T19 | F3 | Durée totale du tracé animé plafonnée (levers de plume et vitesse ajustés au nombre de traits) | dev | T17 | `features/sigil/`, `styles/tokens.css` | Test : durée ≤ plafond pour 1 à 40 traits ; ordre du tracé inchangé | [ ] |
+| T19 | F3 | Durée totale du tracé animé plafonnée (levers de plume et vitesse ajustés au nombre de traits) | dev | T17 | `features/sigil/`, `styles/tokens.css` | Test : durée ≤ plafond pour 1 à 40 traits ; ordre du tracé inchangé || [x] |
 
 Ordre : T1 → (T2, T3, T5, T6 en parallèle, 3 max) → T4 → T7 → test F1 (J2) → T8 → T9 → T10 → test F2 (J3) → T11 → test F3 → T12 → test F4 → test F7 → T13, T14, T15 → tests F5, F6 (J4).
 

@@ -115,3 +115,10 @@
 - Vérifications : eslint + vitest kamea/sigil → 242/242 verts (revérifié) ; 378 cas (9 intentions × 7 carrés × 3 épaisseurs × cercle) : écart > 0, boucle attachée.
 - Écarts au plan : décision D15 ; 2 tests existants ajustés (épaisseur ×1,5, plafond du cercle de départ).
 - Points ouverts : Lune illisible à l'épaisseur 4 → curseur plafonné à 2,4 (T19) ; chevauchement de deux boucles voisines avec cercle à forte épaisseur (rare).
+
+## 2026-11-08 — T19 Durée du tracé et épaisseur max
+- Rôle : dev
+- Fait : durée de tracé plafonnée à 2,7 s (`traceTimeScale`, token `--duration-trace-max`), kamea inchangé ; épaisseur max 2,4 (D15), libellés fin/moyen/épais ajustés.
+- Vérifications : vitest sigil + app 174/174, eslint, typecheck verts (sigil revérifié) ; mesure navigateur : Spare 11 traits 3,35 → 2,85 s, 42 traits 5,83 → 2,86 s, kamea 2,70 s inchangé.
+- Écarts au plan : texte d'aide de l'épaisseur dans `strings.fr.ts` commité avec T12 (fichier partagé).
+- Points ouverts : commentaires des tests kamea mentionnant l'épaisseur 4 « la plus forte proposée » à rafraîchir.

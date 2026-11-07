@@ -180,3 +180,7 @@ Tous ont repos, survol, focus visible (anneau 2 px `--color-focus`, décalage 2 
 2. **Police d'interface** — IBM Plex Mono (construction, chiffres alignés, ton « carnet de calcul ») ou Jost (géométrique fine, plus « tatouage », moins technique). *Recommandation :* Plex Mono, qui rend lisible la pédagogie (nombres, cases, lettres).
 3. **Accent du thème clair** — rouge de rubrique `#8E2A1D` ou encre seule (noir, accent porté par le soulignement). *Recommandation :* rouge de rubrique, discret et historiquement juste ; il ne touche jamais le sigil.
 4. **Grain de papier** — fond uni ou très léger grain SVG (bruit 2 %) sur le thème clair. *Recommandation :* uni ; le grain glisse vite vers le décor de jeu de rôle et alourdit les captures.
+
+## Ajouts du build
+- Tracé animé plafonné à 2,7 s (`--duration-trace-max`), traits et levers de plume réduits dans la même proportion au-delà ; sigil complet en ≤ 3 s hors cercle d'encadrement.
+- Épaisseur du trait de 0,4 à 2,4 dans le repère 0–100 (token 4–24 dans le repère 1000) ; fin ≤ 1,4, moyen 1,6–1,8, épais 2,0–2,4.
