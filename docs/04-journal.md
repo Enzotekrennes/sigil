@@ -28,3 +28,10 @@
 - Vérifications : eslint + vitest spare → 103/103 verts (revérifié) ; régénération idempotente (sha256 identique).
 - Écarts au plan : script en `.js` important le `.ts` (évite de toucher tsconfig/eslint).
 - Points ouverts : script npm `glyphs:generate` à ajouter ; mise à l'échelle Hershey → repère 0–100 en T8 ; lien NOTICE dans le README (phase 6).
+
+## 2026-11-07 — T5 PWA, CSP et déploiement
+- Rôle : dev
+- Fait : `vite-plugin-pwa` 2.0.0 (generateSW, autoUpdate, 21 fichiers précachés), manifest et icônes (tracé kamea encre sur papier) ; CSP `<meta>` stricte (`default-src 'self'`, `form-action 'none'`, `object-src 'none'`, `base-uri 'none'`) + `referrer no-referrer` ; workflow `.github/workflows/deploy.yml` (inactif tant que le dépôt n'existe pas).
+- Vérifications : e2e 7/7 (hors ligne servi par le service worker, aucune requête tierce, CSP appliquée, ressources sous `/sigil/`) — revérifié au contrôle ; contre-épreuve sans service worker → test hors ligne rouge.
+- Écarts au plan : CSP retirée sur le serveur de dev seulement (plugin) ; `skipWaiting`/`clientsClaim` explicites ; apple-touch-icon ajoutée. Décision D12.
+- Points ouverts : e2e non lancés en CI (à ajouter en phase 6 si souhaité) ; régler Pages → Source « GitHub Actions » en phase 6 ; 15 vulnérabilités low/moderate dans l'outillage de build uniquement.
