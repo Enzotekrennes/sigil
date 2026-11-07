@@ -9,9 +9,67 @@ import type { Mark, Point, Sigil } from '../sigil/types.ts';
 import { buildKameaSigil } from './buildKameaSigil.ts';
 import type { KameaError } from './buildKameaSigil.ts';
 import type { Planet } from '../sigil/types.ts';
+import { PLANETS } from './squares.ts';
 
 /** "Je suis calme" after normalisation. */
 const JE_SUIS_CALME = ['J', 'E', 'S', 'U', 'I', 'S', 'C', 'A', 'L', 'M', 'E'];
+
+/** "Belle allée" after normalisation: two runs of L and a final run of E. */
+const BELLE_ALLEE = ['B', 'E', 'L', 'L', 'E', 'A', 'L', 'L', 'E', 'E'];
+
+/** Stroke width the marks are sized for, in frame units. */
+const REFERENCE_STROKE = 1.2;
+
+/** Side N of each planet's square. */
+const ORDERS: Readonly<Record<Planet, number>> = {
+  saturn: 3,
+  jupiter: 4,
+  mars: 5,
+  sun: 6,
+  venus: 7,
+  mercury: 8,
+  moon: 9,
+};
+
+/**
+ * Design mark sizes (start circle radius 3, loop radius 3.6, end bar 9.6)
+ * multiplied by a scale, the start circle never under 2.4.
+ *
+ * @param scale - Shrink factor, 1 for the full size.
+ * @returns The expected sizes in frame units.
+ */
+function sizesAt(scale: number): { startCircle: number; loop: number; endBar: number } {
+  return { startCircle: Math.max(3 * scale, 2.4), loop: 3.6 * scale, endBar: 9.6 * scale };
+}
+
+/**
+ * Expected mark sizes per square: full size while a cell (80 / N) is at least
+ * 18 units, then shrunk by cell / 18.
+ */
+const EXPECTED_SIZES: Readonly<Record<Planet, ReturnType<typeof sizesAt>>> = {
+  saturn: sizesAt(1),
+  jupiter: sizesAt(1),
+  mars: sizesAt(16 / 18),
+  sun: sizesAt(80 / 6 / 18),
+  venus: sizesAt(80 / 7 / 18),
+  mercury: sizesAt(10 / 18),
+  moon: sizesAt(80 / 9 / 18),
+};
+
+/**
+ * Cell of the grid a point falls in, as a `"row:column"` key.
+ *
+ * @param point - Point in frame units, inside the grid.
+ * @param planet - Square whose grid is used.
+ * @returns The cell key, or `"none"` when the point is missing.
+ */
+function cellOf(point: Point | undefined, planet: Planet): string {
+  if (point === undefined) return 'none';
+  const size = 80 / ORDERS[planet];
+  const row = Math.floor((point.y - 10) / size);
+  const column = Math.floor((point.x - 10) / size);
+  return `${String(row)}:${String(column)}`;
+}
 
 /**
  * Builds a sigil and fails the test if the builder refused.
@@ -148,7 +206,7 @@ describe('buildKameaSigil', () => {
       ['horizontal', ['D', 'I'], 'saturn'],
       ['vertical', ['I', 'E'], 'saturn'],
       ['moon diagonal', ['A', 'B', 'C'], 'moon'],
-    ])('is perpendicular to the last segment (%s)', (_, letters, planet) => {
+    ])('is perpendicular to the last segment and centred on its end (%s)', (_, letters, planet) => {
       const sigil = build(letters, planet);
       const stroke = sigil.strokes[0] ?? [];
       const end = stroke[stroke.length - 1];
@@ -165,7 +223,58 @@ describe('buildKameaSigil', () => {
       expect(bar.center).toEqual(end);
       expect(bar.angle).toBeGreaterThanOrEqual(0);
       expect(bar.angle).toBeLessThan(180);
-      expect(bar.length).toBeCloseTo(9.6, 9);
+      expect(bar.length).toBeCloseTo(EXPECTED_SIZES[planet].endBar, 9);
+    });
+  });
+
+  describe('mark sizes', () => {
+    it.each(PLANETS)('sizes the marks to the cells of the %s square', (planet) => {
+      const sigil = build(['A', 'B', 'B', 'C'], planet);
+      const expected = EXPECTED_SIZES[planet];
+      expect(marksOf(sigil, 'start-circle')[0]?.radius).toBeCloseTo(expected.startCircle, 9);
+      expect(marksOf(sigil, 'loop')[0]?.radius).toBeCloseTo(expected.loop, 9);
+      expect(marksOf(sigil, 'end-bar')[0]?.length).toBeCloseTo(expected.endBar, 9);
+    });
+
+    it('keeps the design sizes on Saturn and Jupiter, whose cells are large enough', () => {
+      for (const planet of ['saturn', 'jupiter'] as const) {
+        const sigil = build(['A', 'B', 'B', 'C'], planet);
+        expect(marksOf(sigil, 'start-circle')[0]?.radius).toBeCloseTo(3, 9);
+        expect(marksOf(sigil, 'loop')[0]?.radius).toBeCloseTo(3.6, 9);
+        expect(marksOf(sigil, 'end-bar')[0]?.length).toBeCloseTo(9.6, 9);
+      }
+    });
+
+    it.each(PLANETS)('keeps every loop of %s inside its cell, stroke included', (planet) => {
+      const order = ORDERS[planet];
+      const half = 80 / order / 2;
+      const sigil = build(['A', 'B', 'B', 'C', 'D', 'D', 'E'], planet);
+      const loops = marksOf(sigil, 'loop');
+      expect(loops).toHaveLength(2);
+      for (const loop of loops) {
+        const reach = Math.max(
+          Math.abs(loop.center.x - loop.anchor.x),
+          Math.abs(loop.center.y - loop.anchor.y),
+        );
+        expect(reach + loop.radius + REFERENCE_STROKE / 2).toBeLessThan(half);
+      }
+    });
+
+    it.each(PLANETS)('keeps the end bar of %s inside its cell', (planet) => {
+      const half = 80 / ORDERS[planet] / 2;
+      const [bar] = marksOf(build(['A', 'B', 'C'], planet), 'end-bar');
+      expect((bar?.length ?? Infinity) / 2 + REFERENCE_STROKE / 2).toBeLessThan(half);
+    });
+
+    it.each(PLANETS)('keeps the start circle of %s hollow and inside its cell', (planet) => {
+      const half = 80 / ORDERS[planet] / 2;
+      const [start] = marksOf(build(['A', 'B', 'C'], planet), 'start-circle');
+      const radius = start?.radius ?? 0;
+      // Around the line end (half a stroke), a ring one stroke wide stays empty.
+      expect(radius - REFERENCE_STROKE / 2 - REFERENCE_STROKE / 2).toBeGreaterThanOrEqual(
+        REFERENCE_STROKE - 1e-9,
+      );
+      expect(radius + REFERENCE_STROKE / 2).toBeLessThan(half);
     });
   });
 
@@ -211,6 +320,77 @@ describe('buildKameaSigil', () => {
       const [loop] = marksOf(atStart, 'loop');
       expect(loop?.anchor).toEqual(one);
       expect(Number.isFinite(loop?.center.x)).toBe(true);
+    });
+
+    it('draws a single loop on a cell holding several separate runs', () => {
+      // 2, 1, 1, 3, 1, 1, 2: two runs of 1, on the same cell.
+      const twice = build(['B', 'A', 'J', 'C', 'S', 'A', 'B'], 'saturn');
+      const loops = marksOf(twice, 'loop');
+      expect(loops).toHaveLength(1);
+      // The loop follows the path at the first run: from 2 to 3 through 1.
+      expect(loops[0]).toEqual(marksOf(build(['B', 'A', 'J', 'C'], 'saturn'), 'loop')[0]);
+    });
+
+    it('draws one loop per looped cell for "Belle allée" on the Moon', () => {
+      // 2, 5, 12, 12, 5, 1, 12, 12, 5, 5: 12 loops twice, 5 once at the end.
+      const moon = build(BELLE_ALLEE, 'moon');
+      expect(numbersOf(moon)).toEqual([2, 5, 12, 12, 5, 1, 12, 12, 5, 5]);
+      const loops = marksOf(moon, 'loop');
+      expect(loops).toHaveLength(2);
+      const centres = loops.map((loop) => `${String(loop.center.x)}:${String(loop.center.y)}`);
+      expect(new Set(centres).size).toBe(2);
+    });
+  });
+
+  describe('loop on the last cell', () => {
+    it.each(PLANETS)('stays clear of the end bar on %s', (planet) => {
+      for (const letters of [['A', 'B', 'B'], ['B', 'B', 'A', 'B'], BELLE_ALLEE]) {
+        const sigil = build(letters, planet);
+        const stroke = sigil.strokes[0] ?? [];
+        const end = stroke[stroke.length - 1];
+        const [bar] = marksOf(sigil, 'end-bar');
+        const endLoop = marksOf(sigil, 'loop').find(
+          (loop) => cellOf(loop.anchor, planet) === cellOf(end, planet),
+        );
+        if (end === undefined || bar === undefined || endLoop === undefined) {
+          throw new Error(`Missing end loop for ${letters.join('')} on ${planet}`);
+        }
+
+        // Distance from the loop centre to the bar's axis, and to the bar segment.
+        const radians = (bar.angle * Math.PI) / 180;
+        const along = { x: Math.cos(radians), y: Math.sin(radians) };
+        const offset = { x: endLoop.center.x - end.x, y: endLoop.center.y - end.y };
+        const onBar = offset.x * along.x + offset.y * along.y;
+        const toAxis = Math.abs(offset.x * along.y - offset.y * along.x);
+        const clamped = Math.max(-bar.length / 2, Math.min(bar.length / 2, onBar));
+        const toSegment = Math.hypot(offset.x - clamped * along.x, offset.y - clamped * along.y);
+
+        // Both strokes are 1.2 wide: a gap of one more stroke width must remain.
+        expect(toAxis - endLoop.radius).toBeGreaterThanOrEqual(2 * REFERENCE_STROKE - 1e-9);
+        expect(toSegment - endLoop.radius).toBeGreaterThan(REFERENCE_STROKE);
+      }
+    });
+
+    it.each(PLANETS)('stays tangent to the last segment, inside the last cell, on %s', (planet) => {
+      const sigil = build(['A', 'B', 'B'], planet);
+      const stroke = sigil.strokes[0] ?? [];
+      const end = stroke[stroke.length - 1];
+      const beforeEnd = stroke[stroke.length - 2];
+      const [loop] = marksOf(sigil, 'loop');
+      if (end === undefined || beforeEnd === undefined || loop === undefined) {
+        throw new Error('Missing end of path or loop');
+      }
+
+      const segment = { x: end.x - beforeEnd.x, y: end.y - beforeEnd.y };
+      const toAnchor = { x: loop.anchor.x - beforeEnd.x, y: loop.anchor.y - beforeEnd.y };
+      // The anchor lies on the last segment…
+      expect(segment.x * toAnchor.y - segment.y * toAnchor.x).toBeCloseTo(0, 9);
+      // …the loop touches it there, its centre one radius away across it…
+      const radius = { x: loop.center.x - loop.anchor.x, y: loop.center.y - loop.anchor.y };
+      expect(Math.hypot(radius.x, radius.y)).toBeCloseTo(loop.radius, 9);
+      expect(radius.x * segment.x + radius.y * segment.y).toBeCloseTo(0, 9);
+      // …and the anchor stays in the last cell.
+      expect(cellOf(loop.anchor, planet)).toBe(cellOf(end, planet));
     });
   });
 

@@ -3,9 +3,11 @@
  *
  * Letters → numbers (decision D2) → centres of the matching cells of the
  * planet's square → one polyline, with a circle at the start, a bar
- * perpendicular to the last segment at the end, and a loop wherever the same
- * number comes several times in a row (decision D3). Also produces the
- * explanation steps. Pure and deterministic: no randomness, no I/O.
+ * perpendicular to the last segment at the end, and a loop on each cell where
+ * the same number comes several times in a row (decision D3). Marks are sized
+ * to the cells of the square so they stay inside them from the 3 × 3 to the
+ * 9 × 9. Also produces the explanation steps. Pure and deterministic: no
+ * randomness, no I/O.
  * Does not normalise the intention: letters arrive already reduced to A–Z.
  */
 import {
@@ -43,14 +45,55 @@ const GRID_SIZE = DRAWING_SIZE;
  */
 const REFERENCE_STROKE_WIDTH = MARK_REFERENCE_STROKE_WIDTH;
 
-/** Start circle radius: 2.5 stroke widths, large enough to read as hollow. */
+/**
+ * Start circle radius on large cells: 2.5 stroke widths, large enough to read
+ * as hollow. Smaller squares shrink it with the mark scale (see `markSizes`),
+ * down to `START_CIRCLE_MIN_RADIUS`.
+ */
 const START_CIRCLE_RADIUS = 2.5 * REFERENCE_STROKE_WIDTH;
 
-/** End bar length: 8 stroke widths, clearly longer than the line is thick. */
+/**
+ * Smallest start circle radius: 2 stroke widths. The path begins at the
+ * circle's centre, so the line end (half a stroke) sits in its hole; at this
+ * radius a ring of paper one stroke wide stays visible around it, where the
+ * scaled 1.5 of the Moon left the hole nearly filled. The circle is centred on
+ * its cell, so 2.4 + 0.6 still fits the Moon's 4.4-unit half cell.
+ */
+const START_CIRCLE_MIN_RADIUS = 2 * REFERENCE_STROKE_WIDTH;
+
+/**
+ * End bar length on large cells: 8 stroke widths, clearly longer than the line
+ * is thick. Smaller squares shrink it with the mark scale.
+ */
 const END_BAR_LENGTH = 8 * REFERENCE_STROKE_WIDTH;
 
-/** Loop radius: 3 stroke widths, slightly larger than the start circle to tell them apart. */
+/**
+ * Loop radius on large cells: 3 stroke widths, slightly larger than the start
+ * circle to tell them apart. Smaller squares shrink it with the mark scale;
+ * there the start circle, held at its minimum, may be the larger one, and the
+ * two still differ in shape: the line runs into the start circle's centre but
+ * only touches a loop's edge.
+ */
 const LOOP_RADIUS = 3 * REFERENCE_STROKE_WIDTH;
+
+/**
+ * Smallest cell side, in frame units, that holds the marks at their full size.
+ * A loop reaches two radii from the cell centre plus half a stroke, and
+ * 2 × 3.6 + 0.6 = 7.8 fits in the 9-unit half cell with a little room. Below
+ * it every mark shrinks by `cellSize / 18`, so a loop keeps reaching 40 % of
+ * the cell side (plus half a stroke) and the end bar 27 % on each side of the
+ * cell centre. Saturn (26.7) and Jupiter (20) keep the full
+ * size; Mars (16) shrinks to 0.89, the Moon (8.9) to 0.49.
+ */
+const MARK_REFERENCE_CELL_SIZE = 18;
+
+/**
+ * Distance kept between a loop on the last cell and the end bar, from the
+ * bar's axis to the loop's centre line: half the bar stroke plus half the loop
+ * stroke make them touch, one more stroke width leaves a visible gap as wide
+ * as the line itself.
+ */
+const END_LOOP_CLEARANCE = 2 * REFERENCE_STROKE_WIDTH;
 
 /** Kamea has no pseudo-random choice, so its seed is a constant (see `Sigil.seed`). */
 const KAMEA_SEED = 0;
@@ -132,7 +175,7 @@ export function buildKameaSigil(letters: readonly string[], planet: Planet): Kam
     ok: true,
     data: {
       strokes: [stroke],
-      marks: buildMarks(stroke, numbers, visited),
+      marks: buildMarks(stroke, numbers, visited, markSizes(order)),
       viewBox: { x: 0, y: 0, width: FRAME_SIZE, height: FRAME_SIZE },
       steps,
       seed: KAMEA_SEED,
@@ -169,6 +212,31 @@ function cellCenter(cell: GridCell, order: number): Point {
   };
 }
 
+/** Sizes of the marks for one square, in frame units. */
+interface MarkSizes {
+  readonly startCircleRadius: number;
+  readonly endBarLength: number;
+  readonly loopRadius: number;
+}
+
+/**
+ * Sizes the marks to the cells of a square, so that no mark spills onto the
+ * neighbouring cells. Large cells keep the design sizes (the cap); smaller
+ * ones shrink every mark by the same factor, the start circle stopping at
+ * `START_CIRCLE_MIN_RADIUS` so its hole stays visible.
+ *
+ * @param order - Side N of the square, 3 to 9.
+ * @returns The start circle radius, end bar length and loop radius.
+ */
+function markSizes(order: number): MarkSizes {
+  const markScale = Math.min(1, GRID_SIZE / order / MARK_REFERENCE_CELL_SIZE);
+  return {
+    startCircleRadius: Math.max(START_CIRCLE_RADIUS * markScale, START_CIRCLE_MIN_RADIUS),
+    endBarLength: END_BAR_LENGTH * markScale,
+    loopRadius: LOOP_RADIUS * markScale,
+  };
+}
+
 /**
  * Drops points equal to the one before, so the polyline has no zero-length segment.
  *
@@ -183,33 +251,48 @@ function removeConsecutiveDuplicates(points: readonly Point[]): Point[] {
 }
 
 /**
- * Builds the start circle, the end bar and one loop per run of repeated numbers.
+ * Builds the start circle, the end bar and one loop per cell holding a run of
+ * repeated numbers.
+ *
+ * A cell gets a single loop even when several separate runs fall on it: the
+ * loop says "this cell is repeated", the path already shows how often the
+ * cell is visited, and stacked loops would merge into a blot on the small
+ * cells of the 9 × 9. The loop follows the path at the cell's first run. On
+ * the last cell it is moved back along the last segment, clear of the end bar.
  *
  * @param stroke - Path without consecutive duplicates, at least two points.
  * @param numbers - Numbers visited, one per letter.
  * @param visited - Cell centre of each number, same length as `numbers`.
+ * @param sizes - Mark sizes for the square.
  * @returns Marks in drawing order: start, loops along the path, end.
  */
 function buildMarks(
   stroke: readonly Point[],
   numbers: readonly number[],
   visited: readonly Point[],
+  sizes: MarkSizes,
 ): Mark[] {
   const start = stroke[0];
   const end = stroke[stroke.length - 1];
   const beforeEnd = stroke[stroke.length - 2];
   if (start === undefined || end === undefined || beforeEnd === undefined) return [];
 
-  const marks: Mark[] = [{ kind: 'start-circle', center: start, radius: START_CIRCLE_RADIUS }];
+  const marks: Mark[] = [{ kind: 'start-circle', center: start, radius: sizes.startCircleRadius }];
+  const loopedNumbers = new Set<number>();
   for (const [index, point] of visited.entries()) {
-    const startsRun =
-      numbers[index] === numbers[index + 1] && numbers[index] !== numbers[index - 1];
-    if (!startsRun) continue;
+    const value = numbers[index];
+    const startsRun = value === numbers[index + 1] && value !== numbers[index - 1];
+    if (!startsRun || value === undefined || loopedNumbers.has(value)) continue;
+    loopedNumbers.add(value);
+    if (samePoint(point, end)) {
+      marks.push(buildEndLoop(stroke, sizes.loopRadius));
+      continue;
+    }
     const previous = findDistinct(visited, index, -1);
     const next = findDistinct(visited, index, 1);
-    marks.push(buildLoop(point, previous, next));
+    marks.push(buildLoop(point, previous, next, sizes.loopRadius));
   }
-  marks.push(buildEndBar(beforeEnd, end));
+  marks.push(buildEndBar(beforeEnd, end, sizes.endBarLength));
   return marks;
 }
 
@@ -238,9 +321,15 @@ function findDistinct(points: readonly Point[], from: number, step: -1 | 1): Poi
  * @param anchor - Repeated point.
  * @param previous - Point the path comes from, if any.
  * @param next - Point the path goes to, if any. At least one of the two exists.
+ * @param radius - Loop radius in frame units.
  * @returns The loop mark.
  */
-function buildLoop(anchor: Point, previous: Point | undefined, next: Point | undefined): LoopMark {
+function buildLoop(
+  anchor: Point,
+  previous: Point | undefined,
+  next: Point | undefined,
+  radius: number,
+): LoopMark {
   const incoming = previous === undefined ? undefined : unit(subtract(anchor, previous));
   const outgoing = next === undefined ? undefined : unit(subtract(next, anchor));
 
@@ -259,9 +348,39 @@ function buildLoop(anchor: Point, previous: Point | undefined, next: Point | und
   return {
     kind: 'loop',
     anchor,
-    center: add(anchor, scale(normal, LOOP_RADIUS)),
-    radius: LOOP_RADIUS,
+    center: add(anchor, scale(normal, radius)),
+    radius,
   };
+}
+
+/**
+ * Places the loop of the last cell on the last segment, back from the end
+ * point by one radius plus `END_LOOP_CLEARANCE`, on the side away from the
+ * segment before. A loop tangent at the end point would always touch the end
+ * bar, which crosses that very point.
+ *
+ * The anchor stays inside the last cell: one radius plus the clearance is
+ * under half a cell side on every square (6 of 13.3 on Saturn, 4.2 of 4.4 on
+ * the Moon), and the last segment is at least one cell long.
+ *
+ * @param stroke - Path without consecutive duplicates, at least two points.
+ * @param radius - Loop radius in frame units.
+ * @returns The loop mark, tangent to the last segment.
+ */
+function buildEndLoop(stroke: readonly Point[], radius: number): LoopMark {
+  const end = stroke[stroke.length - 1] ?? ZERO;
+  const beforeEnd = stroke[stroke.length - 2] ?? ZERO;
+  const direction = unit(subtract(end, beforeEnd));
+  const anchor = subtract(end, scale(direction, radius + END_LOOP_CLEARANCE));
+  let normal: Point = { x: -direction.y, y: direction.x };
+
+  // Keep the loop off the side where the path came from before its last turn.
+  const earlier = stroke[stroke.length - 3];
+  if (earlier !== undefined && dot(normal, subtract(earlier, beforeEnd)) > 0) {
+    normal = scale(normal, -1);
+  }
+
+  return { kind: 'loop', anchor, center: add(anchor, scale(normal, radius)), radius };
 }
 
 /**
@@ -269,13 +388,14 @@ function buildLoop(anchor: Point, previous: Point | undefined, next: Point | und
  *
  * @param beforeEnd - Second-to-last point of the path, distinct from `end`.
  * @param end - Last point of the path.
+ * @param barLength - Full bar length in frame units.
  * @returns The end bar mark, its angle in [0, 180) degrees.
  */
-function buildEndBar(beforeEnd: Point, end: Point): EndBarMark {
+function buildEndBar(beforeEnd: Point, end: Point, barLength: number): EndBarMark {
   const segment = subtract(end, beforeEnd);
   const segmentAngle = (Math.atan2(segment.y, segment.x) * 180) / Math.PI;
   const angle = (((segmentAngle + 90) % 180) + 180) % 180;
-  return { kind: 'end-bar', center: end, angle, length: END_BAR_LENGTH };
+  return { kind: 'end-bar', center: end, angle, length: barLength };
 }
 
 /**
