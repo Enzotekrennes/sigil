@@ -140,3 +140,10 @@
 - Verdict : VALIDÉ (passage n° 3, sur le commit 2aa51b2 en worktree isolé)
 - Preuves : 5 scénarios OK ; 0 lettre nettement lisible / 15, 4 cas limites (aucune lettre entière et isolée) ; ratio moyen 1,09 (B2 corrigé) ; tracé ~2,87 s sur 124 lettres (B3 corrigé) ; CSP, confidentialité, 375 px OK.
 - Réserve mineure : air de famille (courbe en S + zigzag) entre certaines variantes de « Je suis calme » — non bloquant, à noter en limite connue.
+
+## 2026-11-08 — T14 Interface FR/EN
+- Rôle : dev
+- Fait : `features/i18n` (détection `navigator.languages`, persistance tolérante `sigil.language` = fr|en, contexte, formatage pluriels/décimales via `Intl`), `strings.en.ts` typé `AppStrings`, sélecteur FR | EN dans l'en-tête, `<html lang>` mis à jour ; l'état (intention, sigil, animation) survit à la bascule.
+- Vérifications : 738/738 tests, lint, typecheck verts (revérifié) ; e2e `i18n.spec` 6/6 ; test « aucune chaîne en dur » dans les deux sens, contre-épreuve OK ; captures EN 375/1440.
+- Écarts au plan : manifest PWA unique en français ; `playwright.config.ts` en `locale: 'fr-FR'`.
+- Points ouverts : deux tests clavier e2e à décaler d'un arrêt (sélecteur de langue) — en cours ; composant commun langue/thème à décider en T15.
