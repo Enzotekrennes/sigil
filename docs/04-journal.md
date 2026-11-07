@@ -69,3 +69,10 @@
 - Fait : marques × min(1, case / 18) (Saturne et Jupiter inchangés ; Lune : boucle 3,6 → 1,78 de rayon), cercle de départ plancher 2,4 ; une seule boucle par case ; boucle finale reculée et placée à l'opposé du trait d'arrivée.
 - Vérifications : eslint kamea + vitest `src/features` → 386/386 verts (revérifié) ; capture Lune « Belle allée » lisible.
 - Points ouverts : boucle sur la case de départ croise le cercle de départ (préexistant) ; écart boucle / trait d'arrivée à revérifier avec un trait épais (T11).
+
+## 2026-11-07 — T10 Spare dans l'écran
+- Rôle : design
+- Fait : Spare activé, interrupteur « Garder les voyelles », « Autre variante » (numéro affiché), panneau Spare en 4 étapes (lettres retirées, squelettes et transformations, composition retenue, simplification), erreur « oui » avec action directe, avertissement « caractères ignorés » à un seul endroit ; composant `Switch`.
+- Vérifications : lint, typecheck, 474/474 tests, e2e 14/14 verts (revérifié) ; captures 375/768/1100/1440 clair et sombre ; contrastes AA ; `buildSpareSigil` ≤ 90 ms en CPU ×4.
+- Écarts au plan : décision D14.
+- Points ouverts : espacement du panneau kamea en deux colonnes (1024–1279 px) ; 240 ms du clic au premier affichage à mesurer sur téléphone.

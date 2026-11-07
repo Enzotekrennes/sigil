@@ -32,6 +32,7 @@ Statut : validé le 2026-11-07
 | D11 | Spare : Y n'est pas une voyelle (gardée) ; voyelles = A E I O U | Y retirée | Y souvent consonne (« yeux », « you ») ; garde une lettre de plus sur les intentions courtes |
 | D12 | CSP `style-src 'self'` sans `'unsafe-inline'` : styles dynamiques uniquement par la prop `style` React (CSSOM), jamais d'élément `<style>` ni d'attribut `style=""` en dur ; meta CSP retirée sur le serveur de dev seulement | `'unsafe-inline'` | Prouvé par test e2e ; garde la CSP stricte en production |
 | D13 | Spare : score = équilibre (1) + remplissage (1) + isolement (2) + lettre restée droite (1,5) ; recentrage final sur le centre de gravité ; aucune marque de départ/arrivée | Marques comme kamea | La méthode de Spare n'a pas de sens de lecture ; le terme « lettre droite » réduit les lettres lisibles |
+| D14 | Variantes affichées à partir de 1 ; kamea méthode par défaut ; changer planète ou option ne retrace pas (bouton Tracer) | Numérotation à 0, Spare par défaut, retracé automatique | Plus lisible pour le public ; évite une animation relancée à chaque clic |
 
 ## Architecture
 ### Flux
@@ -137,7 +138,7 @@ Voir `docs/design.md` et `src/styles/tokens.css`. Page de grimoire : beaucoup de
 | T7 | F1 | Écran principal : saisie, choix méthode/planète, scène, panneau explicatif kamea (table, règle, carré + chemin), états d'erreur | design | T2, T3, T4 | `app/`, `features/explain/`, `components/ui/` | Captures 375/768/1440, parcours clavier, contrastes ; scénarios F1 joués à la main || [x] |
 | T8 | F2 | Spare 1/2 : PRNG (`lib/random.ts`), placement et transformations des glyphes (rotation, miroir, échelle, chevauchement), génération de candidats | dev | T2, T6 | `lib/random.ts`, `features/spare/` | Tests : déterminisme, variantes distinctes, candidats dans le cadre || [x] |
 | T9 | F2 | Spare 2/2 : score d'équilibre (centre de gravité, encombrement, chevauchement), fusion des traits proches, simplification, étapes explicatives | dev | T8 | `features/spare/` | Tests : critère de centre de gravité F2, aucun segment dupliqué ; planche de 12 exemples SVG générée pour le journal || [x] |
-| T10 | F2 | Intégration Spare dans l'écran : option voyelles, « autre variante », panneau étapes Spare | design | T7, T9 | `app/`, `features/explain/` | Scénarios F2 joués à la main, captures | [ ] |
+| T10 | F2 | Intégration Spare dans l'écran : option voyelles, « autre variante », panneau étapes Spare | design | T7, T9 | `app/`, `features/explain/` | Scénarios F2 joués à la main, captures || [x] |
 | T11 | F3 | Panneau réglages de style et bouton rejouer | design | T7 | `features/sigil/`, `components/ui/` | Scénarios F3 joués à la main, captures | [ ] |
 | T12 | F4 | Exports SVG et PNG, boutons, nom de fichier neutre ; couleurs du thème écrites en littéral (pas de `var()`) | dev | T4, T7 | `features/export/` | Tests : SVG valide, PNG 2048 px, aucune trace de l'intention | [ ] |
 | T13 | F5 | Mode pochoir et PDF A4 à taille réelle avec règle de contrôle | dev | T12 | `features/export/`, `features/sigil/` | Test : dimensions du chemin dans le PDF = taille demandée ± 0,5 mm ; plage refusée | [ ] |
