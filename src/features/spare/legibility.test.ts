@@ -15,6 +15,7 @@ import {
   MIN_ENTANGLEMENT,
   letterLegibility,
   readsAsLetter,
+  readsInAnyOrientation,
 } from './legibility.ts';
 import type { QuarterTurn } from './placement.ts';
 
@@ -141,6 +142,18 @@ describe('letterLegibility', () => {
     expect(upright?.deficit).toBe(LETTER_LIKE_BASE_DEFICIT);
   });
 
+  it('counts a familiar letter tangled no more than a turned one needs as wholly visible', () => {
+    // Upright L with half its length tangled: the extra part of its deficit is full.
+    const [upright] = letterLegibility(
+      candidateOf([
+        { letter: 'L', rotation: 0, strokes: [line(10, 50, 90, 50)] },
+        { letter: 'T', strokes: [line(10, 51, 50, 51)] },
+      ]),
+    );
+    expect(upright?.entanglement ?? 1).toBeLessThanOrEqual(MIN_ENTANGLEMENT + SAMPLING_TOLERANCE);
+    expect(upright?.deficit ?? 0).toBeGreaterThan(0.9);
+  });
+
   it('does not apply to a single letter, which has nothing to tangle with', () => {
     const [alone] = letterLegibility(
       candidateOf([{ letter: 'K', strokes: [line(10, 10, 90, 90)] }]),
@@ -181,6 +194,10 @@ describe('readsAsLetter', () => {
     for (const letter of ['C', 'N', 'O', 'Q', 'U', 'X', 'Z'] as const) {
       expect(readsAsLetter(letter, 90)).toBe(true);
       expect(readsAsLetter(letter, 270)).toBe(true);
+      expect(readsInAnyOrientation(letter)).toBe(true);
+    }
+    for (const letter of ['A', 'J', 'L', 'M', 'S'] as const) {
+      expect(readsInAnyOrientation(letter)).toBe(false);
     }
   });
 });

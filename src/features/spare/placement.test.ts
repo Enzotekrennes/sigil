@@ -1,8 +1,9 @@
 /**
  * Unit tests of the placement of letters in a Spare composition: transforms
  * applied as traced, bounds of every draw, stem sharing, a fixed number of
- * draws per letter, and the detection of orientations that leave a letter
- * readable as written.
+ * draws per letter, the weighted turns, the spread across a letter's narrow
+ * axis, the lead letter of each variant, and the detection of orientations
+ * that leave a letter readable as written.
  */
 import { describe, expect, it } from 'vitest';
 
@@ -14,14 +15,22 @@ import type { CapitalLetter } from './glyphs/index.ts';
 import {
   MAX_CENTRE_OFFSET,
   MAX_LETTER_SCALE,
+  MAX_SUPPORT_SCALE,
   MIN_LETTER_SCALE,
+  NARROW_AXIS_SPREAD,
+  TURN_WEIGHTS,
   composeLetters,
+  drawTurn,
+  leadLetterFor,
   looksUpright,
 } from './placement.ts';
 import type { Composition } from './placement.ts';
 
 /** Tolerance on computed coordinates. */
 const EPSILON = 1e-9;
+
+/** Lead index outside any word: no letter is drawn at full size. */
+const NO_LEAD = -1;
 
 /** Letters with and without vertical stems, to exercise every branch. */
 const MIXED_LETTERS: CapitalLetter[] = ['H', 'S', 'L', 'M', 'O', 'T', 'W'];
@@ -71,8 +80,8 @@ function verticalSegmentXs(
 
 describe('composeLetters', () => {
   it('applies mirror, quarter turn, scale and offset in that order, as traced', () => {
-    // Mirror (0.1 < 0.5), turn index 1 = 90°, smallest scale, centred, no sharing.
-    const composition = composeLetters(['L'], scripted([0.1, 0.3, 0, 0.5, 0.5, 0.9]));
+    // Mirror (0.1 < 0.5), turn 90° (0.3), smallest scale, centred, no sharing, no lead.
+    const composition = composeLetters(['L'], scripted([0.1, 0.3, 0, 0.5, 0.5, 0.9]), NO_LEAD);
 
     expect(composition.placements).toEqual([
       {
@@ -92,8 +101,8 @@ describe('composeLetters', () => {
   });
 
   it('leaves an untransformed letter centred in the unit frame', () => {
-    // Not mirrored, no turn, full scale, centred.
-    const composition = composeLetters(['I'], scripted([0.9, 0, 0.999999999, 0.5, 0.5, 0.9]));
+    // Not mirrored, no turn (0.8), lead letter at full scale, centred.
+    const composition = composeLetters(['I'], scripted([0.9, 0.8, 0.5, 0.5, 0.5, 0.9]), 0);
     const stroke = composition.strokes[0] ?? [];
 
     expect(stroke[0]?.x).toBeCloseTo(0, 6);
@@ -102,7 +111,7 @@ describe('composeLetters', () => {
   });
 
   it('keeps every glyph stroke and records its letter', () => {
-    const composition = composeLetters(MIXED_LETTERS, mulberry32(9));
+    const composition = composeLetters(MIXED_LETTERS, mulberry32(9), 0);
     const expectedOwners = MIXED_LETTERS.flatMap((letter, index) =>
       getGlyph(letter).strokes.map(() => index),
     );
@@ -119,15 +128,23 @@ describe('composeLetters', () => {
   });
 
   it('draws every transform within its bounds and keeps each letter around its offset', () => {
+    const lead = 1;
     for (let seed = 0; seed < 200; seed += 1) {
-      const composition = composeLetters(MIXED_LETTERS, mulberry32(seed));
+      const composition = composeLetters(MIXED_LETTERS, mulberry32(seed), lead);
       composition.placements.forEach((placement, letterIndex) => {
         expect([0, 90, 180, 270]).toContain(placement.rotation);
-        expect(placement.scale).toBeGreaterThanOrEqual(MIN_LETTER_SCALE);
-        expect(placement.scale).toBeLessThan(MAX_LETTER_SCALE);
-        expect(Math.abs(placement.offset.y)).toBeLessThanOrEqual(MAX_CENTRE_OFFSET);
+        if (letterIndex === lead) {
+          expect(placement.scale).toBe(MAX_LETTER_SCALE);
+        } else {
+          expect(placement.scale).toBeGreaterThanOrEqual(MIN_LETTER_SCALE);
+          expect(placement.scale).toBeLessThan(MAX_SUPPORT_SCALE);
+        }
+        // O reads in any orientation: it stays near the centre.
+        const reach =
+          placement.letter === 'O' ? MAX_CENTRE_OFFSET : MAX_CENTRE_OFFSET + NARROW_AXIS_SPREAD;
+        expect(Math.abs(placement.offset.y)).toBeLessThanOrEqual(reach);
         if (placement.sharedStemWith === null) {
-          expect(Math.abs(placement.offset.x)).toBeLessThanOrEqual(MAX_CENTRE_OFFSET);
+          expect(Math.abs(placement.offset.x)).toBeLessThanOrEqual(reach);
         } else {
           expect(placement.sharedStemWith).toBeLessThan(letterIndex);
         }
@@ -147,7 +164,7 @@ describe('composeLetters', () => {
   it('puts a sharing letter stem on a stem of its anchor letter', () => {
     let shared = 0;
     for (let seed = 0; seed < 200; seed += 1) {
-      const composition = composeLetters(MIXED_LETTERS, mulberry32(seed));
+      const composition = composeLetters(MIXED_LETTERS, mulberry32(seed), 0);
       composition.placements.forEach((placement, letterIndex) => {
         if (placement.sharedStemWith === null) return;
         shared += 1;
@@ -164,7 +181,7 @@ describe('composeLetters', () => {
   it('never shares a stem for letters without vertical lines in any orientation', () => {
     // O, S and W have no straight vertical or horizontal stroke.
     for (let seed = 0; seed < 50; seed += 1) {
-      const composition = composeLetters(['O', 'S', 'W'], mulberry32(seed));
+      const composition = composeLetters(['O', 'S', 'W'], mulberry32(seed), 0);
       expect(composition.placements.every((placement) => placement.sharedStemWith === null)).toBe(
         true,
       );
@@ -174,7 +191,7 @@ describe('composeLetters', () => {
   it('reaches all eight orientations of a letter over many draws', () => {
     const orientations = new Set<string>();
     for (let seed = 0; seed < 200; seed += 1) {
-      const [placement] = composeLetters(['F'], mulberry32(seed)).placements;
+      const [placement] = composeLetters(['F'], mulberry32(seed), 0).placements;
       if (placement)
         orientations.add(`${String(placement.mirrored)}-${String(placement.rotation)}`);
     }
@@ -188,8 +205,69 @@ describe('composeLetters', () => {
       draws += 1;
       return source();
     };
-    composeLetters(MIXED_LETTERS, counting);
+    composeLetters(MIXED_LETTERS, counting, 0);
     expect(draws).toBe(6 * MIXED_LETTERS.length);
+  });
+});
+
+describe('composeLetters, spread across the narrow axis', () => {
+  it('lets a letter laid on its side move further vertically than along its length', () => {
+    // L turned 90° (0.3): wide and flat. Offsets drawn at the top of their range.
+    const [placement] = composeLetters(
+      ['L'],
+      scripted([0.9, 0.3, 0.5, 0.999999, 0.999999, 0.9]),
+      NO_LEAD,
+    ).placements;
+    expect(placement?.offset.x).toBeCloseTo(MAX_CENTRE_OFFSET, 4);
+    expect(placement?.offset.y ?? 0).toBeGreaterThan(MAX_CENTRE_OFFSET + 0.1);
+  });
+
+  it('keeps a letter readable in any orientation near the centre', () => {
+    const [placement] = composeLetters(
+      ['C'],
+      scripted([0.9, 0.3, 0.5, 0.999999, 0.999999, 0.9]),
+      NO_LEAD,
+    ).placements;
+    expect(placement?.offset.x).toBeCloseTo(MAX_CENTRE_OFFSET, 4);
+    expect(placement?.offset.y).toBeCloseTo(MAX_CENTRE_OFFSET, 4);
+  });
+});
+
+describe('drawTurn', () => {
+  it('maps a uniform draw onto the weighted turns', () => {
+    expect(drawTurn(0)).toBe(90);
+    expect(drawTurn(0.374)).toBe(90);
+    expect(drawTurn(0.376)).toBe(270);
+    expect(drawTurn(0.8)).toBe(0);
+    expect(drawTurn(0.99)).toBe(180);
+  });
+
+  it('lays three letters out of four on their side', () => {
+    const total = TURN_WEIGHTS.reduce((sum, [, weight]) => sum + weight, 0);
+    const lying = TURN_WEIGHTS.filter(([turn]) => turn === 90 || turn === 270).reduce(
+      (sum, [, weight]) => sum + weight,
+      0,
+    );
+    expect(total).toBeCloseTo(1, 12);
+    expect(lying).toBeCloseTo(0.75, 12);
+  });
+});
+
+describe('leadLetterFor', () => {
+  it('gives each variant the next letter in turn', () => {
+    const word: CapitalLetter[] = ['J', 'S', 'L', 'M'];
+    expect([0, 1, 2, 3, 4].map((variant) => leadLetterFor(word, variant))).toEqual([0, 1, 2, 3, 0]);
+  });
+
+  it('never leads with a letter readable in any orientation', () => {
+    const word: CapitalLetter[] = ['J', 'S', 'C', 'L', 'M'];
+    const leads = [0, 1, 2, 3, 4, 5, 6, 7].map((variant) => word[leadLetterFor(word, variant)]);
+    expect(leads).not.toContain('C');
+    expect(new Set(leads)).toEqual(new Set(['J', 'S', 'L', 'M']));
+  });
+
+  it('falls back to every letter when all read in any orientation', () => {
+    expect(leadLetterFor(['O', 'X'], 3)).toBe(1);
   });
 });
 

@@ -1,7 +1,7 @@
 /**
  * Balance score of the Spare candidates and the final recentring: rates how
  * well a composition sits in the frame as a seal (centre of gravity, use of
- * the drawing area) and how well its letters dissolve into one another (see
+ * the drawing area, a roughly square outline) and how well its letters dissolve into one another (see
  * `legibility.ts`), and moves the chosen one so that its centre of gravity
  * lands on the centre of the frame, inside the disc the framing circle surrounds.
  *
@@ -74,6 +74,19 @@ export const MIN_SPREAD = 0.4;
 export const SHRINK_WEIGHT = 20;
 
 /**
+ * Weight of the elongation term, `elongation − 1` where the elongation is the
+ * larger side of the drawing's box over the smaller one. A seal reads as a
+ * round or square sign; quarter-turned letters, which hide best, are wider
+ * than tall and drift the compositions into flat bands. A 1.4 : 1 box costs
+ * 1.2, as much as a 12 % centring gap, enough to choose a square candidate
+ * among equally legible ones but not to bring back a readable letter.
+ */
+export const ELONGATION_WEIGHT = 3;
+
+/** Elongation given to a drawing with no thickness at all, far above any real composition. */
+const MAX_ELONGATION = 100;
+
+/**
  * Distance under which two letters count as touching, in frame units: under
  * half the default stroke width (1.2), where drawn strokes already merge.
  */
@@ -101,6 +114,8 @@ export interface CandidateScore {
   readonly fill: number;
   /** Root-mean-square distance of the recentred ink from the centre, as a share of `DRAWING_RADIUS`. */
   readonly spread: number;
+  /** Larger side of the drawing's bounding box over the smaller one, 1 for a square. */
+  readonly elongation: number;
   /** Legibility of each letter, in input order. */
   readonly legibility: readonly LetterLegibility[];
   /** Weighted sum of the penalties; the lowest wins. */
@@ -119,7 +134,7 @@ export interface Recentring {
  * Rates one candidate. Lower is better:
  * `BALANCE_WEIGHT × centreOffset / MAX_CENTRE_OFFSET_RATIO
  * + FILL_WEIGHT × (1 − fill) + SHRINK_WEIGHT × max(0, MIN_SPREAD − spread) / MIN_SPREAD
- * + LEGIBILITY_WEIGHT × Σ deficit`.
+ * + LEGIBILITY_WEIGHT × Σ deficit + ELONGATION_WEIGHT × (elongation − 1)`.
  *
  * @param candidate - Composition fitted into the frame.
  * @returns The terms of the score and the total penalty.
@@ -129,6 +144,7 @@ export function scoreCandidate(candidate: SpareCandidate): CandidateScore {
   const recentring = recentringFor(candidate.strokes, points);
   const centreOffset = distance(recentring.from, FRAME_CENTRE) / FRAME_SIZE;
   const fill = boxArea(points, recentring.factor) / (DRAWING_SIZE * DRAWING_SIZE);
+  const elongation = boxElongation(points);
   const spread =
     (recentring.factor * inkRadius(candidate.strokes, recentring.from)) / DRAWING_RADIUS;
   const legibility = letterLegibility(candidate);
@@ -137,8 +153,9 @@ export function scoreCandidate(candidate: SpareCandidate): CandidateScore {
     (BALANCE_WEIGHT * centreOffset) / MAX_CENTRE_OFFSET_RATIO +
     FILL_WEIGHT * (1 - fill) +
     (SHRINK_WEIGHT * Math.max(0, MIN_SPREAD - spread)) / MIN_SPREAD +
-    LEGIBILITY_WEIGHT * deficits;
-  return { centreOffset, fill, spread, legibility, penalty };
+    LEGIBILITY_WEIGHT * deficits +
+    ELONGATION_WEIGHT * (elongation - 1);
+  return { centreOffset, fill, spread, elongation, legibility, penalty };
 }
 
 /**
@@ -262,6 +279,26 @@ function inkRadius(strokes: readonly (readonly Point[])[], centre: Point): numbe
     moment += (segment * (ax * ax + ay * ay + ax * bx + ay * by + bx * bx + by * by)) / 3;
   }
   return length === 0 ? 0 : Math.sqrt(moment / length);
+}
+
+/**
+ * Elongation of the bounding box of points.
+ *
+ * @param points - Points of the drawing.
+ * @returns The larger side over the smaller one, at least 1; 1 without
+ *   extent, and `MAX_ELONGATION` for a flat drawing (a lone I), so that the
+ *   penalty stays a finite number in the explanation step.
+ */
+function boxElongation(points: readonly Point[]): number {
+  if (points.length === 0) return 1;
+  const xs = points.map((point) => point.x);
+  const ys = points.map((point) => point.y);
+  const width = Math.max(...xs) - Math.min(...xs);
+  const height = Math.max(...ys) - Math.min(...ys);
+  const shorter = Math.min(width, height);
+  const longer = Math.max(width, height);
+  if (longer === 0) return 1;
+  return Math.min(MAX_ELONGATION, longer / shorter);
 }
 
 /**

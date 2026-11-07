@@ -3,7 +3,8 @@
  * determinism (D6), variants, the F2 balance criterion on a broad sample,
  * strokes inside the drawing disc and free of duplicates, no letter left in a
  * familiar orientation on the intentions refused at the first F2 acceptance
- * run, explanation steps, and business errors.
+ * run, seals about as tall as wide and variants of distinct structure (T18),
+ * explanation steps, and business errors.
  */
 import { describe, expect, it } from 'vitest';
 
@@ -49,6 +50,52 @@ const REFUSED_CASES: readonly (readonly [string, number])[] = [
  * no draw can avoid them, so the regression test leaves them out.
  */
 const ALWAYS_LETTER_LIKE: ReadonlySet<string> = new Set(['C', 'N', 'O', 'Q', 'U', 'X', 'Z']);
+
+/**
+ * The sixteen cases of the F2 acceptance board (internal variant numbers):
+ * reference for the shape of the seals.
+ */
+const REFERENCE_BOARD: readonly (readonly [string, number])[] = [
+  ...[0, 1, 2, 3, 4].map((variant) => ['I am strong', variant] as const),
+  [
+    'Je choisis chaque jour la patience la clarté et la force tranquille pour avancer sereinement vers mes projets les plus chers',
+    0,
+  ],
+  ...[0, 1, 2, 3, 4].map((variant) => ['Je suis calme', variant] as const),
+  ['Je trouve ma voie', 0],
+  ['Je trouve ma voie', 1],
+  ['La paix est en moi', 0],
+  ['My mind is clear', 0],
+  ['Yeux', 0],
+];
+
+/**
+ * Largest mean width-to-height ratio of the reference board's seals (T18).
+ * Before T18 they drifted to 1.37, flat bands; a seal reads as a round or
+ * square sign.
+ */
+const MAX_MEAN_ASPECT = 1.15;
+
+/**
+ * Cells per side of the grid the silhouettes are compared on: 5 frame units
+ * per cell inside the drawing area, coarse enough to ignore stroke detail,
+ * fine enough to tell a loop from a bar.
+ */
+const SILHOUETTE_GRID = 16;
+
+/**
+ * Smallest silhouette distance between two variants of « Je suis calme » (Jaccard
+ * distance of the inked cells: 0 for the same cells, 1 for none in common).
+ * Before T18, two variants repeated the same structure at 0.36.
+ */
+const MIN_VARIANT_DISSIMILARITY = 0.4;
+
+/**
+ * Extra ink tolerated after merging, in frame units: a merged piece may be
+ * joined to the end of the stroke covering it, a step of at most a merge
+ * tolerance per join.
+ */
+const MERGE_SLACK = 2;
 
 /** Overlap beyond which two segments on the same line count as drawn twice. */
 const MAX_OVERLAP = 0.5;
@@ -174,6 +221,65 @@ function stepOf<K extends ExplanationStep['kind']>(
 }
 
 /**
+ * Total length of polylines.
+ *
+ * @param strokes - Polylines in the 0–100 frame.
+ * @returns The sum of their segment lengths.
+ */
+function inkLength(strokes: readonly (readonly Point[])[]): number {
+  return strokeSegments(strokes).reduce((total, segment) => total + segmentLength(segment), 0);
+}
+
+/**
+ * Width over height of a sigil's bounding box.
+ *
+ * @param sigil - Sigil to measure.
+ * @returns The ratio; above 1 for a wide seal.
+ */
+function aspectOf(sigil: Sigil): number {
+  const points = sigil.strokes.flat();
+  const xs = points.map((point) => point.x);
+  const ys = points.map((point) => point.y);
+  return (Math.max(...xs) - Math.min(...xs)) / (Math.max(...ys) - Math.min(...ys));
+}
+
+/**
+ * Cells of a `SILHOUETTE_GRID` grid over the drawing area that a sigil's
+ * strokes pass through, sampled every half frame unit.
+ *
+ * @param sigil - Sigil to rasterise.
+ * @returns The keys of the inked cells.
+ */
+function silhouette(sigil: Sigil): Set<number> {
+  const cellSize = (FRAME_SIZE - 2 * FRAME_MARGIN) / SILHOUETTE_GRID;
+  const cell = (value: number): number =>
+    Math.min(SILHOUETTE_GRID - 1, Math.max(0, Math.floor((value - FRAME_MARGIN) / cellSize)));
+  const cells = new Set<number>();
+  for (const { start, end } of strokeSegments(sigil.strokes)) {
+    const steps = Math.ceil(segmentLength({ start, end }) / 0.5);
+    for (let step = 0; step <= steps; step += 1) {
+      const t = step / steps;
+      const x = start.x + t * (end.x - start.x);
+      const y = start.y + t * (end.y - start.y);
+      cells.add(cell(x) * SILHOUETTE_GRID + cell(y));
+    }
+  }
+  return cells;
+}
+
+/**
+ * Jaccard distance between two sets of cells.
+ *
+ * @param a - First silhouette.
+ * @param b - Second silhouette.
+ * @returns 1 − |a ∩ b| / |a ∪ b|.
+ */
+function silhouetteDistance(a: ReadonlySet<number>, b: ReadonlySet<number>): number {
+  const shared = [...a].filter((key) => b.has(key)).length;
+  return 1 - shared / (a.size + b.size - shared);
+}
+
+/**
  * Length over which two segments lying on the same line overlap.
  *
  * @param a - First segment, of positive length.
@@ -277,6 +383,25 @@ describe('buildSpareSigil', () => {
     },
   );
 
+  it('keeps the seals of the reference board about as tall as wide', () => {
+    const aspects = REFERENCE_BOARD.map(([text, variant]) =>
+      aspectOf(sigilOf(text, { keepVowels: false, variant })),
+    );
+    const mean = aspects.reduce((sum, aspect) => sum + aspect, 0) / aspects.length;
+    expect(mean).toBeLessThanOrEqual(MAX_MEAN_ASPECT);
+  });
+
+  it('gives the variants of « Je suis calme » distinct silhouettes', () => {
+    const silhouettes = [0, 1, 2, 3, 4].map((variant) =>
+      silhouette(sigilOf('Je suis calme', { keepVowels: false, variant })),
+    );
+    silhouettes.forEach((first, index) => {
+      for (const second of silhouettes.slice(index + 1)) {
+        expect(silhouetteDistance(first, second)).toBeGreaterThanOrEqual(MIN_VARIANT_DISSIMILARITY);
+      }
+    });
+  });
+
   it('has no marks and the 0–100 frame', () => {
     const sigil = sigilOf('Je suis calme');
     expect(sigil.marks).toEqual([]);
@@ -336,8 +461,14 @@ describe('buildSpareSigil', () => {
     const sigil = sigilOf('Je suis calme');
     const step = stepOf(sigil, 'spare-simplification');
 
+    const { letters } = stepOf(sigil, 'spare-letter-placements');
+    const superimposed = letters.flatMap((letter) => letter.strokes);
+
     expect(step.segmentCountAfter).toBe(strokeSegments(sigil.strokes).length);
-    expect(step.segmentCountAfter).toBeLessThanOrEqual(step.segmentCountBefore);
+    expect(step.segmentCountBefore).toBe(strokeSegments(superimposed).length);
+    // Merging draws shared stretches once: it never adds ink. (The segment
+    // count may grow, a segment covered in its middle leaving two pieces.)
+    expect(inkLength(sigil.strokes)).toBeLessThanOrEqual(inkLength(superimposed) + MERGE_SLACK);
   });
 
   it('proposes to keep the vowels when « oui » leaves no letter', () => {

@@ -15,7 +15,7 @@ import type { Point } from '../sigil/types.ts';
 import { roundCoordinate } from './geometry.ts';
 import { isCapitalLetter } from './glyphs/index.ts';
 import type { CapitalLetter } from './glyphs/index.ts';
-import { composeLetters } from './placement.ts';
+import { composeLetters, leadLetterFor } from './placement.ts';
 import type { Composition, LetterPlacement } from './placement.ts';
 import { spareSeed } from './seed.ts';
 
@@ -104,6 +104,9 @@ export type SpareCandidatesResult =
  * @param letters - Retained letters after the Spare reduction: distinct
  *   upper-case letters A–Z, in intention order.
  * @param options - Vowel setting and variant number, both part of the seed.
+ *   The variant also chooses the lead letter, drawn largest (see
+ *   `leadLetterFor`), so that successive variants are led by different
+ *   letters and differ in structure.
  * @returns `{ ok: true, data }` with the seed and `candidateCountFor(letters.length)`
  *   candidates, or `{ ok: false, error }` with `NO_LETTERS`,
  *   `INVALID_LETTER`, `DUPLICATE_LETTER` or `INVALID_VARIANT`. Never throws.
@@ -123,7 +126,7 @@ export function generateSpareCandidates(
   const seed = spareSeed({ letters, keepVowels, variant });
   const random = createRandom(seed);
   const candidates = Array.from({ length: candidateCountFor(letters.length) }, () =>
-    fitToFrame(composeLetters(validation.data, random)),
+    fitToFrame(composeLetters(validation.data, random, leadLetterFor(validation.data, variant))),
   );
   return { ok: true, data: { seed, candidates } };
 }

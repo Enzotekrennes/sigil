@@ -15,6 +15,7 @@ import type { QuarterTurn } from './placement.ts';
 import {
   BALANCE_WEIGHT,
   DRAWING_RADIUS,
+  ELONGATION_WEIGHT,
   FILL_WEIGHT,
   LEGIBILITY_WEIGHT,
   MAX_CENTRE_OFFSET_RATIO,
@@ -146,6 +147,37 @@ describe('scoreCandidate', () => {
     expect(scoreCandidate(square).spread).toBeGreaterThan(MIN_SPREAD);
   });
 
+  it('measures the elongation of the box, the same for a wide and a tall drawing', () => {
+    const wide = candidateOf([
+      { letter: 'L', strokes: [line(10, 40, 90, 40), line(90, 40, 90, 60)] },
+    ]);
+    const tall = candidateOf([
+      { letter: 'L', strokes: [line(40, 10, 40, 90), line(40, 90, 60, 90)] },
+    ]);
+
+    expect(scoreCandidate(wide).elongation).toBeCloseTo(4, 9);
+    expect(scoreCandidate(tall).elongation).toBeCloseTo(4, 9);
+    expect(scoreCandidate(TANGLED_PAIR).elongation).toBeCloseTo(1, 9);
+  });
+
+  it('keeps the elongation finite for a drawing without thickness', () => {
+    const flat = candidateOf([{ letter: 'L', strokes: [line(10, 50, 90, 50)] }]);
+    const { elongation, penalty } = scoreCandidate(flat);
+    expect(Number.isFinite(elongation)).toBe(true);
+    expect(elongation).toBeGreaterThan(10);
+    expect(Number.isFinite(penalty)).toBe(true);
+  });
+
+  it('prefers a square composition to an equally legible flat one', () => {
+    const square = candidateOf([
+      { letter: 'L', strokes: [line(20, 20, 80, 20), line(80, 20, 80, 80), line(80, 80, 20, 80)] },
+    ]);
+    const flat = candidateOf([
+      { letter: 'L', strokes: [line(10, 40, 90, 40), line(90, 40, 90, 60), line(90, 60, 10, 60)] },
+    ]);
+    expect(chooseCandidate([flat, square]).index).toBe(1);
+  });
+
   it('rates the legibility of every letter', () => {
     const { legibility } = scoreCandidate(TANGLED_PAIR);
     expect(legibility).toHaveLength(2);
@@ -163,7 +195,8 @@ describe('scoreCandidate', () => {
       (BALANCE_WEIGHT * score.centreOffset) / MAX_CENTRE_OFFSET_RATIO +
       FILL_WEIGHT * (1 - score.fill) +
       (SHRINK_WEIGHT * Math.max(0, MIN_SPREAD - score.spread)) / MIN_SPREAD +
-      LEGIBILITY_WEIGHT * deficits;
+      LEGIBILITY_WEIGHT * deficits +
+      ELONGATION_WEIGHT * (score.elongation - 1);
 
     // Both letters stand apart: the upright L and the turned K are fully readable.
     expect(score.legibility.map((letter) => letter.deficit)).toEqual([1, 1]);

@@ -10,7 +10,8 @@
  * orientation still reads as a letter needs more of it than one turned into
  * an unfamiliar shape (see `readsAsLetter`).
  *
- * Exposes `letterLegibility`, `readsAsLetter` and their thresholds. Pure.
+ * Exposes `letterLegibility`, `readsAsLetter`, `readsInAnyOrientation` and
+ * their thresholds. Pure.
  */
 import type { Point } from '../sigil/types.ts';
 import type { SpareCandidate } from './generateSpareCandidates.ts';
@@ -84,8 +85,9 @@ export interface LetterLegibility {
   /**
    * How readable the letter remains, 0–1. In an unfamiliar orientation, its
    * shortfall from `MIN_ENTANGLEMENT` as a fraction of it (0 once reached);
-   * in a letter-like one, `LETTER_LIKE_BASE_DEFICIT` plus the rest scaled by
-   * its shortfall from `MIN_ENTANGLEMENT_LETTER_LIKE`. 1 when not tangled at all.
+   * in a letter-like one, `LETTER_LIKE_BASE_DEFICIT` plus the rest, scaled
+   * from all of it at `MIN_ENTANGLEMENT` or less to none at
+   * `MIN_ENTANGLEMENT_LETTER_LIKE`. 1 when not tangled at all.
    */
   readonly deficit: number;
 }
@@ -132,8 +134,10 @@ export function letterLegibility(candidate: SpareCandidate): LetterLegibility[] 
  */
 function deficitOf(entanglement: number, letterLike: boolean): number {
   if (!letterLike) return Math.max(0, MIN_ENTANGLEMENT - entanglement) / MIN_ENTANGLEMENT;
-  const shortfall =
-    Math.max(0, MIN_ENTANGLEMENT_LETTER_LIKE - entanglement) / MIN_ENTANGLEMENT_LETTER_LIKE;
+  // The extra part runs from MIN_ENTANGLEMENT (full) to MIN_ENTANGLEMENT_LETTER_LIKE
+  // (none): below the share that hides a turned letter, a familiar one is wholly visible.
+  const range = MIN_ENTANGLEMENT_LETTER_LIKE - MIN_ENTANGLEMENT;
+  const shortfall = Math.min(1, Math.max(0, MIN_ENTANGLEMENT_LETTER_LIKE - entanglement) / range);
   return LETTER_LIKE_BASE_DEFICIT + (1 - LETTER_LIKE_BASE_DEFICIT) * shortfall;
 }
 
@@ -153,7 +157,19 @@ function deficitOf(entanglement: number, letterLike: boolean): number {
  * @returns True when the orientation leaves the letter recognisable.
  */
 export function readsAsLetter(letter: CapitalLetter, rotation: QuarterTurn): boolean {
-  return rotation === 0 || rotation === 180 || LETTERS_AFTER_QUARTER_TURN.has(letter);
+  return rotation === 0 || rotation === 180 || readsInAnyOrientation(letter);
+}
+
+/**
+ * Tells whether a letter reads as a letter whatever its orientation (see
+ * `LETTERS_AFTER_QUARTER_TURN`): no draw can hide it by turning it, only by
+ * covering it, so the composition keeps it at the heart of the seal.
+ *
+ * @param letter - Upper-case letter A–Z.
+ * @returns True for C, N, O, Q, U, X and Z.
+ */
+export function readsInAnyOrientation(letter: CapitalLetter): boolean {
+  return LETTERS_AFTER_QUARTER_TURN.has(letter);
 }
 
 /**
