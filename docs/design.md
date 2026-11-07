@@ -1,5 +1,5 @@
 # Design — Sigil
-Statut : proposé le 2026-11-07
+Statut : validé le 2026-11-07
 
 ## Direction
 1. Une page de grimoire tenue par un graveur : beaucoup de vide, un seul objet au centre (le sigil), le reste est de l'annotation.

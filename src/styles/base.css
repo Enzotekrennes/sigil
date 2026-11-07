@@ -1,0 +1,23 @@
+/*
+ * Document-level base styles: page background, default text color and
+ * reading font, all taken from the design tokens.
+ *
+ * Styles bare elements only (html, body, headings); component styles live
+ * next to their component. Contains no raw color or size value.
+ */
+
+html {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
+}
+
+::selection {
+  background: var(--color-selection);
+}
