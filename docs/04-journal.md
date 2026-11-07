@@ -35,3 +35,10 @@
 - Vérifications : e2e 7/7 (hors ligne servi par le service worker, aucune requête tierce, CSP appliquée, ressources sous `/sigil/`) — revérifié au contrôle ; contre-épreuve sans service worker → test hors ligne rouge.
 - Écarts au plan : CSP retirée sur le serveur de dev seulement (plugin) ; `skipWaiting`/`clientsClaim` explicites ; apple-touch-icon ajoutée. Décision D12.
 - Points ouverts : e2e non lancés en CI (à ajouter en phase 6 si souhaité) ; régler Pages → Source « GitHub Actions » en phase 6 ; 15 vulnérabilités low/moderate dans l'outillage de build uniquement.
+
+## 2026-11-07 — T4 SigilRenderer
+- Rôle : dev
+- Fait : rendu SVG (un `path` par polyligne, marques mises à l'échelle `strokeWidth / 1.2`, cercle d'encadrement), animation ordonnée (départ, tracé `pathLength=1`, marques, cadre), mouvement réduit → fondu, rejouer via `replayToken` ; `StyleOptions` (`strokeWidth`, `roundEnds`, `frameCircle`, `mode`).
+- Vérifications : eslint + vitest sigil → 41/41 verts (revérifié) ; aucune violation D12.
+- Écarts au plan : thème hors `StyleOptions` (global par `data-theme`).
+- Points ouverts : export (T12) doit nettoyer le SVG (styles `--trace-*`, classes, `pathLength`) et écrire les couleurs en littéral ; constante 1,2 dupliquée kamea/sigil (refactor) ; pas à pas en mouvement réduit et rendu réel de l'animation à vérifier en T7/T11 ; le parent doit mémoriser le `Sigil`.
