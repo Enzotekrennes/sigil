@@ -10,11 +10,18 @@
  * exception: the loop of the last cell shrinks when the shortened last segment
  * can no longer hold it clear of the end bar.
  *
- * Exposes `frameFitScale` and `scaleDrawing`. Pure functions.
+ * Exposes `fittedDrawing`, the one entry point the renderer and the exports
+ * share, and its parts `frameFitScale` and `scaleDrawing`. Pure functions.
  */
 import { endBarEndpoints } from './geometry.ts';
-import { FRAME_CIRCLE_RADIUS, loopSide } from './style.ts';
-import type { LoopMark, Mark, Point } from './types.ts';
+import {
+  FRAME_CIRCLE_RADIUS,
+  frameCenter,
+  loopSide,
+  scaleMark,
+  showsFrameCircle,
+} from './style.ts';
+import type { LoopMark, Mark, Point, Sigil, StyleOptions } from './types.ts';
 
 /**
  * Smallest radius the end loop is given when the fitted last segment is too
@@ -43,6 +50,33 @@ const BISECTION_ROUNDS = 30;
 export interface Drawing {
   readonly strokes: readonly (readonly Point[])[];
   readonly marks: readonly Mark[];
+}
+
+/**
+ * Strokes and marks of a sigil exactly as they are drawn: marks resized to the
+ * stroke width (up to their cap), then the whole drawing fitted inside the
+ * framing circle when it is shown. The renderer and the SVG and PNG exports
+ * all draw from it, so the screen and the files always match.
+ *
+ * @param sigil - Sigil to draw.
+ * @param styleOptions - Style settings shown; only the stroke width, the
+ *   framing circle and the mode matter here.
+ * @param part - Strokes and marks to draw, in the sigil's own geometry, when
+ *   only part of it is shown (step-by-step replay); defaults to the whole
+ *   sigil. The fitting is always computed on the whole sigil, so a partial
+ *   drawing keeps the size of the final one.
+ * @returns The drawing in frame units; the inputs are not modified.
+ */
+export function fittedDrawing(sigil: Sigil, styleOptions: StyleOptions, part?: Drawing): Drawing {
+  const { strokeWidth } = styleOptions;
+  const center = frameCenter(sigil.viewBox);
+  const resize = (drawing: Drawing): Drawing => ({
+    strokes: drawing.strokes,
+    marks: drawing.marks.map((mark) => scaleMark(mark, strokeWidth)),
+  });
+  const whole = resize(sigil);
+  const scale = showsFrameCircle(styleOptions) ? frameFitScale(whole, strokeWidth, center) : 1;
+  return scaleDrawing(part === undefined ? whole : resize(part), scale, center);
 }
 
 /**

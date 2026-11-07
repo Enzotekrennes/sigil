@@ -5,10 +5,10 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { frameFitScale, scaleDrawing } from './frameFit.ts';
+import { fittedDrawing, frameFitScale, scaleDrawing } from './frameFit.ts';
 import type { Drawing } from './frameFit.ts';
-import { FRAME_CIRCLE_RADIUS } from './style.ts';
-import type { LoopMark, Point } from './types.ts';
+import { DEFAULT_STYLE_OPTIONS, FRAME_CIRCLE_RADIUS, scaleMark } from './style.ts';
+import type { LoopMark, Point, Sigil } from './types.ts';
 
 /** Centre of the 0–100 frame. */
 const CENTER: Point = { x: 50, y: 50 };
@@ -164,5 +164,65 @@ describe('scaleDrawing', () => {
 
   it('returns the same drawing for a factor of 1', () => {
     expect(scaleDrawing(CORNER_TO_CORNER, 1, CENTER)).toBe(CORNER_TO_CORNER);
+  });
+});
+
+describe('fittedDrawing', () => {
+  /** A sigil crossing the whole drawing square, with a start circle and an end bar. */
+  const sigil: Sigil = {
+    strokes: CORNER_TO_CORNER.strokes,
+    marks: [
+      { kind: 'start-circle', center: { x: 10, y: 10 }, radius: 3 },
+      { kind: 'end-bar', center: { x: 90, y: 90 }, angle: 135, length: 9.6 },
+    ],
+    viewBox: { x: 0, y: 0, width: 100, height: 100 },
+    steps: [],
+    seed: 0,
+  };
+  const thick = { ...DEFAULT_STYLE_OPTIONS, strokeWidth: 2.4 };
+
+  it('resizes the marks to the stroke width and leaves the strokes when the circle is off', () => {
+    const drawing = fittedDrawing(sigil, thick);
+
+    expect(drawing.strokes).toEqual(sigil.strokes);
+    expect(drawing.marks).toEqual(sigil.marks.map((mark) => scaleMark(mark, 2.4)));
+  });
+
+  it('fits the resized drawing inside the circle when it is on', () => {
+    const framed = { ...thick, frameCircle: true };
+    const resized = {
+      strokes: sigil.strokes,
+      marks: sigil.marks.map((mark) => scaleMark(mark, 2.4)),
+    };
+    const scale = frameFitScale(resized, 2.4, CENTER);
+
+    expect(scale).toBeLessThan(1);
+    expect(fittedDrawing(sigil, framed)).toEqual(scaleDrawing(resized, scale, CENTER));
+  });
+
+  it('ignores the circle in stencil mode, as the renderer does', () => {
+    const stencil = { ...thick, frameCircle: true, mode: 'stencil' as const };
+
+    expect(fittedDrawing(sigil, stencil)).toEqual(fittedDrawing(sigil, thick));
+  });
+
+  it('draws a part of the sigil at the size of the whole one', () => {
+    const framed = { ...thick, frameCircle: true };
+    const whole = fittedDrawing(sigil, framed);
+    // The first half alone would fit the circle unshrunk; it must still follow the whole.
+    const half = {
+      strokes: [
+        [
+          { x: 10, y: 10 },
+          { x: 50, y: 50 },
+        ],
+      ],
+      marks: [],
+    };
+    const part = fittedDrawing(sigil, framed, half);
+
+    expect(part.strokes[0]?.[0]).toEqual(whole.strokes[0]?.[0]);
+    expect(part.strokes[0]?.[0]).not.toEqual({ x: 10, y: 10 });
+    expect(part.marks).toEqual([]);
   });
 });

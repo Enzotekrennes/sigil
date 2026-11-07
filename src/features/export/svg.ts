@@ -12,14 +12,12 @@
  */
 import {
   formatCoordinate,
+  fittedDrawing,
   frameCenter,
-  frameFitScale,
   FRAME_CIRCLE_RADIUS,
   lineEndsFor,
   endBarEndpoints,
   polylinePathData,
-  scaleDrawing,
-  scaleMark,
   showsFrameCircle,
 } from '../sigil/index.ts';
 import type { Mark, Sigil, StyleOptions } from '../sigil/types.ts';
@@ -78,13 +76,8 @@ export function buildSigilSvg(
   const { strokeWidth } = styleOptions;
   const center = frameCenter(sigil.viewBox);
   const withFrame = showsFrameCircle(styleOptions);
-  const whole = {
-    strokes: sigil.strokes,
-    marks: sigil.marks.map((mark) => scaleMark(mark, strokeWidth)),
-  };
-  // Same fitting as the renderer: shrink around the centre only when the circle is shown.
-  const fitScale = withFrame ? frameFitScale(whole, strokeWidth, center) : 1;
-  const drawing = scaleDrawing(whole, fitScale, center);
+  // Same strokes and marks as the renderer's final drawing.
+  const drawing = fittedDrawing(sigil, styleOptions);
   const lineEnds = lineEndsFor(styleOptions.roundEnds);
   const { x, y, width, height } = sigil.viewBox;
 

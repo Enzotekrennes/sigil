@@ -32,7 +32,7 @@ export {
   strokeWidthLevel,
 } from './style.ts';
 export type { LineEnds, StrokeWidthLevel } from './style.ts';
-export { frameFitScale, scaleDrawing } from './frameFit.ts';
+export { fittedDrawing, frameFitScale, scaleDrawing } from './frameFit.ts';
 export type { Drawing } from './frameFit.ts';
 export { revealSteps, stepwiseStepCount } from './stepwise.ts';
 export type { RevealedSigil } from './stepwise.ts';

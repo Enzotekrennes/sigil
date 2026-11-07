@@ -51,6 +51,20 @@ async function setStrokeWidth(page: Page, value: number): Promise<void> {
   await page.getByRole('slider', { name: 'Épaisseur' }).fill(String(value));
 }
 
+/**
+ * Converts a CSS duration to milliseconds, whichever unit the stylesheet uses.
+ *
+ * @param duration - A CSS `<time>` such as `2400ms` or `2.4s`.
+ * @returns The duration in milliseconds, rounded to the unit.
+ * @throws {Error} When the value is not a CSS duration in `ms` or `s`.
+ */
+function toMilliseconds(duration: string): number {
+  const match = /^(-?[\d.]+)(ms|s)$/.exec(duration);
+  if (match === null) throw new Error(`Not a CSS duration: "${duration}"`);
+  const value = Number(match[1]);
+  return Math.round(match[2] === 's' ? value * 1000 : value);
+}
+
 test('traces the path first, then shows the end mark (F3)', async ({ page }) => {
   await page.goto('./');
   await trace(page);
@@ -147,8 +161,9 @@ test('serves the duration tokens the tracing cap is computed from', async ({ pag
       style.getPropertyValue(name).trim(),
     );
   });
-  // TRACE_DURATION_MS, PEN_LIFT_MS and TRACE_MAX_MS of src/features/sigil/geometry.ts.
-  expect(tokens).toEqual(['2400ms', '80ms', '2700ms']);
+  // TRACE_DURATION_MS, PEN_LIFT_MS and TRACE_MAX_MS of src/features/sigil/geometry.ts;
+  // the minified build may write a duration in seconds (2.4s), so compare in ms.
+  expect(tokens.map(toMilliseconds)).toEqual([2400, 80, 2700]);
 });
 
 test('replays the tracing on demand (F3)', async ({ page }) => {

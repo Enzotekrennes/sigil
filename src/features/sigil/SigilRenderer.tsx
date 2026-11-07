@@ -18,7 +18,7 @@
 import { useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
 
-import { frameFitScale, scaleDrawing } from './frameFit.ts';
+import { fittedDrawing } from './frameFit.ts';
 import './SigilRenderer.css';
 import {
   endBarEndpoints,
@@ -27,13 +27,7 @@ import {
   traceSchedule,
   traceTimeScale,
 } from './geometry.ts';
-import {
-  frameCenter,
-  FRAME_CIRCLE_RADIUS,
-  lineEndsFor,
-  scaleMark,
-  showsFrameCircle,
-} from './style.ts';
+import { frameCenter, FRAME_CIRCLE_RADIUS, lineEndsFor, showsFrameCircle } from './style.ts';
 import type { Mark, Sigil, StyleOptions } from './types.ts';
 import { revealSteps } from './stepwise.ts';
 import { useTraceAnimation } from './useTraceAnimation.ts';
@@ -85,10 +79,13 @@ export function SigilRenderer({
 }: SigilRendererProps) {
   const trace = useTraceAnimation(sigil, replayToken);
   const { runKey } = trace;
-  const revealed =
-    revealedSteps === undefined
-      ? { strokes: sigil.strokes, marks: sigil.marks, complete: true }
-      : revealSteps(sigil, revealedSteps);
+  const revealed = useMemo(
+    () =>
+      revealedSteps === undefined
+        ? { strokes: sigil.strokes, marks: sigil.marks, complete: true }
+        : revealSteps(sigil, revealedSteps),
+    [sigil, revealedSteps],
+  );
   // A partial drawing is a still frame: animating it would trace it again on every step.
   const animate = trace.animate && revealedSteps === undefined;
   const lineEnds = lineEndsFor(styleOptions.roundEnds);
@@ -103,21 +100,9 @@ export function SigilRenderer({
   if (newRun || (frameRun.traced && !withFrame)) setFrameRun({ runKey, traced: withFrame });
   const frameTraced = animate && (newRun ? withFrame : frameRun.traced);
   // Fitted on the whole sigil, so a step-by-step replay keeps one size throughout.
-  const fitScale = useMemo(() => {
-    if (!withFrame) return 1;
-    const whole = {
-      strokes: sigil.strokes,
-      marks: sigil.marks.map((mark) => scaleMark(mark, styleOptions.strokeWidth)),
-    };
-    return frameFitScale(whole, styleOptions.strokeWidth, frameCenter(sigil.viewBox));
-  }, [sigil, styleOptions.strokeWidth, withFrame]);
-  const drawing = scaleDrawing(
-    {
-      strokes: revealed.strokes,
-      marks: revealed.marks.map((mark) => scaleMark(mark, styleOptions.strokeWidth)),
-    },
-    fitScale,
-    center,
+  const drawing = useMemo(
+    () => fittedDrawing(sigil, styleOptions, revealed),
+    [sigil, styleOptions, revealed],
   );
   const { marks } = drawing;
   const schedule = traceSchedule(drawing.strokes);
