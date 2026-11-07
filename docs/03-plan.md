@@ -82,7 +82,7 @@ Voir `docs/design.md` et `src/styles/tokens.css`. Page de grimoire : beaucoup de
 - Étant donné une même intention, planète et réglages, quand je recharge la page et recommence, alors le SVG produit est identique.
 - Étant donné le panneau « comment c'est fait », quand un sigil kamea est affiché, alors il montre la règle de conversion, la table lettre → nombre et le carré avec le chemin.
 - Étant donné une intention vide ou sans lettre latine (« 123 ! »), quand je valide, alors un message clair s'affiche et aucun sigil n'est tracé.
-- Test : [ ] VALIDÉ
+- Test : [x] VALIDÉ (2026-11-07)
 
 ### F2 — Sigil par la méthode de Spare
 - Étant donné l'intention « Je suis calme », quand je choisis Spare, alors le panneau montre les lettres retirées (doublons, voyelles) et les lettres retenues J S C L M.

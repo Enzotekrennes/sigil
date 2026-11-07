@@ -76,3 +76,10 @@
 - Vérifications : lint, typecheck, 474/474 tests, e2e 14/14 verts (revérifié) ; captures 375/768/1100/1440 clair et sombre ; contrastes AA ; `buildSpareSigil` ≤ 90 ms en CPU ×4.
 - Écarts au plan : décision D14.
 - Points ouverts : espacement du panneau kamea en deux colonnes (1024–1279 px) ; 240 ms du clic au premier affichage à mesurer sur téléphone.
+
+## 2026-11-07 — F1 Kamea : test
+- Verdict : VALIDÉ (passage n° 1)
+- Preuves : 5 scénarios OK (chemin Saturne 1,5,1,3,9,1,3,1,3,4,5, barre perpendiculaire, boucles, SVG identique après rechargement, panneau et 7 carrés conformes à Agrippa, erreurs claires) ; confidentialité (URL, stockage, DOM, réseau) et CSP OK ; 375 px OK.
+- Bugs renvoyés (mineurs, ajoutés à T11) : B1 accord singulier du message `noLatinLetter` ; B2 chiffres de la grille du panneau barrés par le chemin.
+- Tests e2e ajoutés : `e2e/f1-acceptance.spec.ts` (27 tests).
+- Non testé : navigateurs hors Chromium, 768 px.
