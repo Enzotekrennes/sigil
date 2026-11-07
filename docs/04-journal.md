@@ -83,3 +83,9 @@
 - Bugs renvoyés (mineurs, ajoutés à T11) : B1 accord singulier du message `noLatinLetter` ; B2 chiffres de la grille du panneau barrés par le chemin.
 - Tests e2e ajoutés : `e2e/f1-acceptance.spec.ts` (27 tests).
 - Non testé : navigateurs hors Chromium, 768 px.
+
+## 2026-11-07 — F2 Spare : test
+- Verdict : REFUSÉ (passage n° 1) — scénario 4 : 6/16 sigils gardent une lettre nettement lisible (C de « Je suis calme », A de « Je trouve ma voie »). Scénarios 1, 2, 3, 5, confidentialité, CSP, 375 px, clavier : OK.
+- Bugs renvoyés : lisibilité → dev (reprise T9 : mesure de recouvrement par lettre, seuil, test) ; cercle d'encadrement débordé par le dessin → design (T11, mise à l'échelle dans le renderer).
+- Décision : critère « aucune lettre lisible » non applicable aux intentions de 1 ou 2 lettres retenues (ex. « Yeux » → Y X).
+- Tests e2e ajoutés : `e2e/f2-acceptance.spec.ts` (10 tests).
