@@ -29,6 +29,7 @@ Statut : validé le 2026-11-07
 | D8 | Confidentialité : aucun appel réseau, CSP en balise `<meta>` (`default-src 'self'`), intention ni dans l'URL ni dans le stockage, nom de fichier exporté sans l'intention | En-têtes HTTP | GitHub Pages ne permet pas d'en-têtes personnalisés |
 | D9 | PNG par canvas à l'export uniquement | Bibliothèque de rastérisation | L'hypothèse « 100 % SVG » vaut pour l'affichage ; le PNG exige une rastérisation |
 | D10 | Polices EB Garamond + IBM Plex Mono, accent rouge en clair, fond uni, thème initial = système | Jost, encre seule, grain de papier, or sur noir imposé | Recommandations `design` validées par Enzo |
+| D11 | Spare : Y n'est pas une voyelle (gardée) ; voyelles = A E I O U | Y retirée | Y souvent consonne (« yeux », « you ») ; garde une lettre de plus sur les intentions courtes |
 
 ## Architecture
 ### Flux
@@ -126,7 +127,7 @@ Voir `docs/design.md` et `src/styles/tokens.css`. Page de grimoire : beaucoup de
 | ID | Fonct. | Tâche | Rôle | Dépend de | Périmètre | Fini quand | État |
 |---|---|---|---|---|---|---|---|
 | T1 | F7 | Socle : Vite + React + TS strict, ESLint/Prettier/jsdoc, Vitest, Playwright, structure `src/`, `base: '/sigil/'`, LICENSE MIT, import de `tokens.css`, polices EB Garamond et IBM Plex Mono en `woff2` local + `OFL.txt` + `src/styles/fonts.css` | dev | — | racine, `src/`, configs, `src/assets/fonts/` | `lint`, `typecheck`, `test`, `build` verts ; page d'accueil vide servie en `preview` || [x] |
-| T2 | F1 | Normalisation et réduction de l'intention (D4, D5), avec trace des lettres retirées et ignorées | dev | T1 | `features/intention/` | Tests : accents, doublons, voyelles, option voyelles, saisies vides ou non latines | [ ] |
+| T2 | F1 | Normalisation et réduction de l'intention (D4, D5), avec trace des lettres retirées et ignorées | dev | T1 | `features/intention/` | Tests : accents, doublons, voyelles, option voyelles, saisies vides ou non latines || [x] |
 | T3 | F1 | Types `Sigil` communs ; 7 carrés d'Agrippa ; conversion D2 ; chemin, marques départ/arrivée, boucles (D3) ; étapes explicatives | dev | T1 | `features/sigil/types.ts`, `features/kamea/` | Tests : sommes magiques des 7 carrés, valeurs comparées à la source citée, scénario « Je suis calme » Saturne, boucle, moins de 2 lettres → erreur | [ ] |
 | T4 | F3 | `SigilRenderer` : SVG, animation du tracé (longueurs précalculées), marques, options de style, `prefers-reduced-motion`, rejouer | dev | T3 | `features/sigil/` | Tests composant : rendu, style, absence d'animation en mouvement réduit | [ ] |
 | T5 | F7 | PWA (`vite-plugin-pwa`), CSP `<meta>`, aucune ressource externe, workflow GitHub Actions Pages (non déclenché) | dev | T1 | `vite.config.ts`, `index.html`, `.github/workflows/` | e2e Playwright : hors ligne après 1re visite ; aucune requête externe ; build sous `/sigil/` | [ ] |
