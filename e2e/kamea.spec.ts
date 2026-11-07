@@ -107,8 +107,15 @@ test('works with the keyboard alone', async ({ page }) => {
   await expect(page.getByRole('img', { name: 'Sigil kamea de Jupiter' })).toBeVisible();
   await page.keyboard.press('Tab');
   await expect(page.getByRole('button', { name: 'Rejouer' })).toBeFocused();
+  // Then the style section, open on this wide screen, before the explanation panel.
   await page.keyboard.press('Tab');
-  await expect(page.locator('summary')).toBeFocused();
+  await expect(page.locator('summary', { hasText: 'Style' })).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('slider', { name: 'Épaisseur' })).toBeFocused();
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Tab');
+  await expect(page.locator('summary', { hasText: 'Comment c’est fait' })).toBeFocused();
 });
 
 test('keeps the intention out of the URL, the storage and the sigil markup (D8)', async ({

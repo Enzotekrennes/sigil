@@ -1,6 +1,7 @@
 /**
- * Public API of the sigil feature: the renderer, its style settings and the
- * pure geometry the export feature may reuse.
+ * Public API of the sigil feature: the renderer, its style settings, its
+ * replay (animated or step by step) and the pure geometry the export feature
+ * may reuse.
  *
  * Model types (`Sigil`, `Mark`, `StyleOptions`…) stay importable from
  * `types.ts`, and the frame constants from `frame.ts`, where the methods take
@@ -20,10 +21,21 @@ export {
   DEFAULT_STYLE_OPTIONS,
   FRAME_CIRCLE_RADIUS,
   MARK_REFERENCE_STROKE_WIDTH,
+  STROKE_WIDTH_MAX,
+  STROKE_WIDTH_MIN,
+  STROKE_WIDTH_STEP,
   frameCenter,
   lineEndsFor,
   scaleMark,
   showsFrameCircle,
+  snapStrokeWidth,
+  strokeWidthLevel,
 } from './style.ts';
-export type { LineEnds } from './style.ts';
+export type { LineEnds, StrokeWidthLevel } from './style.ts';
+export { frameFitScale, scaleDrawing } from './frameFit.ts';
+export type { Drawing } from './frameFit.ts';
+export { revealSteps, stepwiseStepCount } from './stepwise.ts';
+export type { RevealedSigil } from './stepwise.ts';
+export { useTraceReplay } from './useTraceReplay.ts';
+export type { TraceReplay } from './useTraceReplay.ts';
 export type { RenderMode, StyleOptions } from './types.ts';

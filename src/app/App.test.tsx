@@ -1,11 +1,12 @@
 /**
  * Component tests of the main screen, through what a user sees and does:
  * empty state, tracing a kamea or a Spare sigil, Spare variants and vowel
- * option, the explanation panels, business errors under the field, replay,
- * and the privacy guarantees (decision D8).
+ * option, the explanation panels, business errors under the field, replay
+ * (animated, or step by step under reduced motion), the style settings, and
+ * the privacy guarantees (decision D8).
  */
 import { fireEvent, render, screen, within } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { App } from './App.tsx';
 
@@ -70,7 +71,63 @@ beforeEach(() => {
 
 afterEach(() => {
   window.history.replaceState(null, '', '/');
+  vi.unstubAllGlobals();
 });
+
+/**
+ * Replaces `window.matchMedia` so that only the reduced motion query matches.
+ *
+ * @param reduced - Whether the user prefers reduced motion.
+ */
+function mockReducedMotion(reduced: boolean): void {
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn((query: string) => ({
+      matches: reduced && query === '(prefers-reduced-motion: reduce)',
+      media: query,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    })),
+  );
+}
+
+/**
+ * The kamea sigil shown.
+ *
+ * @returns Its `<svg>` element.
+ */
+function kameaSigil(): HTMLElement {
+  return screen.getByRole('img', { name: /^Sigil kamea/ });
+}
+
+/**
+ * The ink group of the kamea sigil shown, which carries the stroke settings.
+ *
+ * @returns The `.sigil-renderer__ink` element.
+ */
+function kameaInk(): Element {
+  const ink = kameaSigil().querySelector('[data-run]');
+  if (ink === null) throw new Error('No sigil ink.');
+  return ink;
+}
+
+/**
+ * Path data of the kamea sigil shown.
+ *
+ * @returns The `d` attribute of its path.
+ */
+function kameaPath(): string {
+  return kameaSigil().querySelector('path')?.getAttribute('d') ?? '';
+}
+
+/**
+ * Number of segments of the kamea path shown.
+ *
+ * @returns The count of `L` commands of the path.
+ */
+function kameaSegments(): number {
+  return kameaPath().match(/L/g)?.length ?? 0;
+}
 
 describe('App', () => {
   it('renders the page title as the only level-one heading', () => {
@@ -218,6 +275,22 @@ describe('App', () => {
     expect(screen.getByText(/Rien à tracer : corrigez l’intention/)).toBeInTheDocument();
   });
 
+  it('agrees the verb with the number of characters it could not trace', () => {
+    render(<App />);
+
+    typeIntention('😀');
+    clickTrace();
+    expect(screen.getByLabelText('Intention')).toHaveAccessibleDescription(
+      /«\s😀\s» ne se trace pas\./,
+    );
+
+    typeIntention('1 2');
+    clickTrace();
+    expect(screen.getByLabelText('Intention')).toHaveAccessibleDescription(
+      /«\s1\s» «\s2\s» ne se tracent pas\./,
+    );
+  });
+
   it('explains when every letter falls on the same cell', () => {
     render(<App />);
 
@@ -249,6 +322,96 @@ describe('App', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Rejouer' }));
     expect(currentRun()).not.toBe(firstRun);
+  });
+
+  it('updates the stroke width, ends and framing circle without replaying the tracing (F3)', () => {
+    render(<App />);
+    typeIntention(INTENTION);
+    clickTrace();
+    const firstRun = currentRun();
+    const shape = kameaPath();
+
+    const width = screen.getByRole('slider', { name: 'Épaisseur' });
+    expect(width).toHaveAttribute('aria-valuetext', '1,2, fin');
+    fireEvent.change(width, { target: { value: '4' } });
+    expect(width).toHaveAttribute('aria-valuetext', '4,0, épais');
+    expect(kameaInk()).toHaveAttribute('stroke-width', '4');
+
+    fireEvent.click(screen.getByRole('switch', { name: 'Extrémités arrondies' }));
+    expect(kameaInk()).toHaveAttribute('stroke-linecap', 'butt');
+    expect(kameaInk()).toHaveAttribute('stroke-linejoin', 'miter');
+    // Width and ends never move a point of the path.
+    expect(kameaPath()).toBe(shape);
+
+    expect(kameaSigil().querySelector('.sigil-renderer__frame')).toBeNull();
+    fireEvent.click(screen.getByRole('switch', { name: 'Cercle d’encadrement' }));
+    expect(kameaSigil().querySelector('.sigil-renderer__frame')).not.toBeNull();
+
+    expect(currentRun()).toBe(firstRun);
+  });
+
+  it('keeps the style settings for the next sigil', () => {
+    render(<App />);
+    fireEvent.change(screen.getByRole('slider', { name: 'Épaisseur' }), {
+      target: { value: '2' },
+    });
+
+    typeIntention(INTENTION);
+    clickTrace();
+
+    expect(kameaInk()).toHaveAttribute('stroke-width', '2');
+  });
+
+  it('starts the style section folded on narrow screens', () => {
+    render(<App />);
+
+    const section = screen.getByRole('heading', { name: 'Style' }).closest('details');
+    expect(section).not.toHaveAttribute('open');
+  });
+
+  it('replays step by step under reduced motion, one segment per press (F3)', () => {
+    mockReducedMotion(true);
+    render(<App />);
+    typeIntention(INTENTION);
+    clickTrace();
+    const replay = screen.getByRole('button', { name: 'Rejouer' });
+    const run = currentRun();
+
+    expect(kameaSegments()).toBe(10);
+    expect(replay).toHaveAccessibleDescription(/chaque clic sur « Rejouer » trace une étape/);
+
+    fireEvent.click(replay);
+    expect(kameaSegments()).toBe(1);
+    expect(
+      screen.getByText('Pas à pas : étape 1 sur 10.', { selector: '[role="status"]' }),
+    ).toBeInTheDocument();
+
+    fireEvent.click(replay);
+    expect(kameaSegments()).toBe(2);
+    expect(currentRun()).toBe(run);
+
+    for (let step = 3; step <= 10; step += 1) fireEvent.click(replay);
+    expect(kameaSegments()).toBe(10);
+    expect(kameaSigil().querySelector('[data-mark="end-bar"]')).not.toBeNull();
+    expect(
+      screen.getByText(/étape 10 sur 10, sigil complet/, { selector: '[role="status"]' }),
+    ).toBeInTheDocument();
+
+    fireEvent.click(replay);
+    expect(kameaSegments()).toBe(1);
+  });
+
+  it('shows a new sigil whole even in the middle of a step-by-step replay', () => {
+    mockReducedMotion(true);
+    render(<App />);
+    typeIntention(INTENTION);
+    clickTrace();
+    fireEvent.click(screen.getByRole('button', { name: 'Rejouer' }));
+    expect(kameaSegments()).toBe(1);
+
+    clickTrace();
+
+    expect(kameaSegments()).toBe(10);
   });
 
   it('swaps the planets for the vowel option, off by default, when Spare is chosen (D4)', () => {

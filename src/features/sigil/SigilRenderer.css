@@ -90,6 +90,14 @@
   animation-timing-function: var(--ease-standard);
 }
 
+/* Framing circle turned on after the run started: shown at once, no tracing. */
+.sigil-renderer--trace .sigil-renderer__frame--settled {
+  visibility: visible;
+  stroke-dasharray: none;
+  stroke-dashoffset: 0;
+  animation: sigil-renderer-fade var(--duration-fade) var(--ease-standard) both;
+}
+
 .sigil-renderer--trace .sigil-renderer__mark {
   animation: sigil-renderer-fade var(--duration-fade) var(--ease-standard) both;
 }

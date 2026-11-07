@@ -3,9 +3,13 @@
  *
  * Assembles the header, the trace controls (intention, method, then the
  * planet for kamea or the vowel option for Spare), the sigil scene with its
- * actions (replay, another Spare variant), and the "how it is made" panel of
- * the method used. Owns the screen state only; normalisation and sigil
- * construction live in the features, chained by `trace.ts`.
+ * actions (replay, another Spare variant), the "Style" section (stroke
+ * width, ends, framing circle) and the "how it is made" panel of the method
+ * used. Owns the screen state only; normalisation and sigil construction live
+ * in the features, chained by `trace.ts`, and the replay (animated, or step
+ * by step under reduced motion) in `useTraceReplay`.
+ *
+ * Style settings live in React state only and are not persisted.
  *
  * Privacy (decision D8): the intention lives in React state only. It is
  * never put in the URL, in storage or in an attribute; the form never
@@ -27,11 +31,13 @@ import type { SegmentedOption } from '../components/ui/index.ts';
 import '../components/ui/VisuallyHidden.css';
 import { KameaExplanation, SpareExplanation } from '../features/explain/index.ts';
 import { normalizeIntention } from '../features/intention/index.ts';
-import type { Planet } from '../features/sigil/types.ts';
+import { DEFAULT_STYLE_OPTIONS, useTraceReplay } from '../features/sigil/index.ts';
+import type { Planet, StyleOptions } from '../features/sigil/types.ts';
 import './App.css';
 import { PlanetPicker } from './PlanetPicker.tsx';
 import { SigilStage } from './SigilStage.tsx';
 import { STRINGS_FR } from './strings.fr.ts';
+import { StylePanel } from './StylePanel.tsx';
 import type { AppStrings } from './strings.fr.ts';
 import { traceErrorMessage, traceKamea, traceSpare } from './trace.ts';
 import type { Trace, TraceResult } from './trace.ts';
@@ -74,6 +80,17 @@ const CONTROLS_HEADING_ID = 'controls-heading';
 /** Id of the visually hidden heading of the scene section. */
 const STAGE_HEADING_ID = 'stage-heading';
 
+/** Id of the hint telling how "replay" works under reduced motion. */
+const REPLAY_HINT_ID = 'replay-hint';
+
+/**
+ * Viewport from which the "Style" section starts open: the two- and
+ * three-column layouts (1024 px, see App.css), where it sits in the controls
+ * column as in the design. On narrower screens it starts folded under the
+ * scene, as the design's mobile layout asks.
+ */
+const STYLE_OPEN_QUERY = '(min-width: 1024px)';
+
 /**
  * Renders the whole screen and wires the trace flow:
  * text → normalisation → kamea or Spare sigil → scene and explanation panel.
@@ -87,7 +104,8 @@ export function App() {
   const [planet, setPlanet] = useState<Planet>(DEFAULT_PLANET);
   const [keepVowels, setKeepVowels] = useState(DEFAULT_KEEP_VOWELS);
   const [request, setRequest] = useState<TraceRequest | null>(null);
-  const [replayToken, setReplayToken] = useState(0);
+  const [styleOptions, setStyleOptions] = useState<StyleOptions>(DEFAULT_STYLE_OPTIONS);
+  const [styleOpen, setStyleOpen] = useState(startsWide);
   // null until the user opens or closes the panel: it then follows the result.
   const [explainToggled, setExplainToggled] = useState<boolean | null>(null);
   const intentionInput = useRef<HTMLInputElement>(null);
@@ -102,6 +120,7 @@ export function App() {
   }, [source]);
 
   const traced = result?.ok === true ? result : undefined;
+  const replay = useTraceReplay(traced?.sigil);
   const error = result?.ok === false ? traceErrorMessage(result.error, strings) : undefined;
   const explainOpen = explainToggled ?? traced !== undefined;
   const offersKeepVowels =
@@ -243,15 +262,16 @@ export function App() {
             sigil={traced?.sigil}
             label={traced === undefined ? '' : sigilLabel(traced, strings)}
             emptyText={emptyText(method, error !== undefined, strings)}
-            replayToken={replayToken}
+            styleOptions={styleOptions}
+            replayToken={replay.replayToken}
+            revealedSteps={replay.step}
           />
           <div className="stage-actions">
             <Button
               variant="secondary"
               disabled={traced === undefined}
-              onClick={() => {
-                setReplayToken((token) => token + 1);
-              }}
+              aria-describedby={replay.stepwise ? REPLAY_HINT_ID : undefined}
+              onClick={replay.replay}
             >
               {strings.replay}
             </Button>
@@ -271,9 +291,25 @@ export function App() {
               {strings.stage.variant(displayedVariant(traced.variant))}
             </p>
           )}
+          {traced !== undefined && replay.step !== undefined && (
+            <p className="stage-caption" aria-hidden="true">
+              {strings.replayStep(replay.step, replay.stepCount)}
+            </p>
+          )}
+          {replay.stepwise && (
+            <p id={REPLAY_HINT_ID} className="stage-hint">
+              {strings.replayStepwiseHint}
+            </p>
+          )}
           <p className="visually-hidden" role="status">
-            {traced === undefined ? '' : tracedAnnouncement(traced, strings)}
+            {stageAnnouncement(traced, replay.step, replay.stepCount, strings)}
           </p>
+        </section>
+
+        <section className="app-layout__style">
+          <Disclosure title={strings.style.title} open={styleOpen} onOpenChange={setStyleOpen}>
+            <StylePanel value={styleOptions} onChange={setStyleOptions} strings={strings.style} />
+          </Disclosure>
         </section>
 
         <section className="app-layout__explain">
@@ -351,6 +387,38 @@ function sigilLabel(traced: Trace, strings: AppStrings): string {
   return traced.method === 'kamea'
     ? strings.stage.label(traced.planet)
     : strings.stage.spareLabel(displayedVariant(traced.variant));
+}
+
+/**
+ * Whether the "Style" section starts open: on the wide layouts only.
+ *
+ * @returns True when the viewport matches `STYLE_OPEN_QUERY`; false where
+ *   `matchMedia` does not exist (some test environments).
+ */
+function startsWide(): boolean {
+  if (typeof window.matchMedia !== 'function') return false;
+  return window.matchMedia(STYLE_OPEN_QUERY).matches;
+}
+
+/**
+ * Sentence of the scene's live region: the step reached during a
+ * step-by-step replay, otherwise what was just traced.
+ *
+ * @param traced - Sigil shown, if any.
+ * @param step - Step reached in the step-by-step replay, if one is running.
+ * @param stepCount - Steps of that replay.
+ * @param strings - Interface texts.
+ * @returns The sentence, empty without a sigil.
+ */
+function stageAnnouncement(
+  traced: Trace | undefined,
+  step: number | undefined,
+  stepCount: number,
+  strings: AppStrings,
+): string {
+  if (traced === undefined) return '';
+  if (step !== undefined) return strings.replayStep(step, stepCount);
+  return tracedAnnouncement(traced, strings);
 }
 
 /**

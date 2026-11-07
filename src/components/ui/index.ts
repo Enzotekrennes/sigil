@@ -10,6 +10,8 @@ export { Disclosure } from './Disclosure.tsx';
 export type { DisclosureProps } from './Disclosure.tsx';
 export { SegmentedControl } from './SegmentedControl.tsx';
 export type { SegmentedControlProps, SegmentedOption } from './SegmentedControl.tsx';
+export { Slider } from './Slider.tsx';
+export type { SliderProps } from './Slider.tsx';
 export { StatusMessage } from './StatusMessage.tsx';
 export type { StatusMessageProps, StatusTone } from './StatusMessage.tsx';
 export { Switch } from './Switch.tsx';

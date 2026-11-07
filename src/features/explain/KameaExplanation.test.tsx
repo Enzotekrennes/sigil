@@ -52,6 +52,29 @@ describe('KameaExplanation', () => {
     expect(grid.querySelector('[data-mark="end-bar"]')).not.toBeNull();
   });
 
+  it('sets every number on a plate of its cell colour, drawn after the path', () => {
+    const sigil = kamea(['J', 'E', 'S', 'U', 'I', 'S', 'C', 'A', 'L', 'M', 'E'], 'saturn');
+    render(<KameaExplanation sigil={sigil} strings={STRINGS} />);
+
+    const grid = screen.getByRole('img', { name: /^Carré de Saturne/ });
+    const plates = grid.querySelectorAll('.kamea-grid__plate');
+    expect(plates).toHaveLength(9);
+    // Cells 1, 5, 3, 9 and 4 are visited: their plates take the active cell colour.
+    expect(grid.querySelectorAll('.kamea-grid__plate--visited')).toHaveLength(5);
+    const path = grid.querySelector('.kamea-grid__path');
+    const numbers = grid.querySelector('.kamea-grid__numbers');
+    if (path === null || numbers === null) throw new Error('Path or numbers missing');
+    // Painted later means on top: the path passes under the numbers.
+    expect(path.compareDocumentPosition(numbers) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    for (const plate of plates) {
+      const text = plate.nextElementSibling;
+      expect(text?.tagName.toLowerCase()).toBe('text');
+      // The plate starts before its number, so it covers the path under the digits.
+      expect(Number(plate.getAttribute('x'))).toBeLessThan(Number(text?.getAttribute('x')));
+      expect(Number(plate.getAttribute('y'))).toBeLessThan(Number(text?.getAttribute('y')));
+    }
+  });
+
   it('counts the loops when a number repeats', () => {
     // A and J both give 1 on Saturn: one loop.
     render(<KameaExplanation sigil={kamea(['A', 'J', 'B'], 'saturn')} strings={STRINGS} />);

@@ -1,10 +1,13 @@
 /*
  * Page layout of App.tsx, mobile first, following "Mise en page" in
  * docs/design.md:
- *   < 768      one column: controls, scene, panel; 16 px gutter;
+ *   < 768      one column: controls, scene, style, panel; 16 px gutter;
  *   768–1023   one centred column (max 640), intention and method side by side;
- *   1024–1279  two columns (320 / 1fr), the panel under the scene;
+ *   1024–1279  two columns (320 / 1fr), style under the controls, the panel
+ *              under the scene;
  *   ≥ 1280     three columns (320 / 1fr / 360), 32 px gaps, 48 px margins.
+ * The DOM order is the mobile one (controls, scene and its actions, style,
+ * panel), which is also the keyboard order at every width.
  * The panel is a size container so its content can switch to two internal
  * columns when it is wide enough. Every value comes from tokens.css.
  */
@@ -37,6 +40,7 @@
   grid-template-areas:
     "controls"
     "stage"
+    "style"
     "explain";
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-6);
@@ -51,6 +55,16 @@
 .app-layout__stage {
   grid-area: stage;
   min-width: 0;
+}
+
+.app-layout__style {
+  grid-area: style;
+  min-width: 0;
+}
+
+.style-panel {
+  display: grid;
+  gap: var(--space-4);
 }
 
 .app-layout__explain {
@@ -102,7 +116,10 @@
   height: var(--font-size-16);
 }
 
-/* Variant number of a Spare sigil: an annotation, read in the sigil's accessible name. */
+/*
+ * Variant number of a Spare sigil, or step reached in a step-by-step replay:
+ * an annotation, read in the sigil's accessible name or the live region.
+ */
 .stage-caption {
   margin: var(--space-2) 0 0;
   font-family: var(--font-mono);
@@ -111,6 +128,16 @@
   letter-spacing: var(--letter-spacing-label);
   text-align: center;
   text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+/* How "replay" works under reduced motion, under the actions. */
+.stage-hint {
+  max-width: var(--measure);
+  margin: var(--space-2) auto 0;
+  font-size: var(--font-size-16);
+  font-style: italic;
+  text-align: center;
   color: var(--color-text-muted);
 }
 
@@ -150,10 +177,17 @@
 
   .app-layout {
     max-width: none;
+    /*
+     * Each column stacks on its own: style right under the controls, the
+     * panel right under the scene. The style area spans the last row, a
+     * flexible track, so its height never pushes the panel down.
+     */
     grid-template-areas:
       "controls stage"
-      "controls explain";
+      "style stage"
+      "style explain";
     grid-template-columns: var(--layout-controls-width) minmax(0, 1fr);
+    grid-template-rows: auto auto 1fr;
     align-items: start;
     column-gap: var(--space-6);
     padding-inline: var(--space-7);
@@ -166,7 +200,10 @@
 
 @media (min-width: 1280px) {
   .app-layout {
-    grid-template-areas: "controls stage explain";
+    grid-template-areas:
+      "controls stage explain"
+      "style stage explain";
     grid-template-columns: var(--layout-controls-width) minmax(0, 1fr) var(--layout-explain-width);
+    grid-template-rows: auto 1fr;
   }
 }

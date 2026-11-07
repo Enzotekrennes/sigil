@@ -7,12 +7,8 @@
  * to it; the accessible name of the sigil is given by the parent and never
  * contains the intention.
  */
-import {
-  DEFAULT_STYLE_OPTIONS,
-  FRAME_CIRCLE_RADIUS,
-  SigilRenderer,
-} from '../features/sigil/index.ts';
-import type { Sigil } from '../features/sigil/types.ts';
+import { FRAME_CIRCLE_RADIUS, SigilRenderer } from '../features/sigil/index.ts';
+import type { Sigil, StyleOptions } from '../features/sigil/types.ts';
 import './SigilStage.css';
 
 /** Frame of the empty-state drawing, the same 0–100 square as a sigil. */
@@ -29,8 +25,12 @@ export interface SigilStageProps {
   readonly label: string;
   /** Text of the empty state (invitation or pointer to the error). */
   readonly emptyText: string;
+  /** Style settings of the sigil; changing them redraws it without replaying. */
+  readonly styleOptions: StyleOptions;
   /** Changing it replays the tracing of the same sigil. */
   readonly replayToken: number;
+  /** Steps drawn in the step-by-step replay (reduced motion); `undefined` draws it whole. */
+  readonly revealedSteps?: number | undefined;
 }
 
 /**
@@ -38,7 +38,14 @@ export interface SigilStageProps {
  *
  * @returns The square scene.
  */
-export function SigilStage({ sigil, label, emptyText, replayToken }: SigilStageProps) {
+export function SigilStage({
+  sigil,
+  label,
+  emptyText,
+  styleOptions,
+  replayToken,
+  revealedSteps,
+}: SigilStageProps) {
   return (
     <div className="sigil-stage">
       {sigil === undefined ? (
@@ -61,9 +68,10 @@ export function SigilStage({ sigil, label, emptyText, replayToken }: SigilStageP
       ) : (
         <SigilRenderer
           sigil={sigil}
-          styleOptions={DEFAULT_STYLE_OPTIONS}
+          styleOptions={styleOptions}
           label={label}
           replayToken={replayToken}
+          revealedSteps={revealedSteps}
         />
       )}
     </div>

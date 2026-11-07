@@ -9,6 +9,7 @@ import { Button } from './Button.tsx';
 import { ChoiceCards } from './ChoiceCards.tsx';
 import { Disclosure } from './Disclosure.tsx';
 import { SegmentedControl } from './SegmentedControl.tsx';
+import { Slider } from './Slider.tsx';
 import { StatusMessage } from './StatusMessage.tsx';
 import { Switch } from './Switch.tsx';
 import { TextField } from './TextField.tsx';
@@ -208,5 +209,55 @@ describe('Switch', () => {
 
     expect(screen.getByRole('switch')).toBeChecked();
     expect(screen.getByText('oui')).toBeInTheDocument();
+  });
+});
+
+describe('Slider', () => {
+  it('is a labelled range with its bounds, spoken value and help, and reports a move', () => {
+    const onValueChange = vi.fn();
+    render(
+      <Slider
+        id="stroke-width"
+        label="Épaisseur"
+        value={1.2}
+        min={0.4}
+        max={4}
+        step={0.2}
+        valueText="fin · 1,2"
+        ariaValueText="1,2, fin"
+        help="De 0,4 à 4."
+        onValueChange={onValueChange}
+      />,
+    );
+
+    const slider = screen.getByRole('slider', { name: 'Épaisseur' });
+    expect(slider).toHaveAttribute('min', '0.4');
+    expect(slider).toHaveAttribute('max', '4');
+    expect(slider).toHaveAttribute('step', '0.2');
+    expect(slider).toHaveValue('1.2');
+    expect(slider).toHaveAttribute('aria-valuetext', '1,2, fin');
+    expect(slider).toHaveAccessibleDescription('De 0,4 à 4.');
+    expect(screen.getByText('fin · 1,2')).toHaveAttribute('aria-hidden', 'true');
+
+    fireEvent.change(slider, { target: { value: '2' } });
+
+    expect(onValueChange).toHaveBeenCalledWith(2);
+  });
+
+  it('reads the visible value when no spoken value is given', () => {
+    render(
+      <Slider
+        id="size"
+        label="Taille"
+        value={3}
+        min={1}
+        max={5}
+        step={1}
+        valueText="3"
+        onValueChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('slider', { name: 'Taille' })).toHaveAttribute('aria-valuetext', '3');
   });
 });

@@ -1,7 +1,8 @@
 /**
  * Component tests of SigilRenderer on real kamea sigils: SVG structure,
- * marks, style settings, accessible name, absence of the intention, reduced
- * motion, and when the tracing animation restarts.
+ * marks, style settings, fitting inside the framing circle, accessible name,
+ * absence of the intention, reduced motion, step-by-step drawing, and when
+ * the tracing animation restarts.
  */
 import { render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -292,5 +293,107 @@ describe('SigilRenderer animation', () => {
     );
 
     expect(svg.querySelector('path')).not.toBe(pathBefore);
+  });
+});
+
+describe('SigilRenderer framing circle', () => {
+  /**
+   * Farthest point of the drawn path from the frame centre.
+   *
+   * @param svg - Rendered sigil.
+   * @returns Largest distance of a path vertex from (50, 50).
+   */
+  function pathReach(svg: Element): number {
+    const d = svg.querySelector('path.sigil-renderer__stroke')?.getAttribute('d') ?? '';
+    const numbers = (d.match(/-?[\d.]+/g) ?? []).map(Number);
+    let reach = 0;
+    for (let index = 0; index + 1 < numbers.length; index += 2) {
+      reach = Math.max(
+        reach,
+        Math.hypot((numbers[index] ?? 50) - 50, (numbers[index + 1] ?? 50) - 50),
+      );
+    }
+    return reach;
+  }
+
+  it('shrinks a sigil that reaches the corners so it fits inside the circle', () => {
+    // On the Moon, E (5) sits in the top-right corner cell, about 50 from the centre.
+    const sigil = kamea(['A', 'E'], 'moon');
+    const without = renderSigil(sigil);
+    const reachWithout = pathReach(without.svg);
+    without.unmount();
+
+    const { svg } = renderSigil(sigil, { frameCircle: true });
+
+    expect(reachWithout).toBeGreaterThan(46);
+    expect(pathReach(svg) + 1.2 / 2).toBeLessThanOrEqual(46 - 1.2 / 2 - 2 * 1.2 + 1e-3);
+    expect(inkOf(svg)).toHaveAttribute('stroke-width', '1.2');
+  });
+
+  it('shows a circle turned on after the tracing started at once, without tracing it', () => {
+    mockReducedMotion(false);
+    const sigil = kamea(JE_SUIS_CALME);
+    const { svg, rerender } = renderSigil(sigil);
+
+    rerender(
+      <SigilRenderer
+        sigil={sigil}
+        styleOptions={{ ...DEFAULT_STYLE_OPTIONS, frameCircle: true }}
+        label={LABEL}
+      />,
+    );
+
+    const frame = svg.querySelector('.sigil-renderer__frame');
+    expect(frame).toHaveClass('sigil-renderer__frame--settled');
+    expect(frame).not.toHaveAttribute('pathLength');
+  });
+
+  it('traces the circle last when it is on from the start of the run', () => {
+    mockReducedMotion(false);
+    const { svg } = renderSigil(kamea(JE_SUIS_CALME), { frameCircle: true });
+
+    const frame = svg.querySelector('.sigil-renderer__frame');
+    expect(frame).not.toHaveClass('sigil-renderer__frame--settled');
+    expect(frame).toHaveAttribute('pathLength', '1');
+  });
+});
+
+describe('SigilRenderer step by step', () => {
+  it('draws only the revealed segments, still, without end bar nor framing circle', () => {
+    mockReducedMotion(true);
+    const sigil = kamea(JE_SUIS_CALME);
+    const { container } = render(
+      <SigilRenderer
+        sigil={sigil}
+        styleOptions={{ ...DEFAULT_STYLE_OPTIONS, frameCircle: true }}
+        label={LABEL}
+        revealedSteps={2}
+      />,
+    );
+    const svg = screen.getByRole('img', { name: LABEL });
+
+    const d = svg.querySelector('path')?.getAttribute('d') ?? '';
+    expect(d.match(/L/g)).toHaveLength(2);
+    expect(svg.querySelector('[data-mark="start-circle"]')).not.toBeNull();
+    expect(svg.querySelector('[data-mark="end-bar"]')).toBeNull();
+    expect(svg.querySelector('.sigil-renderer__frame')).toBeNull();
+    expect(container.querySelector('[pathLength]')).toBeNull();
+  });
+
+  it('draws the whole sigil at the last step', () => {
+    mockReducedMotion(true);
+    const sigil = kamea(JE_SUIS_CALME);
+    render(
+      <SigilRenderer
+        sigil={sigil}
+        styleOptions={DEFAULT_STYLE_OPTIONS}
+        label={LABEL}
+        revealedSteps={10}
+      />,
+    );
+    const svg = screen.getByRole('img', { name: LABEL });
+
+    expect(svg.querySelector('path')?.getAttribute('d')?.match(/L/g)).toHaveLength(10);
+    expect(svg.querySelector('[data-mark="end-bar"]')).not.toBeNull();
   });
 });

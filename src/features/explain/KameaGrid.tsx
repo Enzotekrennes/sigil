@@ -4,9 +4,10 @@
  *
  * Exposes `KameaGrid`. Static drawing (no tracing animation), in the sigil's
  * own 0–100 frame so the path needs no transformation. Visited cells are
- * tinted; numbers sit in the top-left corner of their cell, drawn last with a
- * halo of their cell colour, so the path through the cell centres and its
- * marks stay readable. Colours come from the
+ * tinted; numbers sit in the top-left corner of their cell, drawn last on a
+ * small plate of their cell colour (plus a halo), so a path crossing a number
+ * passes under it: the number stays readable and the path shows on both
+ * sides of it. Colours come from the
  * tokens through `KameaExplanation.css`.
  */
 import { endBarEndpoints, formatCoordinate, polylinePathData, scaleMark } from '../sigil/index.ts';
@@ -41,6 +42,25 @@ const NUMBER_INSET_RATIO = 0.08;
 
 /** Halo around each number as a share of its height, so a crossing path reads as passing under it. */
 const NUMBER_HALO_RATIO = 0.3;
+
+/**
+ * Advance of one digit as a share of the font size: IBM Plex Mono, like
+ * every monospace of the fallback stack, sets each digit 0.6 em wide.
+ */
+const DIGIT_ADVANCE_RATIO = 0.6;
+
+/**
+ * Height of the plate behind a number as a share of its font size: the digits'
+ * box from the top edge of the em (where `text-before-edge` puts it) down to
+ * the baseline and a little below.
+ */
+const NUMBER_PLATE_HEIGHT_RATIO = 1;
+
+/**
+ * Margin of the plate around the number, as a share of the cell side: smaller
+ * than the number's inset (0.08) so the plate never covers the grid lines.
+ */
+const NUMBER_PLATE_PADDING_RATIO = 0.05;
 
 /** Margin kept around the square for the marks that stick out of the edge cells. */
 const VIEW_MARGIN = 1;
@@ -136,13 +156,26 @@ export function KameaGrid({ sigil, square, cells, label }: KameaGridProps) {
       </g>
       <g className="kamea-grid__numbers" fontSize={formatCoordinate(numberSize)}>
         {square.flatMap((values, row) =>
-          values.map((value, column) => {
+          values.flatMap((value, column) => {
             const corner: Point = {
               x: KAMEA_GRID_MARGIN + column * size + size * NUMBER_INSET_RATIO,
               y: KAMEA_GRID_MARGIN + row * size + size * NUMBER_INSET_RATIO,
             };
             const isVisited = visited.has(cellKey({ row, column }));
-            return (
+            const padding = size * NUMBER_PLATE_PADDING_RATIO;
+            return [
+              <rect
+                key={`plate-${String(value)}`}
+                className={
+                  isVisited ? 'kamea-grid__plate kamea-grid__plate--visited' : 'kamea-grid__plate'
+                }
+                x={formatCoordinate(corner.x - padding)}
+                y={formatCoordinate(corner.y - padding)}
+                width={formatCoordinate(
+                  String(value).length * numberSize * DIGIT_ADVANCE_RATIO + 2 * padding,
+                )}
+                height={formatCoordinate(numberSize * NUMBER_PLATE_HEIGHT_RATIO + 2 * padding)}
+              />,
               <text
                 key={value}
                 className={
@@ -155,8 +188,8 @@ export function KameaGrid({ sigil, square, cells, label }: KameaGridProps) {
                 strokeWidth={formatCoordinate(numberSize * NUMBER_HALO_RATIO)}
               >
                 {value}
-              </text>
-            );
+              </text>,
+            ];
           }),
         )}
       </g>

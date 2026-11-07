@@ -1,6 +1,6 @@
 /**
- * Unit tests of the renderer style settings: defaults, line ends, framing
- * circle visibility and mark resizing.
+ * Unit tests of the renderer style settings: defaults, stroke width range,
+ * line ends, framing circle visibility and mark resizing.
  */
 import { describe, expect, it } from 'vitest';
 
@@ -11,6 +11,11 @@ import {
   MARK_REFERENCE_STROKE_WIDTH,
   scaleMark,
   showsFrameCircle,
+  snapStrokeWidth,
+  STROKE_WIDTH_MAX,
+  STROKE_WIDTH_MIN,
+  STROKE_WIDTH_STEP,
+  strokeWidthLevel,
 } from './style.ts';
 import type { LoopMark } from './types.ts';
 
@@ -101,5 +106,35 @@ describe('scaleMark', () => {
     expect(
       Math.hypot(scaled.center.x - scaled.anchor.x, scaled.center.y - scaled.anchor.y),
     ).toBeCloseTo(scaled.radius);
+  });
+});
+
+describe('stroke width setting', () => {
+  it('spans the design range 4–40 by 2 (0.4–4 by 0.2 in the 0–100 frame)', () => {
+    expect([STROKE_WIDTH_MIN, STROKE_WIDTH_MAX, STROKE_WIDTH_STEP]).toEqual([0.4, 4, 0.2]);
+    expect(DEFAULT_STYLE_OPTIONS.strokeWidth).toBe(snapStrokeWidth(1.2));
+  });
+
+  it('snaps a slider value to the step without floating point noise', () => {
+    expect(snapStrokeWidth(1.4000000000000001)).toBe(1.4);
+    expect(snapStrokeWidth(0.2 * 7)).toBe(1.4);
+    expect(snapStrokeWidth(1.29)).toBe(1.2);
+    expect(snapStrokeWidth(1.31)).toBe(1.4);
+  });
+
+  it('clamps to the range and falls back to the default for NaN', () => {
+    expect(snapStrokeWidth(0)).toBe(0.4);
+    expect(snapStrokeWidth(12)).toBe(4);
+    expect(snapStrokeWidth(Number.NaN)).toBe(1.2);
+  });
+
+  it('names thin up to 1.4, medium up to 2.6, thick above', () => {
+    expect(strokeWidthLevel(0.4)).toBe('thin');
+    expect(strokeWidthLevel(1.2)).toBe('thin');
+    expect(strokeWidthLevel(1.4)).toBe('thin');
+    expect(strokeWidthLevel(1.6)).toBe('medium');
+    expect(strokeWidthLevel(2.6)).toBe('medium');
+    expect(strokeWidthLevel(2.8)).toBe('thick');
+    expect(strokeWidthLevel(4)).toBe('thick');
   });
 });

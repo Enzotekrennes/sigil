@@ -3,7 +3,8 @@
  *
  * Exposes `useTraceAnimation`, which tells the renderer if it may animate
  * (not under `prefers-reduced-motion: reduce`) and gives a run key that
- * changes only for a new sigil or a replay request, never for a style change.
+ * changes only for a new sigil or a replay request, never for a style change,
+ * and `usePrefersReducedMotion`, the live reduced motion preference.
  * Does not hold any timing: durations and easings live in the CSS tokens.
  */
 import { useSyncExternalStore } from 'react';
@@ -80,6 +81,16 @@ function prefersReducedMotion(): boolean {
 }
 
 /**
+ * Follows the user's reduced motion preference.
+ *
+ * @returns True under `prefers-reduced-motion: reduce`, kept up to date if the
+ *   preference changes; false where `matchMedia` does not exist.
+ */
+export function usePrefersReducedMotion(): boolean {
+  return useSyncExternalStore(subscribeToReducedMotion, prefersReducedMotion, () => false);
+}
+
+/**
  * Tells the renderer whether to animate the tracing and when to restart it.
  *
  * @param sigil - Sigil shown; a different object starts a new run.
@@ -89,10 +100,6 @@ function prefersReducedMotion(): boolean {
  *   to date if the preference changes, and the `runKey` of the current run.
  */
 export function useTraceAnimation(sigil: Sigil, replayToken: number): TraceAnimation {
-  const reducedMotion = useSyncExternalStore(
-    subscribeToReducedMotion,
-    prefersReducedMotion,
-    () => false,
-  );
+  const reducedMotion = usePrefersReducedMotion();
   return { animate: !reducedMotion, runKey: `${String(sigilId(sigil))}:${String(replayToken)}` };
 }

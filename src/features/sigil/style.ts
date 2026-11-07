@@ -1,7 +1,8 @@
 /**
- * Style settings of the sigil renderer: default `StyleOptions`, the framing
- * circle geometry, the SVG line cap and join for each setting, and the
- * resizing of marks to the chosen stroke width.
+ * Style settings of the sigil renderer: default `StyleOptions`, the range,
+ * step and wording level of the stroke width setting, the framing circle
+ * geometry, the SVG line cap and join for each setting, and the resizing of
+ * marks to the chosen stroke width.
  *
  * Pure values and functions; colours are not here, they come from the CSS
  * tokens (see `SigilRenderer.css`).
@@ -25,6 +26,61 @@ export const DEFAULT_STYLE_OPTIONS: StyleOptions = {
   frameCircle: false,
   mode: 'screen',
 };
+
+/**
+ * Thinnest stroke offered by the width setting, in frame units: 4 in the
+ * design's 1000-unit frame, the finest line that still reads on a phone.
+ */
+export const STROKE_WIDTH_MIN = 0.4;
+
+/**
+ * Thickest stroke offered by the width setting, in frame units: 40 in the
+ * design's 1000-unit frame, a bold line that still leaves the cells apart.
+ */
+export const STROKE_WIDTH_MAX = 4;
+
+/** Step of the width setting, in frame units: 2 in the design's 1000-unit frame. */
+export const STROKE_WIDTH_STEP = 0.2;
+
+/**
+ * Widest stroke still called "thin" (fine line, the default 1.2 included),
+ * in frame units: 14 in the design's 1000-unit frame.
+ */
+const THIN_STROKE_MAX = 1.4;
+
+/** Widest stroke still called "medium"; anything wider is "thick". 26 in the design's frame. */
+const MEDIUM_STROKE_MAX = 2.6;
+
+/** How a stroke width is described next to the slider. */
+export type StrokeWidthLevel = 'thin' | 'medium' | 'thick';
+
+/**
+ * Brings any width onto the setting's grid: clamped to
+ * [`STROKE_WIDTH_MIN`, `STROKE_WIDTH_MAX`] and rounded to the nearest
+ * `STROKE_WIDTH_STEP`, without the binary noise of `0.2 * 7`.
+ *
+ * @param width - Width in frame units, as read from the slider; `NaN` gives the default.
+ * @returns A width the setting offers, with at most one decimal.
+ */
+export function snapStrokeWidth(width: number): number {
+  if (Number.isNaN(width)) return DEFAULT_STYLE_OPTIONS.strokeWidth;
+  const clamped = Math.min(Math.max(width, STROKE_WIDTH_MIN), STROKE_WIDTH_MAX);
+  const steps = Math.round(clamped / STROKE_WIDTH_STEP);
+  // Rounding to one decimal removes the float error of the multiplication (1.4000000000000001).
+  return Math.round(steps * STROKE_WIDTH_STEP * 10) / 10;
+}
+
+/**
+ * Word for a stroke width, shown with its value ("fin", "moyen", "épais").
+ *
+ * @param width - Width in frame units.
+ * @returns `thin` up to 1.4, `medium` up to 2.6, `thick` above.
+ */
+export function strokeWidthLevel(width: number): StrokeWidthLevel {
+  if (width <= THIN_STROKE_MAX) return 'thin';
+  if (width <= MEDIUM_STROKE_MAX) return 'medium';
+  return 'thick';
+}
 
 /**
  * Miter limit used with flat ends: the design's `stroke-miterlimit="4"`,

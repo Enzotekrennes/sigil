@@ -11,6 +11,7 @@ import type {
   KameaExplanationStrings,
   SpareExplanationStrings,
 } from '../features/explain/index.ts';
+import type { StrokeWidthLevel } from '../features/sigil/index.ts';
 import type { Planet } from '../features/sigil/types.ts';
 
 /** Planet names as shown on the picker. */
@@ -58,6 +59,23 @@ const NBSP = '\u00a0';
  */
 function quoted(characters: readonly string[]): string {
   return characters.map((character) => `«${NBSP}${character}${NBSP}»`).join(' ');
+}
+
+/** Words for the stroke width levels, next to the slider value. */
+const STROKE_WIDTH_LEVELS: Readonly<Record<StrokeWidthLevel, string>> = {
+  thin: 'fin',
+  medium: 'moyen',
+  thick: 'épais',
+};
+
+/**
+ * Writes a stroke width the French way, with a decimal comma and one decimal.
+ *
+ * @param width - Width in frame units.
+ * @returns For instance `"1,2"` or `"4,0"`.
+ */
+function strokeWidthNumber(width: number): string {
+  return width.toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 }
 
 /** Texts of the explanation panel for a kamea sigil. */
@@ -178,6 +196,26 @@ export const STRINGS_FR = {
   trace: 'Tracer',
   replay: 'Rejouer',
   otherVariant: 'Autre variante',
+  replayStepwiseHint:
+    'Mouvement réduit : chaque clic sur « Rejouer » trace une étape de plus, sans animation.',
+  replayStep: (step: number, count: number): string =>
+    step >= count
+      ? `Pas à pas : étape ${String(step)} sur ${String(count)}, sigil complet.`
+      : `Pas à pas : étape ${String(step)} sur ${String(count)}.`,
+
+  style: {
+    title: 'Style',
+    strokeWidth: 'Épaisseur',
+    strokeWidthValue: (width: number, level: StrokeWidthLevel): string =>
+      `${STROKE_WIDTH_LEVELS[level]} · ${strokeWidthNumber(width)}`,
+    strokeWidthSpoken: (width: number, level: StrokeWidthLevel): string =>
+      `${strokeWidthNumber(width)}, ${STROKE_WIDTH_LEVELS[level]}`,
+    strokeWidthHelp: 'De 0,4 à 4 sur un cadre de 100 ; 1,2 par défaut.',
+    roundEnds: 'Extrémités arrondies',
+    frameCircle: 'Cercle d’encadrement',
+    on: 'oui',
+    off: 'non',
+  },
 
   stage: {
     heading: 'Sigil',
@@ -198,7 +236,7 @@ export const STRINGS_FR = {
     noLatinLetter: (ignored: readonly string[]): string =>
       ignored.length === 0
         ? 'Aucune lettre latine à tracer. Écrivez l’intention avec les lettres A à Z (les accents sont acceptés).'
-        : `Aucune lettre latine à tracer : ${quoted(ignored)} ne se tracent pas. Écrivez l’intention avec les lettres A à Z (les accents sont acceptés).`,
+        : `Aucune lettre latine à tracer : ${quoted(ignored)} ne se ${ignored.length > 1 ? 'tracent' : 'trace'} pas. Écrivez l’intention avec les lettres A à Z (les accents sont acceptés).`,
     tooFewLetters: 'Une seule lettre ne trace aucun chemin. Écrivez au moins deux lettres.',
     singleCell: (number: number, planet: Planet): string =>
       `Toutes les lettres tombent sur la case ${String(number)} du carré ${PLANET_OF[planet]} : le tracé serait un simple point. Choisissez un autre carré ou ajoutez des lettres.`,

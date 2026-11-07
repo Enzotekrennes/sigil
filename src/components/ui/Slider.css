@@ -1,0 +1,138 @@
+/*
+ * Styles of Slider.tsx. The native range input is restyled: a hairline track
+ * in the field border colour (3:1 on the page and the surface) and a round
+ * accent thumb; the input itself is as tall as a touch target. The value
+ * next to the label is set in the monospace with tabular figures.
+ * Every value comes from tokens.css.
+ */
+
+.slider {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.slider__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.slider__label {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--letter-spacing-label);
+  text-transform: uppercase;
+}
+
+.slider__value {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-label);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.slider__input {
+  box-sizing: border-box;
+  width: 100%;
+  height: var(--tap-target);
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  appearance: none;
+}
+
+.slider__input::-webkit-slider-runnable-track {
+  height: var(--focus-ring-width);
+  border-radius: var(--radius-pill);
+  background: var(--color-border);
+}
+
+.slider__input::-moz-range-track {
+  height: var(--focus-ring-width);
+  border-radius: var(--radius-pill);
+  background: var(--color-border);
+}
+
+/* Thumb: 20 px, centred on the 2 px track. */
+.slider__input::-webkit-slider-thumb {
+  box-sizing: border-box;
+  width: var(--space-5);
+  height: var(--space-5);
+  margin-top: calc((var(--focus-ring-width) - var(--space-5)) / 2);
+  border: var(--focus-ring-width) solid var(--color-accent);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  appearance: none;
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard);
+}
+
+.slider__input::-moz-range-thumb {
+  box-sizing: border-box;
+  width: var(--space-5);
+  height: var(--space-5);
+  border: var(--focus-ring-width) solid var(--color-accent);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard);
+}
+
+.slider__input:hover::-webkit-slider-thumb {
+  background: var(--color-accent);
+}
+
+.slider__input:hover::-moz-range-thumb {
+  background: var(--color-accent);
+}
+
+.slider__input:active::-webkit-slider-thumb {
+  border-color: var(--color-accent-hover);
+  background: var(--color-accent-hover);
+}
+
+.slider__input:active::-moz-range-thumb {
+  border-color: var(--color-accent-hover);
+  background: var(--color-accent-hover);
+}
+
+.slider__input:focus-visible {
+  outline: none;
+}
+
+.slider__input:focus-visible::-webkit-slider-thumb {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.slider__input:focus-visible::-moz-range-thumb {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.slider__input:disabled {
+  cursor: not-allowed;
+}
+
+.slider__input:disabled::-webkit-slider-thumb {
+  border-color: var(--color-border-subtle);
+  background: var(--color-surface);
+}
+
+.slider__input:disabled::-moz-range-thumb {
+  border-color: var(--color-border-subtle);
+  background: var(--color-surface);
+}
+
+.slider__help {
+  max-width: var(--measure);
+  margin: 0;
+  font-size: var(--font-size-16);
+  line-height: var(--line-height-body);
+  color: var(--color-text-muted);
+}

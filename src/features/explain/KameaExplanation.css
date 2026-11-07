@@ -118,6 +118,15 @@
   stroke: var(--sigil-stroke);
 }
 
+/* Plate behind each number, in its cell colour: a crossing path passes under the number. */
+.kamea-grid__plate {
+  fill: var(--color-surface-sunken);
+}
+
+.kamea-grid__plate--visited {
+  fill: var(--color-cell-active);
+}
+
 .kamea-grid__number {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
@@ -136,6 +145,15 @@
 }
 
 @container (min-width: 34rem) {
+  /*
+   * The square, spanning the first three rows, is taller than the steps next
+   * to it: the last row takes all the extra height, so steps 1–3 keep their
+   * usual spacing instead of being spread down the column.
+   */
+  .explain-steps--kamea {
+    grid-template-rows: auto auto 1fr;
+  }
+
   .kamea-steps__path {
     grid-column: 2;
     grid-row: 1 / span 3;
