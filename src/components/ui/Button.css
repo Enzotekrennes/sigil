@@ -1,0 +1,88 @@
+/*
+ * Styles of Button.tsx: shared box, three variants and their states.
+ * Every value comes from tokens.css.
+ */
+
+.button {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--tap-target);
+  min-width: var(--tap-target);
+  padding: var(--space-2) var(--space-4);
+  border: thin solid transparent;
+  border-radius: var(--radius-field);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--letter-spacing-label);
+  line-height: var(--line-height-tight);
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard);
+}
+
+.button:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.button--full-width {
+  width: 100%;
+}
+
+/* Primary: accent background, the one main action of an area. */
+.button--primary {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.button--primary:hover {
+  background: var(--color-accent-hover);
+}
+
+/* Secondary: outline on the page background. */
+.button--secondary {
+  background: transparent;
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+
+.button--secondary:hover {
+  border-color: var(--color-text);
+  background: var(--color-surface);
+}
+
+/* Ghost: text only, underlined on hover so the state does not rely on colour. */
+.button--ghost {
+  background: transparent;
+  color: var(--color-accent);
+}
+
+.button--ghost:hover {
+  color: var(--color-accent-hover);
+  text-decoration: underline;
+}
+
+/* Pressed: inked in full, sunk into the page for the outlined variants. */
+.button--primary:active {
+  background: var(--color-text);
+}
+
+.button--secondary:active,
+.button--ghost:active {
+  background: var(--color-surface-sunken);
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  background: transparent;
+  border-color: var(--color-border-subtle);
+  color: var(--color-text-disabled);
+  text-decoration: none;
+}

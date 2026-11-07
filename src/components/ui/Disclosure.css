@@ -1,0 +1,69 @@
+/*
+ * Styles of Disclosure.tsx: the summary reads as a section title (monospace,
+ * capitals, secondary colour) with a chevron drawn in CSS; the native marker
+ * is hidden. Every value comes from tokens.css.
+ */
+
+.disclosure__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: var(--tap-target);
+  border-bottom: thin solid var(--color-border-subtle);
+  cursor: pointer;
+  list-style: none;
+  transition: border-color var(--duration-fast) var(--ease-standard);
+}
+
+.disclosure__summary::-webkit-details-marker {
+  display: none;
+}
+
+.disclosure__summary:hover {
+  border-bottom-color: var(--color-border);
+}
+
+.disclosure__summary:hover .disclosure__title {
+  color: var(--color-text);
+}
+
+.disclosure__summary:focus-visible {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.disclosure__summary:active {
+  background: var(--color-surface-sunken);
+}
+
+.disclosure__title {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-section);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--letter-spacing-label);
+  line-height: var(--line-height-tight);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+/* Chevron: two borders of a small square, pointing down when closed, up when open. */
+.disclosure__chevron {
+  flex: none;
+  width: var(--space-2);
+  height: var(--space-2);
+  margin-right: var(--space-1);
+  border-right: var(--focus-ring-width) solid var(--color-text-muted);
+  border-bottom: var(--focus-ring-width) solid var(--color-text-muted);
+  transform: translateY(-25%) rotate(45deg);
+  transition: transform var(--duration-base) var(--ease-standard);
+}
+
+.disclosure[open] .disclosure__chevron {
+  transform: translateY(25%) rotate(-135deg);
+}
+
+.disclosure__content {
+  padding-top: var(--space-4);
+}

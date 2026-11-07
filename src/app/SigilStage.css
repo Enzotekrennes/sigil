@@ -1,0 +1,41 @@
+/*
+ * Styles of SigilStage.tsx: a square on the surface colour, the only element
+ * of the page that leaves the page background (docs/design.md, layout).
+ * Every value comes from tokens.css.
+ */
+
+.sigil-stage {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: var(--stage-max-size);
+  aspect-ratio: 1;
+  margin-inline: auto;
+  border-radius: var(--radius-panel);
+  background: var(--color-surface);
+}
+
+.sigil-stage__empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+.sigil-stage__empty-circle {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: var(--color-border-subtle);
+}
+
+.sigil-stage__empty-text {
+  position: relative;
+  margin: 0;
+  padding: var(--space-7);
+  font-style: italic;
+  text-align: center;
+  color: var(--color-text-muted);
+}

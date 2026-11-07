@@ -1,0 +1,114 @@
+/*
+ * Styles of ChoiceCards.tsx. The radio is visually hidden; its state is
+ * drawn on the sibling `.choice-cards__face`. Selected: accent border and a
+ * visible check mark. Every value comes from tokens.css.
+ */
+
+.choice-cards {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.choice-cards__legend {
+  margin-bottom: var(--space-2);
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--letter-spacing-label);
+  text-transform: uppercase;
+}
+
+.choice-cards__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.choice-cards__option {
+  display: flex;
+  cursor: pointer;
+}
+
+.choice-cards__face {
+  position: relative;
+  display: flex;
+  flex: 1;
+  align-items: baseline;
+  flex-wrap: wrap;
+  column-gap: var(--space-2);
+  box-sizing: border-box;
+  min-height: var(--tap-target);
+  padding: var(--space-2) var(--space-6) var(--space-2) var(--space-3);
+  border: thin solid var(--color-border);
+  border-radius: var(--radius-field);
+  align-content: center;
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard);
+}
+
+.choice-cards__label {
+  font-family: var(--font-serif);
+  font-size: var(--font-size-18);
+  line-height: var(--line-height-tight);
+}
+
+.choice-cards__detail {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-label);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+}
+
+.choice-cards__check {
+  position: absolute;
+  top: 50%;
+  right: var(--space-2);
+  width: var(--font-size-16);
+  height: var(--font-size-16);
+  color: var(--color-accent);
+  visibility: hidden;
+  transform: translateY(-50%);
+}
+
+.choice-cards__option:hover .choice-cards__face {
+  border-color: var(--color-text);
+  background: var(--color-surface);
+}
+
+.choice-cards__input:focus-visible + .choice-cards__face {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.choice-cards__option:active .choice-cards__face {
+  background: var(--color-surface-sunken);
+}
+
+.choice-cards__input:checked + .choice-cards__face {
+  border-color: var(--color-accent);
+  border-width: var(--focus-ring-width);
+  background: var(--color-surface);
+}
+
+.choice-cards__input:checked + .choice-cards__face .choice-cards__check {
+  visibility: visible;
+}
+
+.choice-cards__option:has(.choice-cards__input:disabled) {
+  cursor: not-allowed;
+}
+
+.choice-cards__input:disabled + .choice-cards__face,
+.choice-cards__option:hover .choice-cards__input:disabled + .choice-cards__face {
+  border-color: var(--color-border-subtle);
+  background: transparent;
+  color: var(--color-text-disabled);
+}
+
+.choice-cards__input:disabled + .choice-cards__face .choice-cards__detail {
+  color: var(--color-text-disabled);
+}

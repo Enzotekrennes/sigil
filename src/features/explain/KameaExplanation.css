@@ -1,0 +1,198 @@
+/*
+ * Styles of KameaExplanation.tsx and KameaGrid.tsx.
+ *
+ * Steps stack in one column; when the panel is at least 34rem wide (the
+ * 1024–1279 px layout, where it sits under the scene), the square moves to a
+ * second column next to the first three steps, as docs/design.md asks. The
+ * panel's container (`container-type`) is declared by the page layout.
+ * Every colour, size and spacing comes from tokens.css.
+ */
+
+.kamea-steps {
+  display: grid;
+  gap: var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: kamea-step;
+}
+
+.kamea-steps__step {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+  counter-increment: kamea-step;
+}
+
+.kamea-steps__title {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-section);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--letter-spacing-label);
+  line-height: var(--line-height-tight);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.kamea-steps__title::before {
+  content: counter(kamea-step) ". ";
+}
+
+.kamea-steps__text {
+  max-width: var(--measure);
+  margin: 0;
+}
+
+.kamea-steps__note {
+  font-size: var(--font-size-16);
+  font-style: italic;
+  color: var(--color-text-muted);
+}
+
+.kamea-steps__letters {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-16);
+  letter-spacing: var(--letter-spacing-label);
+  overflow-wrap: anywhere;
+}
+
+.kamea-steps__formula {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface-sunken);
+  border-radius: var(--radius-field);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-label);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.kamea-steps__example,
+.kamea-steps__sequence {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-label);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.kamea-steps__sequence-label {
+  color: var(--color-text-muted);
+}
+
+/* Letter → number table: one small column per letter, wrapping like text. */
+.letter-table {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.letter-table__headings,
+.letter-table__entry {
+  display: grid;
+  grid-template-rows: repeat(3, auto);
+  row-gap: var(--space-1);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-label);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--line-height-tight);
+}
+
+.letter-table__headings {
+  flex: none;
+  padding: var(--space-1) 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-12);
+  letter-spacing: var(--letter-spacing-label);
+  text-transform: uppercase;
+}
+
+.letter-table__headings span {
+  /* Same line box as the 14 px values next to it, so the rows line up. */
+  line-height: calc(var(--font-size-label) * var(--line-height-tight));
+}
+
+.letter-table__entries {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.letter-table__entry {
+  min-width: var(--space-6);
+  padding: var(--space-1) var(--space-1);
+  border-radius: var(--radius-field);
+  background: var(--color-surface-sunken);
+  text-align: center;
+}
+
+.letter-table__letter {
+  font-weight: var(--font-weight-medium);
+}
+
+.letter-table__rank {
+  color: var(--color-text-muted);
+}
+
+.letter-table__number {
+  border-top: thin solid var(--color-border);
+}
+
+/* Square with the path. */
+.kamea-grid {
+  display: block;
+  width: 100%;
+  max-width: var(--layout-explain-width);
+  height: auto;
+}
+
+.kamea-grid__background {
+  fill: var(--color-surface-sunken);
+}
+
+.kamea-grid__cell--visited {
+  fill: var(--color-cell-active);
+}
+
+.kamea-grid__lines {
+  stroke: var(--sigil-grid-line);
+}
+
+.kamea-grid__path {
+  stroke: var(--sigil-stroke);
+}
+
+.kamea-grid__number {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  text-anchor: start;
+  dominant-baseline: text-before-edge;
+  fill: var(--sigil-grid-number);
+  stroke: var(--color-surface-sunken);
+  paint-order: stroke;
+  stroke-linejoin: round;
+}
+
+.kamea-grid__number--visited {
+  fill: var(--color-text);
+  stroke: var(--color-cell-active);
+  font-weight: var(--font-weight-medium);
+}
+
+@container (min-width: 34rem) {
+  .kamea-steps {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: var(--space-6);
+    align-items: start;
+  }
+
+  .kamea-steps__step--path {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+  }
+}

@@ -1,0 +1,100 @@
+/*
+ * Styles of SegmentedControl.tsx. The radio itself is visually hidden; its
+ * state is drawn on the sibling `.segmented__face`. Selected: accent
+ * background with on-accent text, as specified in docs/design.md.
+ * Every value comes from tokens.css.
+ */
+
+.segmented {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.segmented__legend {
+  margin-bottom: var(--space-2);
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--letter-spacing-label);
+  text-transform: uppercase;
+}
+
+.segmented__track {
+  display: grid;
+  grid-auto-columns: 1fr;
+  grid-auto-flow: column;
+  border: thin solid var(--color-border);
+  border-radius: var(--radius-field);
+}
+
+.segmented__option {
+  position: relative;
+  display: flex;
+  cursor: pointer;
+}
+
+.segmented__option + .segmented__option {
+  border-left: thin solid var(--color-border);
+}
+
+.segmented__face {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  column-gap: var(--space-2);
+  min-height: var(--tap-target);
+  padding: var(--space-2) var(--space-3);
+  box-sizing: border-box;
+  align-content: center;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-label);
+  letter-spacing: var(--letter-spacing-label);
+  text-transform: uppercase;
+  color: var(--color-text);
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard);
+}
+
+.segmented__note {
+  font-size: var(--font-size-12);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.segmented__option:hover .segmented__face {
+  background: var(--color-surface);
+}
+
+.segmented__input:focus-visible + .segmented__face {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.segmented__input:checked + .segmented__face {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.segmented__option:active .segmented__face {
+  background: var(--color-surface-sunken);
+}
+
+.segmented__input:checked:active + .segmented__face {
+  background: var(--color-accent-hover);
+}
+
+.segmented__option--disabled {
+  cursor: not-allowed;
+}
+
+.segmented__option--disabled .segmented__face,
+.segmented__option--disabled:hover .segmented__face {
+  background: transparent;
+  color: var(--color-text-disabled);
+}

@@ -1,15 +1,29 @@
 /*
- * Layout and title styles of the application shell (App.tsx).
- * Every value comes from tokens.css.
+ * Page layout of App.tsx, mobile first, following "Mise en page" in
+ * docs/design.md:
+ *   < 768      one column: controls, scene, panel; 16 px gutter;
+ *   768–1023   one centred column (max 640), intention and method side by side;
+ *   1024–1279  two columns (320 / 1fr), the panel under the scene;
+ *   ≥ 1280     three columns (320 / 1fr / 360), 32 px gaps, 48 px margins.
+ * The panel is a size container so its content can switch to two internal
+ * columns when it is wide enough. Every value comes from tokens.css.
  */
 
 .app {
-  box-sizing: border-box;
   min-height: 100vh;
-  padding: var(--space-6) var(--page-gutter);
 }
 
-.app__title {
+/* Header: 56 px on mobile, 64 px from 768 px, with a bottom rule. */
+.app-header {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  min-height: calc(var(--header-height) - var(--space-2));
+  padding: 0 var(--page-gutter);
+  border-bottom: thin solid var(--color-border-subtle);
+}
+
+.app-header__title {
   margin: 0;
   font-family: var(--font-serif);
   font-size: var(--font-size-24);
@@ -18,8 +32,113 @@
   line-height: var(--line-height-tight);
 }
 
+.app-layout {
+  display: grid;
+  grid-template-areas:
+    "controls"
+    "stage"
+    "explain";
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-6);
+  padding: var(--space-5) var(--page-gutter) var(--space-7);
+}
+
+.app-layout__controls {
+  grid-area: controls;
+  min-width: 0;
+}
+
+.app-layout__stage {
+  grid-area: stage;
+  min-width: 0;
+}
+
+.app-layout__explain {
+  grid-area: explain;
+  min-width: 0;
+  container-type: inline-size;
+}
+
+.app-layout__explain-empty {
+  max-width: var(--measure);
+  margin: 0;
+  font-style: italic;
+  color: var(--color-text-muted);
+}
+
+/* Controls: one column of fields, the trace button full width under them. */
+.trace-form {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.trace-form__method {
+  display: grid;
+  gap: var(--space-5);
+}
+
+/* Actions under the scene. */
+.stage-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
 @media (min-width: 640px) {
-  .app__title {
+  .app-header__title {
     font-size: var(--font-size-title);
+  }
+}
+
+@media (min-width: 768px) {
+  .app-header {
+    min-height: var(--header-height);
+    /* Aligns the title with the centred content column. */
+    padding-inline: calc(max(0px, (100% - var(--stage-max-size)) / 2) + var(--page-gutter));
+  }
+
+  .app-layout {
+    max-width: var(--stage-max-size);
+    margin-inline: auto;
+  }
+
+  .trace-form {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: var(--space-5);
+    align-items: start;
+  }
+
+  .trace-form > :not(.trace-form__intention, .trace-form__method) {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 1024px) {
+  .app-header {
+    padding-inline: var(--space-7);
+  }
+
+  .app-layout {
+    max-width: none;
+    grid-template-areas:
+      "controls stage"
+      "controls explain";
+    grid-template-columns: var(--layout-controls-width) minmax(0, 1fr);
+    align-items: start;
+    column-gap: var(--space-6);
+    padding-inline: var(--space-7);
+  }
+
+  .trace-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (min-width: 1280px) {
+  .app-layout {
+    grid-template-areas: "controls stage explain";
+    grid-template-columns: var(--layout-controls-width) minmax(0, 1fr) var(--layout-explain-width);
   }
 }
