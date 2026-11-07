@@ -31,6 +31,7 @@ Statut : validé le 2026-11-07
 | D10 | Polices EB Garamond + IBM Plex Mono, accent rouge en clair, fond uni, thème initial = système | Jost, encre seule, grain de papier, or sur noir imposé | Recommandations `design` validées par Enzo |
 | D11 | Spare : Y n'est pas une voyelle (gardée) ; voyelles = A E I O U | Y retirée | Y souvent consonne (« yeux », « you ») ; garde une lettre de plus sur les intentions courtes |
 | D12 | CSP `style-src 'self'` sans `'unsafe-inline'` : styles dynamiques uniquement par la prop `style` React (CSSOM), jamais d'élément `<style>` ni d'attribut `style=""` en dur ; meta CSP retirée sur le serveur de dev seulement | `'unsafe-inline'` | Prouvé par test e2e ; garde la CSP stricte en production |
+| D13 | Spare : score = équilibre (1) + remplissage (1) + isolement (2) + lettre restée droite (1,5) ; recentrage final sur le centre de gravité ; aucune marque de départ/arrivée | Marques comme kamea | La méthode de Spare n'a pas de sens de lecture ; le terme « lettre droite » réduit les lettres lisibles |
 
 ## Architecture
 ### Flux
@@ -133,15 +134,16 @@ Voir `docs/design.md` et `src/styles/tokens.css`. Page de grimoire : beaucoup de
 | T4 | F3 | `SigilRenderer` : SVG, animation du tracé (longueurs précalculées), marques, options de style, `prefers-reduced-motion`, rejouer | dev | T3 | `features/sigil/` | Tests composant : rendu, style, absence d'animation en mouvement réduit || [x] |
 | T5 | F7 | PWA (`vite-plugin-pwa`), CSP `<meta>`, aucune ressource externe, workflow GitHub Actions Pages (non déclenché) | dev | T1 | `vite.config.ts`, `index.html`, `.github/workflows/` | e2e Playwright : hors ligne après 1re visite ; aucune requête externe ; build sous `/sigil/` || [x] |
 | T6 | F2 | Données Hershey Roman Simplex A–Z : source, vérification de licence, script de conversion versionné, module TS généré, fichier d'attribution | dev | T1 | `features/spare/glyphs/`, `scripts/`, `NOTICE` | Licence citée et compatible MIT consignée en rapport ; 26 glyphes testés (trait unique, boîte englobante) || [x] |
-| T7 | F1 | Écran principal : saisie, choix méthode/planète, scène, panneau explicatif kamea (table, règle, carré + chemin), états d'erreur | design | T2, T3, T4 | `app/`, `features/explain/`, `components/ui/` | Captures 375/768/1440, parcours clavier, contrastes ; scénarios F1 joués à la main | [ ] |
+| T7 | F1 | Écran principal : saisie, choix méthode/planète, scène, panneau explicatif kamea (table, règle, carré + chemin), états d'erreur | design | T2, T3, T4 | `app/`, `features/explain/`, `components/ui/` | Captures 375/768/1440, parcours clavier, contrastes ; scénarios F1 joués à la main || [x] |
 | T8 | F2 | Spare 1/2 : PRNG (`lib/random.ts`), placement et transformations des glyphes (rotation, miroir, échelle, chevauchement), génération de candidats | dev | T2, T6 | `lib/random.ts`, `features/spare/` | Tests : déterminisme, variantes distinctes, candidats dans le cadre || [x] |
-| T9 | F2 | Spare 2/2 : score d'équilibre (centre de gravité, encombrement, chevauchement), fusion des traits proches, simplification, étapes explicatives | dev | T8 | `features/spare/` | Tests : critère de centre de gravité F2, aucun segment dupliqué ; planche de 12 exemples SVG générée pour le journal | [ ] |
+| T9 | F2 | Spare 2/2 : score d'équilibre (centre de gravité, encombrement, chevauchement), fusion des traits proches, simplification, étapes explicatives | dev | T8 | `features/spare/` | Tests : critère de centre de gravité F2, aucun segment dupliqué ; planche de 12 exemples SVG générée pour le journal || [x] |
 | T10 | F2 | Intégration Spare dans l'écran : option voyelles, « autre variante », panneau étapes Spare | design | T7, T9 | `app/`, `features/explain/` | Scénarios F2 joués à la main, captures | [ ] |
 | T11 | F3 | Panneau réglages de style et bouton rejouer | design | T7 | `features/sigil/`, `components/ui/` | Scénarios F3 joués à la main, captures | [ ] |
 | T12 | F4 | Exports SVG et PNG, boutons, nom de fichier neutre ; couleurs du thème écrites en littéral (pas de `var()`) | dev | T4, T7 | `features/export/` | Tests : SVG valide, PNG 2048 px, aucune trace de l'intention | [ ] |
 | T13 | F5 | Mode pochoir et PDF A4 à taille réelle avec règle de contrôle | dev | T12 | `features/export/`, `features/sigil/` | Test : dimensions du chemin dans le PDF = taille demandée ± 0,5 mm ; plage refusée | [ ] |
 | T14 | F6 | i18n FR/EN (dictionnaire typé, détection, persistance) sur toutes les chaînes | dev | T10, T11 | `features/i18n/`, chaînes de l'UI | Test : aucune chaîne en dur hors dictionnaires ; bascule et persistance | [ ] |
 | T15 | F6 | Sélecteur de thème encre / or, finition des deux thèmes | design | T14 | `styles/`, `app/` | Captures des deux thèmes aux 3 largeurs, contrastes AA chiffrés | [ ] |
+| T16 | F1 | Boucles kamea proportionnées à la taille des cases (lisibles du 3×3 au 9×9), pas de boucles superposées sur une même case, pas de collision boucle / trait d'arrivée | dev | T7 | `features/kamea/` | Tests sur les 7 carrés + capture Lune « Belle allée » lisible | [ ] |
 
 Ordre : T1 → (T2, T3, T5, T6 en parallèle, 3 max) → T4 → T7 → test F1 (J2) → T8 → T9 → T10 → test F2 (J3) → T11 → test F3 → T12 → test F4 → test F7 → T13, T14, T15 → tests F5, F6 (J4).
 

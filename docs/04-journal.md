@@ -49,3 +49,17 @@
 - Vérifications : eslint + vitest lib/spare → 163/163 verts (revérifié) ; planche visuelle J S C L M contrôlée (scratchpad).
 - Écarts au plan : `strokeLetters` exposé ; erreurs `DUPLICATE_LETTER`, `INVALID_VARIANT`.
 - Points ouverts pour T9 : centre de gravité non équilibré (seule la boîte est centrée) ; certaines lettres restent lisibles isolément ; segments colinéaires à fusionner ; constantes de cadre dupliquées avec kamea (refactor) ; étapes explicatives Spare à typer.
+
+## 2026-11-07 — T9 Spare 2/2 (score, fusion, buildSpareSigil)
+- Rôle : dev
+- Fait : score D13, sélection, fusion des segments colinéaires et points proches, recentrage sur le centre de gravité, `buildSpareSigil` avec 4 étapes explicatives ; constantes de cadre communes dans `sigil/frame.ts` (kamea, style, spare).
+- Vérifications : suite complète 403/403, lint, typecheck, e2e 11/11 verts (revérifié) ; 52 intentions × 3 variantes : centre de gravité centré, 18 ms max par sigil (poste fixe) ; planche de 12 sigils jugée équilibrée, 2/12 gardent une lettre lisible.
+- Écarts au plan : terme « lettre droite » ajouté au score ; `marks: []`.
+- Points ouverts : symétrie testée exactement (B, E, K, S Hershey non reconnues symétriques) ; performance téléphone à mesurer en T10.
+
+## 2026-11-07 — T7 Écran principal et panneau kamea
+- Rôle : design
+- Fait : écran (saisie, méthode, 7 planètes, Tracer, scène, Rejouer), panneau en 4 étapes (lettres, règle D2 avec exemple, table lettre → rang → case, carré avec chemin et marques), erreurs en français, composants `ui/`, textes centralisés dans `app/strings.fr.ts`, Spare visible mais désactivé.
+- Vérifications : suite complète, lint, typecheck, build, e2e 11/11 verts (revérifié) ; captures 375/768/1440, animation réelle chronométrée (départ → tracé → arrivée), parcours clavier, contrastes AA chiffrés.
+- Écarts au plan : grille kamea seulement dans le panneau ; panneau repliable à toutes largeurs ; nombres de la grille en coin de case (lisibilité) ; pas de retracé automatique au changement de planète.
+- Points ouverts : boucles trop grandes sur la Lune 9×9 → tâche T16 ajoutée ; avertissement « caractères ignorés » affiché deux fois (à dédoublonner en T10) ; panneau synchronisé au tracé et pas-à-pas en mouvement réduit → T11.
