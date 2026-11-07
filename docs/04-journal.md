@@ -42,3 +42,10 @@
 - Vérifications : eslint + vitest sigil → 41/41 verts (revérifié) ; aucune violation D12.
 - Écarts au plan : thème hors `StyleOptions` (global par `data-theme`).
 - Points ouverts : export (T12) doit nettoyer le SVG (styles `--trace-*`, classes, `pathLength`) et écrire les couleurs en littéral ; constante 1,2 dupliquée kamea/sigil (refactor) ; pas à pas en mouvement réduit et rendu réel de l'animation à vérifier en T7/T11 ; le parent doit mémoriser le `Sigil`.
+
+## 2026-11-07 — T8 Spare 1/2 (graine, placement, candidats)
+- Rôle : dev
+- Fait : `lib/random.ts` (cyrb53, mulberry32, utilitaires) ; `spareSeed` (D6) ; placement par miroir + quarts de tour (8 orientations), échelle 0,55–1, décalage ±0,25, partage de barre verticale ; 24 candidats mis au cadre 10–90 avec trace des transformations par lettre.
+- Vérifications : eslint + vitest lib/spare → 163/163 verts (revérifié) ; planche visuelle J S C L M contrôlée (scratchpad).
+- Écarts au plan : `strokeLetters` exposé ; erreurs `DUPLICATE_LETTER`, `INVALID_VARIANT`.
+- Points ouverts pour T9 : centre de gravité non équilibré (seule la boîte est centrée) ; certaines lettres restent lisibles isolément ; segments colinéaires à fusionner ; constantes de cadre dupliquées avec kamea (refactor) ; étapes explicatives Spare à typer.
