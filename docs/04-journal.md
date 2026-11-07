@@ -13,3 +13,10 @@
 - Vérifications : eslint + vitest sur `src/features/intention` → 21/21 verts (revérifié au contrôle).
 - Écarts au plan : aucun ; décision D11 (Y gardée).
 - Points ouverts : caractères de compatibilité (« ﬁ », pleine chasse) ignorés plutôt que convertis (NFKD possible si besoin) ; messages utilisateur FR/EN à écrire en T7/T10/T14.
+
+## 2026-11-07 — T3 Modèle Sigil et kamea
+- Rôle : dev
+- Fait : types communs (`sigil/types.ts`, repère 0–100) ; 7 carrés d'Agrippa (De occulta philosophia II, 22 ; disposition vérifiée sur Wikipedia « Magic square ») ; conversion D2 ; chemin, cercle de départ, trait d'arrivée perpendiculaire, boucle par suite de nombres identiques ; étapes explicatives ; erreurs `TOO_FEW_LETTERS`/tracé impossible/`INVALID_LETTER`.
+- Vérifications : eslint + vitest sur kamea et sigil → 72/72 verts (revérifié au contrôle).
+- Écarts au plan : erreur `INVALID_LETTER` ajoutée ; une boucle par suite (AAA → 1 boucle) ; kamea `seed = 0`.
+- Points ouverts : tailles des marques figées pour l'épaisseur 1,2 → mise à l'échelle confiée à T4 ; boucle débordant des cases de la Lune → à juger en T7 ; lint global rouge à cause de `vite.config.ts` (T5 en cours).
