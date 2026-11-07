@@ -90,6 +90,9 @@ test('shows a clear error and draws nothing without a Latin letter', async ({ pa
 test('works with the keyboard alone', async ({ page }) => {
   await page.goto('./');
 
+  // First stop: the language selector of the header, on its checked radio.
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('radio', { name: 'Français' })).toBeFocused();
   await page.keyboard.press('Tab');
   await expect(page.getByLabel('Intention')).toBeFocused();
   await page.keyboard.type(INTENTION);
