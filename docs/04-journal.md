@@ -147,3 +147,9 @@
 - Vérifications : 738/738 tests, lint, typecheck verts (revérifié) ; e2e `i18n.spec` 6/6 ; test « aucune chaîne en dur » dans les deux sens, contre-épreuve OK ; captures EN 375/1440.
 - Écarts au plan : manifest PWA unique en français ; `playwright.config.ts` en `locale: 'fr-FR'`.
 - Points ouverts : deux tests clavier e2e à décaler d'un arrêt (sélecteur de langue) — en cours ; composant commun langue/thème à décider en T15.
+
+## 2026-11-08 — F3 Tracé animé et style : test
+- Verdict : VALIDÉ (passage n° 1, commit 2aa51b2 en worktree)
+- Preuves : ordre départ → tracé → arrivée chronométré ; mouvement réduit sans tracé ; `d` identique quel que soit le style, cercle = même dessin réduit (résidu < 0,01) ; Rejouer relance ; durée 2,70 s (kamea, 7 planètes) et 2,85 s (Spare 120+ lettres) ; écart dessin / cercle ≥ 2 ; boucle finale / arrivée > 0 de 0,4 à 2,4 ; pas-à-pas correct ; CSP, 375 px, clavier OK.
+- Bugs : aucun. Observations : Spare long à 2,4 très dense ; Lune à 2,4 écart boucle / arrivée étroit (1,2).
+- Tests e2e ajoutés : `e2e/f3-acceptance.spec.ts` (37 tests), en revalidation sur HEAD avant commit.

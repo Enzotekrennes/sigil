@@ -98,7 +98,7 @@ Voir `docs/design.md` et `src/styles/tokens.css`. Page de grimoire : beaucoup de
 - Étant donné `prefers-reduced-motion: reduce`, quand un sigil s'affiche, alors il apparaît sans animation.
 - Étant donné un sigil affiché, quand je change l'épaisseur, les extrémités ou le cercle d'encadrement, alors le rendu se met à jour sans changer la forme.
 - Étant donné un sigil affiché, quand je clique « rejouer », alors l'animation recommence.
-- Test : [ ] VALIDÉ
+- Test : [x] VALIDÉ (2026-11-08)
 
 ### F4 — Exports SVG et PNG
 - Étant donné un sigil affiché, quand j'exporte en SVG, alors le fichier s'ouvre dans un navigateur et un éditeur vectoriel avec le même rendu et le style choisi.
