@@ -171,18 +171,18 @@ describe('SigilRenderer style settings', () => {
     expect(svg).toHaveClass('sigil-renderer--stencil');
   });
 
-  it('resizes the marks with the stroke width', () => {
+  it('resizes the marks with the stroke width, below their cap', () => {
     const sigil = kamea(WITH_LOOP);
     const start = sigil.marks.find((mark) => mark.kind === 'start-circle');
     const loop = sigil.marks.find((mark) => mark.kind === 'loop');
     if (start === undefined || loop === undefined) throw new Error('Expected marks');
 
-    const { svg } = renderSigil(sigil, { strokeWidth: MARK_REFERENCE_STROKE_WIDTH * 2 });
+    const { svg } = renderSigil(sigil, { strokeWidth: MARK_REFERENCE_STROKE_WIDTH * 1.5 });
 
     const startRadius = Number(svg.querySelector('[data-mark="start-circle"]')?.getAttribute('r'));
     const loopRadius = Number(svg.querySelector('[data-mark="loop"]')?.getAttribute('r'));
-    expect(startRadius).toBeCloseTo(start.radius * 2, 2);
-    expect(loopRadius).toBeCloseTo(loop.radius * 2, 2);
+    expect(startRadius).toBeCloseTo(start.radius * 1.5, 2);
+    expect(loopRadius).toBeCloseTo(loop.radius * 1.5, 2);
 
     const bar = svg.querySelector('[data-mark="end-bar"]');
     const barLength = Math.hypot(
@@ -190,7 +190,15 @@ describe('SigilRenderer style settings', () => {
       Number(bar?.getAttribute('y2')) - Number(bar?.getAttribute('y1')),
     );
     const endBar = sigil.marks.find((mark) => mark.kind === 'end-bar');
-    expect(barLength).toBeCloseTo((endBar?.length ?? 0) * 2, 2);
+    expect(barLength).toBeCloseTo((endBar?.length ?? 0) * 1.5, 2);
+  });
+
+  it('stops a kamea loop at its cap relative to the cell', () => {
+    // Saturn cells are 26.7 wide: a loop never exceeds 45 % of that in diameter.
+    const { svg } = renderSigil(kamea(WITH_LOOP), { strokeWidth: 4 });
+
+    const loopRadius = Number(svg.querySelector('[data-mark="loop"]')?.getAttribute('r'));
+    expect(loopRadius).toBeCloseTo((0.45 * 80) / 3 / 2, 2);
   });
 
   it('keeps the shape when the style changes', () => {

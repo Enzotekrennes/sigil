@@ -95,6 +95,17 @@ describe('revealSteps', () => {
     expect(revealSteps(sigil, 1).marks.map((mark) => mark.kind)).toEqual(['start-circle']);
   });
 
+  it('shows the loop of the last cell only at the end, even on a cell crossed earlier', () => {
+    // B (2), A (1), then B twice: the loop on cell 2 marks the final repetition.
+    const sigil = saturn(['B', 'A', 'B', 'B']);
+    const loopsAt = (step: number) =>
+      revealSteps(sigil, step).marks.filter((mark) => mark.kind === 'loop');
+
+    expect(stepwiseStepCount(sigil)).toBe(2);
+    expect(loopsAt(1)).toEqual([]);
+    expect(loopsAt(2)).toHaveLength(1);
+  });
+
   it('draws whole strokes one by one on a multi-stroke sigil', () => {
     expect(revealSteps(THREE_STROKES, 1).strokes).toEqual([THREE_STROKES.strokes[0]]);
     expect(revealSteps(THREE_STROKES, 2).strokes).toHaveLength(2);

@@ -5,7 +5,10 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import type { Mark, Point, Sigil } from '../sigil/types.ts';
+import { frameFitScale, scaleDrawing } from '../sigil/frameFit.ts';
+import type { Drawing } from '../sigil/frameFit.ts';
+import { frameCenter, scaleMark } from '../sigil/style.ts';
+import type { EndBarMark, LoopMark, Mark, Point, Sigil } from '../sigil/types.ts';
 import { buildKameaSigil } from './buildKameaSigil.ts';
 import type { KameaError } from './buildKameaSigil.ts';
 import type { Planet } from '../sigil/types.ts';
@@ -132,6 +135,112 @@ function marksOf<K extends Mark['kind']>(sigil: Sigil, kind: K): Extract<Mark, {
   return sigil.marks.filter((mark): mark is Extract<Mark, { kind: K }> => mark.kind === kind);
 }
 
+/** Stroke widths checked: the thinnest, the reference and the thickest offered. */
+const WIDTHS = [0.4, 1.2, 4];
+
+/** Intentions whose last cell carries a loop, reaching it from several directions. */
+const END_LOOP_INTENTIONS: readonly (readonly string[])[] = [
+  ['A', 'B', 'B'],
+  ['B', 'B', 'A', 'B'],
+  ['C', 'A', 'A'],
+  ['M', 'E', 'E'],
+  ['Z', 'Y', 'Y'],
+  BELLE_ALLEE,
+  [...JE_SUIS_CALME, 'E'],
+  ['A', 'M', 'O', 'U', 'R', 'R'],
+  ['P', 'A', 'I', 'X', 'X'],
+];
+
+/**
+ * Normalises a vector.
+ *
+ * @param vector - Non-null vector.
+ * @returns The vector of length 1 in the same direction.
+ */
+function unitVector(vector: Point): Point {
+  const size = Math.hypot(vector.x, vector.y);
+  return { x: vector.x / size, y: vector.y / size };
+}
+
+/**
+ * Strokes and marks as `SigilRenderer` draws them: marks resized to the
+ * stroke width, then the whole drawing fitted in the framing circle when shown.
+ *
+ * @param sigil - Kamea sigil.
+ * @param strokeWidth - Chosen stroke width in frame units.
+ * @param frameCircle - Whether the framing circle is shown.
+ * @returns The drawing in frame units.
+ */
+function renderedDrawing(sigil: Sigil, strokeWidth: number, frameCircle: boolean): Drawing {
+  const center = frameCenter(sigil.viewBox);
+  const whole = {
+    strokes: sigil.strokes,
+    marks: sigil.marks.map((mark) => scaleMark(mark, strokeWidth)),
+  };
+  const fit = frameCircle ? frameFitScale(whole, strokeWidth, center) : 1;
+  return scaleDrawing(whole, fit, center);
+}
+
+/**
+ * Last segment, end bar and loop of the last cell.
+ *
+ * @param drawing - Sigil or rendered drawing whose last cell carries a loop.
+ * @returns The two last points, the end bar and the end loop.
+ * @throws {Error} When one of them is missing.
+ */
+function endOf(drawing: Drawing): {
+  beforeEnd: Point;
+  end: Point;
+  bar: EndBarMark;
+  loop: LoopMark;
+} {
+  const stroke = drawing.strokes[drawing.strokes.length - 1] ?? [];
+  const end = stroke[stroke.length - 1];
+  const beforeEnd = stroke[stroke.length - 2];
+  const bar = drawing.marks.find((mark): mark is EndBarMark => mark.kind === 'end-bar');
+  const loop = drawing.marks.find(
+    (mark): mark is LoopMark => mark.kind === 'loop' && mark.lastSegment !== undefined,
+  );
+  if (end === undefined || beforeEnd === undefined || bar === undefined || loop === undefined) {
+    throw new Error('Missing end of path, end bar or end loop');
+  }
+  return { beforeEnd, end, bar, loop };
+}
+
+/**
+ * Point where the end loop touches the last segment.
+ *
+ * @param drawing - Drawing whose last cell carries a loop.
+ * @returns The foot of the perpendicular from the loop centre to the last segment.
+ */
+function tangencyPoint(drawing: Drawing): Point {
+  const { beforeEnd, end, loop } = endOf(drawing);
+  const segment = { x: beforeEnd.x - end.x, y: beforeEnd.y - end.y };
+  const squared = segment.x * segment.x + segment.y * segment.y;
+  const t = ((loop.center.x - end.x) * segment.x + (loop.center.y - end.y) * segment.y) / squared;
+  return { x: end.x + t * segment.x, y: end.y + t * segment.y };
+}
+
+/**
+ * Paper left between the outer edges of the end loop's stroke and the end
+ * bar's stroke: distance from the loop centre to the bar segment, minus the
+ * radius, minus half a stroke on each side.
+ *
+ * @param drawing - Drawing whose last cell carries a loop.
+ * @param strokeWidth - Stroke width it is drawn with.
+ * @returns The gap in frame units; zero or less means the strokes touch.
+ */
+function edgeGap(drawing: Drawing, strokeWidth: number): number {
+  const { bar, loop } = endOf(drawing);
+  const radians = (bar.angle * Math.PI) / 180;
+  const along = { x: Math.cos(radians), y: Math.sin(radians) };
+  const offset = { x: loop.center.x - bar.center.x, y: loop.center.y - bar.center.y };
+  const onBar = offset.x * along.x + offset.y * along.y;
+  const clamped = Math.max(-bar.length / 2, Math.min(bar.length / 2, onBar));
+  const toBar = Math.hypot(offset.x - clamped * along.x, offset.y - clamped * along.y);
+  return toBar - loop.radius - strokeWidth;
+}
+
 describe('buildKameaSigil', () => {
   describe('"Je suis calme" on Saturn', () => {
     const sigil = build(JE_SUIS_CALME, 'saturn');
@@ -177,9 +286,11 @@ describe('buildKameaSigil', () => {
     });
 
     it('puts a circle on the first point', () => {
-      expect(marksOf(sigil, 'start-circle')).toEqual([
-        { kind: 'start-circle', center: center(2, 1, 3), radius: 3 },
-      ]);
+      const starts = marksOf(sigil, 'start-circle');
+      expect(starts).toHaveLength(1);
+      expect(starts[0]).toMatchObject({ center: center(2, 1, 3), radius: 3 });
+      // Capped at 30 % of the 26.7-unit cell when the stroke thickens.
+      expect(starts[0]?.maxRadius).toBeCloseTo(8, 9);
     });
 
     it('has no loop since no number repeats consecutively', () => {
@@ -343,54 +454,108 @@ describe('buildKameaSigil', () => {
   });
 
   describe('loop on the last cell', () => {
-    it.each(PLANETS)('stays clear of the end bar on %s', (planet) => {
-      for (const letters of [['A', 'B', 'B'], ['B', 'B', 'A', 'B'], BELLE_ALLEE]) {
+    it.each(PLANETS)('is anchored on the end point and stays clear of the bar on %s', (planet) => {
+      for (const letters of END_LOOP_INTENTIONS) {
         const sigil = build(letters, planet);
-        const stroke = sigil.strokes[0] ?? [];
-        const end = stroke[stroke.length - 1];
-        const [bar] = marksOf(sigil, 'end-bar');
-        const endLoop = marksOf(sigil, 'loop').find(
-          (loop) => cellOf(loop.anchor, planet) === cellOf(end, planet),
-        );
-        if (end === undefined || bar === undefined || endLoop === undefined) {
-          throw new Error(`Missing end loop for ${letters.join('')} on ${planet}`);
-        }
-
-        // Distance from the loop centre to the bar's axis, and to the bar segment.
-        const radians = (bar.angle * Math.PI) / 180;
-        const along = { x: Math.cos(radians), y: Math.sin(radians) };
-        const offset = { x: endLoop.center.x - end.x, y: endLoop.center.y - end.y };
-        const onBar = offset.x * along.x + offset.y * along.y;
-        const toAxis = Math.abs(offset.x * along.y - offset.y * along.x);
-        const clamped = Math.max(-bar.length / 2, Math.min(bar.length / 2, onBar));
-        const toSegment = Math.hypot(offset.x - clamped * along.x, offset.y - clamped * along.y);
-
-        // Both strokes are 1.2 wide: a gap of one more stroke width must remain.
-        expect(toAxis - endLoop.radius).toBeGreaterThanOrEqual(2 * REFERENCE_STROKE - 1e-9);
-        expect(toSegment - endLoop.radius).toBeGreaterThan(REFERENCE_STROKE);
+        const { end, loop } = endOf(sigil);
+        expect(loop.anchor).toEqual(end);
+        // At the reference width, a paper gap of one stroke width remains.
+        expect(edgeGap(sigil, REFERENCE_STROKE)).toBeGreaterThanOrEqual(REFERENCE_STROKE - 1e-9);
+        // The point where it touches the path lies in the last cell.
+        expect(cellOf(tangencyPoint(sigil), planet)).toBe(cellOf(end, planet));
       }
     });
 
-    it.each(PLANETS)('stays tangent to the last segment, inside the last cell, on %s', (planet) => {
-      const sigil = build(['A', 'B', 'B'], planet);
-      const stroke = sigil.strokes[0] ?? [];
-      const end = stroke[stroke.length - 1];
-      const beforeEnd = stroke[stroke.length - 2];
-      const [loop] = marksOf(sigil, 'loop');
-      if (end === undefined || beforeEnd === undefined || loop === undefined) {
-        throw new Error('Missing end of path or loop');
-      }
+    it('keeps Saturn at the reference width as drawn before', () => {
+      // 1 (bottom middle) → 2 (top right): loop touching 6 units back from the end, radius 3.6.
+      const { loop, end, beforeEnd } = endOf(build(['A', 'B', 'B'], 'saturn'));
+      const back = unitVector({ x: beforeEnd.x - end.x, y: beforeEnd.y - end.y });
+      const offset = { x: loop.center.x - end.x, y: loop.center.y - end.y };
+      expect(offset.x * back.x + offset.y * back.y).toBeCloseTo(3.6 + 2.4, 9);
+      expect(Math.abs(offset.x * back.y - offset.y * back.x)).toBeCloseTo(3.6, 9);
+      expect(loop.radius).toBeCloseTo(3.6, 9);
+    });
 
-      const segment = { x: end.x - beforeEnd.x, y: end.y - beforeEnd.y };
-      const toAnchor = { x: loop.anchor.x - beforeEnd.x, y: loop.anchor.y - beforeEnd.y };
-      // The anchor lies on the last segment…
-      expect(segment.x * toAnchor.y - segment.y * toAnchor.x).toBeCloseTo(0, 9);
-      // …the loop touches it there, its centre one radius away across it…
-      const radius = { x: loop.center.x - loop.anchor.x, y: loop.center.y - loop.anchor.y };
-      expect(Math.hypot(radius.x, radius.y)).toBeCloseTo(loop.radius, 9);
-      expect(radius.x * segment.x + radius.y * segment.y).toBeCloseTo(0, 9);
-      // …and the anchor stays in the last cell.
-      expect(cellOf(loop.anchor, planet)).toBe(cellOf(end, planet));
+    it('records the repetition at the end of the stroke, even on a cell crossed earlier', () => {
+      // 2, 5, 12, 12, 5, 1, 12, 12, 5, 5: cell 5 is crossed at point 1, repeated at the end.
+      const moon = build(BELLE_ALLEE, 'moon');
+      const stroke = moon.strokes[0] ?? [];
+      expect(endOf(moon).loop.pathIndex).toBe(stroke.length - 1);
+      const middle = marksOf(moon, 'loop').find((loop) => loop.lastSegment === undefined);
+      expect(middle?.pathIndex).toBe(2);
+    });
+
+    describe.each(PLANETS)('as the renderer draws it on %s', (planet) => {
+      it.each(WIDTHS)('stays clear of the end bar at width %s', (strokeWidth) => {
+        for (const letters of END_LOOP_INTENTIONS) {
+          for (const frameCircle of [false, true]) {
+            const drawn = renderedDrawing(build(letters, planet), strokeWidth, frameCircle);
+            expect(edgeGap(drawn, strokeWidth)).toBeGreaterThan(0);
+          }
+        }
+      });
+
+      it.each(WIDTHS)('stays attached to the last segment at width %s', (strokeWidth) => {
+        for (const letters of END_LOOP_INTENTIONS) {
+          for (const frameCircle of [false, true]) {
+            const drawn = renderedDrawing(build(letters, planet), strokeWidth, frameCircle);
+            const { beforeEnd, end, loop } = endOf(drawn);
+            const segment = { x: beforeEnd.x - end.x, y: beforeEnd.y - end.y };
+            const segmentLength = Math.hypot(segment.x, segment.y);
+            const offset = { x: loop.center.x - end.x, y: loop.center.y - end.y };
+            const across = Math.abs(segment.x * offset.y - segment.y * offset.x) / segmentLength;
+            const along = (segment.x * offset.x + segment.y * offset.y) / segmentLength;
+            // Centre one radius from the segment's line, foot of the perpendicular on the segment.
+            expect(across).toBeCloseTo(loop.radius, 9);
+            expect(along).toBeGreaterThan(0);
+            expect(along).toBeLessThan(segmentLength);
+          }
+        }
+      });
+    });
+
+    it('keeps a gap equal to the stroke width, up to one reference width', () => {
+      for (const strokeWidth of WIDTHS) {
+        const drawn = renderedDrawing(build(['A', 'B', 'B'], 'saturn'), strokeWidth, false);
+        expect(edgeGap(drawn, strokeWidth)).toBeCloseTo(Math.min(strokeWidth, 1.2), 9);
+      }
+    });
+  });
+
+  describe('marks at other stroke widths', () => {
+    it.each(PLANETS)('caps the marks of %s relative to its cell at width 4', (planet) => {
+      const cell = 80 / ORDERS[planet];
+      const drawn = renderedDrawing(build(['A', 'B', 'B', 'C', 'D', 'D'], planet), 4, false);
+      for (const mark of drawn.marks) {
+        if (mark.kind === 'loop') expect(2 * mark.radius).toBeLessThanOrEqual(0.45 * cell + 1e-9);
+        if (mark.kind === 'start-circle')
+          expect(mark.radius).toBeLessThanOrEqual(0.3 * cell + 1e-9);
+        if (mark.kind === 'end-bar') expect(mark.length).toBeLessThanOrEqual(0.6 * cell + 1e-9);
+      }
+    });
+
+    it('lets a loop follow the stroke up to its cap, then stop', () => {
+      const [loop] = marksOf(build(['B', 'A', 'J', 'C'], 'saturn'), 'loop');
+      if (loop === undefined) throw new Error('Missing loop');
+      expect(scaleMark(loop, 0.4)).toMatchObject({ radius: 1.2 });
+      expect(scaleMark(loop, 2.4)).toMatchObject({ radius: 6 });
+    });
+
+    it('never shrinks a sigil to nothing in the framing circle', () => {
+      for (const planet of PLANETS) {
+        for (const letters of [...END_LOOP_INTENTIONS, JE_SUIS_CALME]) {
+          const sigil = build(letters, planet);
+          for (const strokeWidth of WIDTHS) {
+            const whole = {
+              strokes: sigil.strokes,
+              marks: sigil.marks.map((mark) => scaleMark(mark, strokeWidth)),
+            };
+            const fit = frameFitScale(whole, strokeWidth, frameCenter(sigil.viewBox));
+            // Measured at 0.63 at worst; half the size is already a clear failure.
+            expect(fit).toBeGreaterThan(0.5);
+          }
+        }
+      }
     });
   });
 

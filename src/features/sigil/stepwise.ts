@@ -37,8 +37,8 @@ export function stepwiseStepCount(sigil: Sigil): number {
  * Part of the sigil drawn after `step` steps.
  *
  * The start circle shows from the first step; a loop shows once the path has
- * reached its cell; the end bar and the framing circle wait for the last step,
- * when the path is complete.
+ * reached the point of its `pathIndex` (or, without one, its cell); the end
+ * bar and the framing circle wait for the last step, when the path is complete.
  *
  * @param sigil - Sigil to replay.
  * @param step - Steps drawn, an integer ≥ 1; values from `stepwiseStepCount`
@@ -60,6 +60,11 @@ export function revealSteps(sigil: Sigil, step: number): RevealedSigil {
   const marks = sigil.marks.filter((mark) => {
     if (mark.kind === 'start-circle') return true;
     if (mark.kind === 'end-bar') return false;
+    // A loop that knows where its repetition happens shows at that step, even
+    // when the path crossed its cell earlier (the last cell's loop, for one).
+    if (mark.pathIndex !== undefined && sigil.strokes.length === 1) {
+      return mark.pathIndex <= shown;
+    }
     // Loops are anchored on a cell centre, computed by the same formula as the path points.
     return reached.some((point) => point.x === mark.anchor.x && point.y === mark.anchor.y);
   });

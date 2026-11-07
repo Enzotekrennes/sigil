@@ -16,6 +16,7 @@ import {
   FRAME_SIZE,
   MARK_REFERENCE_STROKE_WIDTH,
 } from '../sigil/frame.ts';
+import { placeEndLoop } from '../sigil/style.ts';
 import type {
   EndBarMark,
   ExplanationStep,
@@ -88,12 +89,30 @@ const LOOP_RADIUS = 3 * REFERENCE_STROKE_WIDTH;
 const MARK_REFERENCE_CELL_SIZE = 18;
 
 /**
- * Distance kept between a loop on the last cell and the end bar, from the
- * bar's axis to the loop's centre line: half the bar stroke plus half the loop
- * stroke make them touch, one more stroke width leaves a visible gap as wide
- * as the line itself.
+ * Largest loop diameter as a share of the cell side, whatever the stroke
+ * width: 45 %. The loop then stays within its cell up to a stroke of about
+ * 2, and the last cell's loop, its radius plus its clearance from the end bar
+ * (5.2 at the thickest stroke, 4), still fits beside a last segment one cell
+ * long: 0.225 × 8.9 + 5.2 = 7.2 on the Moon. Never reached at the reference
+ * width (the loop is at most 40 % of the cell there).
  */
-const END_LOOP_CLEARANCE = 2 * REFERENCE_STROKE_WIDTH;
+const LOOP_MAX_DIAMETER_SHARE = 0.45;
+
+/**
+ * Largest start circle radius as a share of the cell side: 0.3, a diameter of
+ * 60 % that keeps the circle inside its cell up to a stroke of about 1.8 and
+ * just larger than the capped loop, as at the reference width on small
+ * squares. Never reached at the reference width (at most 0.27 of the Moon's
+ * cell).
+ */
+const START_CIRCLE_MAX_SHARE = 0.3;
+
+/**
+ * Largest end bar length as a share of the cell side: 60 %, so the bar stays
+ * inside its cell up to a stroke of about 3.5. Never reached at the reference
+ * width (at most 53 % of the cell).
+ */
+const END_BAR_MAX_SHARE = 0.6;
 
 /** Kamea has no pseudo-random choice, so its seed is a constant (see `Sigil.seed`). */
 const KAMEA_SEED = 0;
@@ -212,28 +231,40 @@ function cellCenter(cell: GridCell, order: number): Point {
   };
 }
 
-/** Sizes of the marks for one square, in frame units. */
+/**
+ * Sizes of the marks for one square, in frame units: at the reference stroke
+ * width, and the caps the renderer may not exceed as the stroke thickens.
+ */
 interface MarkSizes {
   readonly startCircleRadius: number;
+  readonly startCircleMaxRadius: number;
   readonly endBarLength: number;
+  readonly endBarMaxLength: number;
   readonly loopRadius: number;
+  readonly loopMaxRadius: number;
 }
 
 /**
  * Sizes the marks to the cells of a square, so that no mark spills onto the
  * neighbouring cells. Large cells keep the design sizes (the cap); smaller
  * ones shrink every mark by the same factor, the start circle stopping at
- * `START_CIRCLE_MIN_RADIUS` so its hole stays visible.
+ * `START_CIRCLE_MIN_RADIUS` so its hole stays visible. Also gives each mark
+ * its cap relative to the cell, so that thick strokes do not blow the marks
+ * over the neighbouring cells.
  *
  * @param order - Side N of the square, 3 to 9.
- * @returns The start circle radius, end bar length and loop radius.
+ * @returns The start circle radius, end bar length and loop radius, and their caps.
  */
 function markSizes(order: number): MarkSizes {
-  const markScale = Math.min(1, GRID_SIZE / order / MARK_REFERENCE_CELL_SIZE);
+  const cellSize = GRID_SIZE / order;
+  const markScale = Math.min(1, cellSize / MARK_REFERENCE_CELL_SIZE);
   return {
     startCircleRadius: Math.max(START_CIRCLE_RADIUS * markScale, START_CIRCLE_MIN_RADIUS),
+    startCircleMaxRadius: START_CIRCLE_MAX_SHARE * cellSize,
     endBarLength: END_BAR_LENGTH * markScale,
+    endBarMaxLength: END_BAR_MAX_SHARE * cellSize,
     loopRadius: LOOP_RADIUS * markScale,
+    loopMaxRadius: (LOOP_MAX_DIAMETER_SHARE * cellSize) / 2,
   };
 }
 
@@ -257,8 +288,9 @@ function removeConsecutiveDuplicates(points: readonly Point[]): Point[] {
  * A cell gets a single loop even when several separate runs fall on it: the
  * loop says "this cell is repeated", the path already shows how often the
  * cell is visited, and stacked loops would merge into a blot on the small
- * cells of the 9 × 9. The loop follows the path at the cell's first run. On
- * the last cell it is moved back along the last segment, clear of the end bar.
+ * cells of the 9 × 9. The loop follows the path at the cell's first run, and
+ * records that run's place in the stroke for the step-by-step replay. On the
+ * last cell it sits beside the last segment, clear of the end bar.
  *
  * @param stroke - Path without consecutive duplicates, at least two points.
  * @param numbers - Numbers visited, one per letter.
@@ -277,23 +309,55 @@ function buildMarks(
   const beforeEnd = stroke[stroke.length - 2];
   if (start === undefined || end === undefined || beforeEnd === undefined) return [];
 
-  const marks: Mark[] = [{ kind: 'start-circle', center: start, radius: sizes.startCircleRadius }];
+  const marks: Mark[] = [
+    {
+      kind: 'start-circle',
+      center: start,
+      radius: sizes.startCircleRadius,
+      maxRadius: sizes.startCircleMaxRadius,
+    },
+  ];
   const loopedNumbers = new Set<number>();
   for (const [index, point] of visited.entries()) {
     const value = numbers[index];
     const startsRun = value === numbers[index + 1] && value !== numbers[index - 1];
     if (!startsRun || value === undefined || loopedNumbers.has(value)) continue;
     loopedNumbers.add(value);
-    if (samePoint(point, end)) {
-      marks.push(buildEndLoop(stroke, sizes.loopRadius));
-      continue;
-    }
     const previous = findDistinct(visited, index, -1);
     const next = findDistinct(visited, index, 1);
-    marks.push(buildLoop(point, previous, next, sizes.loopRadius));
+    const loop = samePoint(point, end)
+      ? buildEndLoop(stroke, sizes.loopRadius)
+      : buildLoop(point, previous, next, sizes.loopRadius);
+    marks.push({
+      ...loop,
+      maxRadius: sizes.loopMaxRadius,
+      pathIndex: strokeIndexOf(visited, index),
+    });
   }
-  marks.push(buildEndBar(beforeEnd, end, sizes.endBarLength));
+  marks.push({
+    ...buildEndBar(beforeEnd, end, sizes.endBarLength),
+    maxLength: sizes.endBarMaxLength,
+  });
   return marks;
+}
+
+/**
+ * Index in the stroke (consecutive repetitions dropped) of a visited point.
+ *
+ * @param visited - Cell centre of each number, repetitions kept.
+ * @param index - Index in `visited`.
+ * @returns How many times the path has moved to another cell up to `index`.
+ */
+function strokeIndexOf(visited: readonly Point[], index: number): number {
+  let moves = 0;
+  for (let position = 1; position <= index; position += 1) {
+    const previous = visited[position - 1];
+    const current = visited[position];
+    if (previous !== undefined && current !== undefined && !samePoint(previous, current)) {
+      moves += 1;
+    }
+  }
+  return moves;
 }
 
 /**
@@ -354,33 +418,42 @@ function buildLoop(
 }
 
 /**
- * Places the loop of the last cell on the last segment, back from the end
- * point by one radius plus `END_LOOP_CLEARANCE`, on the side away from the
- * segment before. A loop tangent at the end point would always touch the end
- * bar, which crosses that very point.
+ * Places the loop of the last cell beside the last segment, on the side away
+ * from the segment before. A loop tangent at the end point would always touch
+ * the end bar, which crosses that very point, so `placeEndLoop` moves its
+ * tangency point back by its radius plus a clearance from the bar; the
+ * renderer recomputes that clearance for the chosen stroke width
+ * (`lastSegment` tells it how).
  *
- * The anchor stays inside the last cell: one radius plus the clearance is
- * under half a cell side on every square (6 of 13.3 on Saturn, 4.2 of 4.4 on
- * the Moon), and the last segment is at least one cell long.
+ * The anchor stays the end point, a cell centre like every loop's. At the
+ * reference width the tangency point lies inside the last cell: one radius
+ * plus the 2.4 clearance is under half a cell side on every square (6 of 13.3
+ * on Saturn, 4.2 of 4.4 on the Moon).
  *
  * @param stroke - Path without consecutive duplicates, at least two points.
- * @param radius - Loop radius in frame units.
- * @returns The loop mark, tangent to the last segment.
+ * @param radius - Loop radius in frame units, at the reference width.
+ * @returns The loop mark, anchored on the end point.
  */
 function buildEndLoop(stroke: readonly Point[], radius: number): LoopMark {
   const end = stroke[stroke.length - 1] ?? ZERO;
   const beforeEnd = stroke[stroke.length - 2] ?? ZERO;
-  const direction = unit(subtract(end, beforeEnd));
-  const anchor = subtract(end, scale(direction, radius + END_LOOP_CLEARANCE));
-  let normal: Point = { x: -direction.y, y: direction.x };
+  const lastSegment = subtract(beforeEnd, end);
+  const direction = unit(lastSegment);
+  let side: Point = { x: -direction.y, y: direction.x };
 
   // Keep the loop off the side where the path came from before its last turn.
   const earlier = stroke[stroke.length - 3];
-  if (earlier !== undefined && dot(normal, subtract(earlier, beforeEnd)) > 0) {
-    normal = scale(normal, -1);
+  if (earlier !== undefined && dot(side, subtract(earlier, beforeEnd)) > 0) {
+    side = scale(side, -1);
   }
 
-  return { kind: 'loop', anchor, center: add(anchor, scale(normal, radius)), radius };
+  return {
+    kind: 'loop',
+    anchor: end,
+    center: placeEndLoop(end, lastSegment, side, radius, REFERENCE_STROKE_WIDTH),
+    radius,
+    lastSegment,
+  };
 }
 
 /**

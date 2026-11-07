@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 import { frameFitScale, scaleDrawing } from './frameFit.ts';
 import type { Drawing } from './frameFit.ts';
 import { FRAME_CIRCLE_RADIUS } from './style.ts';
-import type { Point } from './types.ts';
+import type { LoopMark, Point } from './types.ts';
 
 /** Centre of the 0–100 frame. */
 const CENTER: Point = { x: 50, y: 50 };
@@ -125,6 +125,40 @@ describe('scaleDrawing', () => {
       anchor: { x: 70, y: 50 },
       center: { x: 70, y: 46 },
       radius: 4,
+    });
+  });
+
+  describe('loop of the last cell', () => {
+    // End at (90, 50), path coming from (90, 70); loop beside the segment, 2.4 + 3 back.
+    const endLoop: LoopMark = {
+      kind: 'loop',
+      anchor: { x: 90, y: 50 },
+      center: { x: 93, y: 55.4 },
+      radius: 3,
+      lastSegment: { x: 0, y: 20 },
+    };
+
+    it('keeps its clearance from the end bar and its radius when the segment is long enough', () => {
+      const [loop] = scaleDrawing({ strokes: [], marks: [endLoop] }, 0.5, CENTER).marks;
+
+      expect(loop).toMatchObject({
+        anchor: { x: 70, y: 50 },
+        radius: 3,
+        lastSegment: { x: 0, y: 10 },
+      });
+      if (loop?.kind !== 'loop') throw new Error('Expected a loop');
+      expect(loop.center.x).toBeCloseTo(73, 9);
+      expect(loop.center.y).toBeCloseTo(55.4, 9);
+    });
+
+    it('shrinks its radius to stay beside a segment shortened below its reach', () => {
+      // At 0.25 the segment is 5 long: 2.4 of clearance leaves a radius of 2.6.
+      const [loop] = scaleDrawing({ strokes: [], marks: [endLoop] }, 0.25, CENTER).marks;
+      if (loop?.kind !== 'loop') throw new Error('Expected a loop');
+
+      expect(loop.radius).toBeCloseTo(2.6, 9);
+      expect(loop.center.y - loop.anchor.y).toBeCloseTo(5, 9);
+      expect(loop.center.x - loop.anchor.x).toBeCloseTo(2.6, 9);
     });
   });
 

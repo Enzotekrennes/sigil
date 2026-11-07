@@ -31,8 +31,14 @@ export interface StartCircleMark {
   readonly kind: 'start-circle';
   /** Centre of the circle, equal to the first point of the first stroke. */
   readonly center: Point;
-  /** Radius in frame units. */
+  /** Radius in frame units, for the reference stroke width. */
   readonly radius: number;
+  /**
+   * Largest radius the renderer may give the circle as the stroke thickens,
+   * in frame units; set by methods whose marks must stay within a cell.
+   * Absent: the radius follows the stroke width without limit.
+   */
+  readonly maxRadius?: number;
 }
 
 /** Short bar across the last point of the path, perpendicular to the last segment. */
@@ -46,8 +52,16 @@ export interface EndBarMark {
    * in the range [0, 180).
    */
   readonly angle: number;
-  /** Full length of the bar in frame units, split evenly on both sides of `center`. */
+  /**
+   * Full length of the bar in frame units, for the reference stroke width,
+   * split evenly on both sides of `center`.
+   */
   readonly length: number;
+  /**
+   * Largest length the renderer may give the bar as the stroke thickens, in
+   * frame units. Absent: the length follows the stroke width without limit.
+   */
+  readonly maxLength?: number;
 }
 
 /**
@@ -57,12 +71,37 @@ export interface EndBarMark {
  */
 export interface LoopMark {
   readonly kind: 'loop';
-  /** Point of the path the loop is attached to (tangency point). */
+  /**
+   * Point of the path the loop belongs to: a visited cell centre. The loop
+   * touches the path there, except on the last cell (see `lastSegment`).
+   */
   readonly anchor: Point;
-  /** Centre of the circle, at `radius` from `anchor`. */
+  /**
+   * Centre of the circle for the reference stroke width: `radius` from
+   * `anchor`, or placed beside the last segment when `lastSegment` is set.
+   */
   readonly center: Point;
-  /** Radius in frame units. */
+  /** Radius in frame units, for the reference stroke width. */
   readonly radius: number;
+  /**
+   * Largest radius the renderer may give the loop as the stroke thickens, in
+   * frame units. Absent: the radius follows the stroke width without limit.
+   */
+  readonly maxRadius?: number;
+  /**
+   * Only on the loop of the path's last cell, whose anchor is the end point:
+   * the vector from the end point back to the previous point of the path.
+   * The loop then touches that segment back from the end by its radius plus
+   * a clearance growing with the stroke width (see `placeEndLoop` in
+   * `style.ts`), so it never touches the end bar crossing the end point.
+   */
+  readonly lastSegment?: Point;
+  /**
+   * Index, in the (single) stroke, of the point where the repetition the
+   * loop marks happens, so a step-by-step replay shows the loop at that step.
+   * Absent: the loop shows once the path reaches `anchor`.
+   */
+  readonly pathIndex?: number;
 }
 
 /** Any mark drawn over the strokes, discriminated by `kind`. */

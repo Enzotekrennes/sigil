@@ -6,13 +6,23 @@
  * shown, the renderer shrinks the drawing uniformly around the frame centre so
  * that every line, mark included, stays inside the circle with a visible band
  * of paper. Only positions move: stroke width, mark radii and bar lengths keep
- * the chosen size, so the line looks the same, only the shape is smaller.
+ * the chosen size, so the line looks the same, only the shape is smaller. One
+ * exception: the loop of the last cell shrinks when the shortened last segment
+ * can no longer hold it clear of the end bar.
  *
  * Exposes `frameFitScale` and `scaleDrawing`. Pure functions.
  */
 import { endBarEndpoints } from './geometry.ts';
-import { FRAME_CIRCLE_RADIUS } from './style.ts';
-import type { Mark, Point } from './types.ts';
+import { FRAME_CIRCLE_RADIUS, loopSide } from './style.ts';
+import type { LoopMark, Mark, Point } from './types.ts';
+
+/**
+ * Smallest radius the end loop is given when the fitted last segment is too
+ * short for it, in frame units, so it never turns into a point. Above any
+ * case met by the seven squares at the offered widths (see the kamea tests);
+ * reaching it would let the loop pass the previous point of the path.
+ */
+const END_LOOP_MIN_RADIUS = 0.1;
 
 /**
  * Paper left between the drawing and the framing circle, in stroke widths:
@@ -38,7 +48,8 @@ export interface Drawing {
 /**
  * Moves every position of the drawing towards `center` by `scale`, keeping
  * the sizes of the marks. A loop keeps touching the path: its centre moves
- * with its anchor.
+ * with its anchor; the loop of the last cell stays beside the shortened last
+ * segment (see `fitEndLoop`).
  *
  * @param drawing - Strokes and marks, marks already resized to the stroke width.
  * @param scale - Factor applied to distances from `center`, in (0, 1].
@@ -64,6 +75,9 @@ export function scaleDrawing(drawing: Drawing, scale: number, center: Point): Dr
         return { ...mark, center: move(mark.center) };
       case 'loop': {
         const anchor = move(mark.anchor);
+        if (mark.lastSegment !== undefined) {
+          return fitEndLoop(mark, mark.lastSegment, anchor, scale);
+        }
         return {
           ...mark,
           anchor,
@@ -76,6 +90,42 @@ export function scaleDrawing(drawing: Drawing, scale: number, center: Point): Dr
     }
   });
   return { strokes: drawing.strokes.map((stroke) => stroke.map(move)), marks };
+}
+
+/**
+ * Moves the loop of the last cell with the drawing. Its clearance from the end
+ * bar keeps its size, like the stroke it is measured in; its radius shrinks
+ * only when the shortened last segment can no longer hold the loop and that
+ * clearance, so the loop keeps touching the path.
+ *
+ * @param loop - End loop, already resized to the stroke width.
+ * @param segment - Its `lastSegment`, before the move; not null.
+ * @param anchor - Moved end point.
+ * @param scale - Factor applied to positions, in (0, 1].
+ * @returns The moved loop, its `lastSegment` shortened by `scale`.
+ */
+function fitEndLoop(loop: LoopMark, segment: Point, anchor: Point, scale: number): LoopMark {
+  const segmentLength = Math.hypot(segment.x, segment.y);
+  const offset = { x: loop.center.x - loop.anchor.x, y: loop.center.y - loop.anchor.y };
+  const back = (offset.x * segment.x + offset.y * segment.y) / segmentLength;
+  const clearance = back - loop.radius;
+  const lastSegment = { x: segment.x * scale, y: segment.y * scale };
+  const radius = Math.max(
+    Math.min(loop.radius, segmentLength * scale - clearance),
+    END_LOOP_MIN_RADIUS,
+  );
+  const side = loopSide(segment, offset);
+  const along = (radius + clearance) / (segmentLength * scale);
+  return {
+    ...loop,
+    anchor,
+    lastSegment,
+    radius,
+    center: {
+      x: anchor.x + lastSegment.x * along + side.x * radius,
+      y: anchor.y + lastSegment.y * along + side.y * radius,
+    },
+  };
 }
 
 /**
