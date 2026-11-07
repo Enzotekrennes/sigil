@@ -7,7 +7,12 @@
  */
 export { buildSpareSigil } from './buildSpareSigil.ts';
 export type { SpareError, SpareOptions, SpareResult } from './buildSpareSigil.ts';
-export { CANDIDATE_COUNT, generateSpareCandidates } from './generateSpareCandidates.ts';
+export {
+  MAX_CANDIDATE_COUNT,
+  MIN_CANDIDATE_COUNT,
+  candidateCountFor,
+  generateSpareCandidates,
+} from './generateSpareCandidates.ts';
 export type {
   SpareCandidate,
   SpareCandidateOptions,

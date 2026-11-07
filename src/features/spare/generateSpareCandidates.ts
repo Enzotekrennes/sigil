@@ -1,7 +1,7 @@
 /**
  * Generates the candidate compositions of a Spare sigil: from the retained
  * letters and the settings, derives the seed (decision D6), composes
- * `CANDIDATE_COUNT` superimpositions of the letters' skeletons and fits each
+ * `candidateCountFor(letters)` superimpositions of the letters' skeletons and fits each
  * one into the 0–100 sigil frame.
  *
  * Exposes `generateSpareCandidates`, its options, result and error types and
@@ -20,12 +20,38 @@ import type { Composition, LetterPlacement } from './placement.ts';
 import { spareSeed } from './seed.ts';
 
 /**
- * Number of compositions drawn per seed. Two dozen gives the balance score
- * enough different orientations and offsets to find a well-centred one,
- * while composing and scoring them all (a few thousand points for a long
- * intention) stays within a few milliseconds on a phone.
+ * Fewest compositions drawn per seed. Two dozen give a long intention enough
+ * different orientations and offsets to find a balanced one in which every
+ * letter is tangled: with many letters, each one has many strokes to hide among.
  */
-export const CANDIDATE_COUNT = 24;
+export const MIN_CANDIDATE_COUNT = 24;
+
+/**
+ * Most compositions drawn per seed. A short intention (four or five letters)
+ * has few strokes to hide each letter among, and needs this many draws to
+ * contain one where every letter is laid on its side or well tangled.
+ */
+export const MAX_CANDIDATE_COUNT = 96;
+
+/**
+ * Letters × candidates scored per sigil. Scoring cost grows with both, so a
+ * fixed budget keeps every intention within the same time: 480 is five
+ * letters × 96, measured under 40 ms with a four-times slowed CPU, well
+ * inside the 150 ms target for a phone.
+ */
+export const SCORING_BUDGET = 480;
+
+/**
+ * Number of compositions drawn for a given number of letters: the scoring
+ * budget shared among the letters, within [`MIN_CANDIDATE_COUNT`, `MAX_CANDIDATE_COUNT`].
+ *
+ * @param letterCount - Number of retained letters, at least 1.
+ * @returns The number of candidates, an integer.
+ */
+export function candidateCountFor(letterCount: number): number {
+  const shared = Math.floor(SCORING_BUDGET / Math.max(1, letterCount));
+  return Math.min(MAX_CANDIDATE_COUNT, Math.max(MIN_CANDIDATE_COUNT, shared));
+}
 
 /** Settings of a Spare sigil, besides its letters. */
 export interface SpareCandidateOptions {
@@ -52,7 +78,7 @@ export interface SpareCandidate {
 export interface SpareCandidates {
   /** Seed every candidate was drawn from, to be stored in `Sigil.seed`. */
   readonly seed: number;
-  /** `CANDIDATE_COUNT` candidates, in draw order. */
+  /** `candidateCountFor(letters.length)` candidates, in draw order. */
   readonly candidates: readonly SpareCandidate[];
 }
 
@@ -78,7 +104,7 @@ export type SpareCandidatesResult =
  * @param letters - Retained letters after the Spare reduction: distinct
  *   upper-case letters A–Z, in intention order.
  * @param options - Vowel setting and variant number, both part of the seed.
- * @returns `{ ok: true, data }` with the seed and `CANDIDATE_COUNT`
+ * @returns `{ ok: true, data }` with the seed and `candidateCountFor(letters.length)`
  *   candidates, or `{ ok: false, error }` with `NO_LETTERS`,
  *   `INVALID_LETTER`, `DUPLICATE_LETTER` or `INVALID_VARIANT`. Never throws.
  *   The same arguments always give deeply equal results.
@@ -96,7 +122,7 @@ export function generateSpareCandidates(
 
   const seed = spareSeed({ letters, keepVowels, variant });
   const random = createRandom(seed);
-  const candidates = Array.from({ length: CANDIDATE_COUNT }, () =>
+  const candidates = Array.from({ length: candidateCountFor(letters.length) }, () =>
     fitToFrame(composeLetters(validation.data, random)),
   );
   return { ok: true, data: { seed, candidates } };

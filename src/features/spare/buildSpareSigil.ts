@@ -2,8 +2,9 @@
  * Builds a sigil with Austin Osman Spare's method: the normalised letters are
  * reduced (duplicates, vowels by default; decision D4), their single-stroke
  * skeletons superimposed in several seeded compositions (D6, D7), the
- * best-balanced composition kept, its strokes merged and simplified, and the
- * result recentred on its centre of gravity. Also produces the explanation steps.
+ * composition that is best balanced and leaves no letter readable kept, its
+ * strokes merged and simplified, and the result recentred on its centre of
+ * gravity, inside a disc that the framing circle surrounds. Also produces the explanation steps.
  *
  * Exposes `buildSpareSigil` with its options, result and error types. Pure and
  * deterministic. Does not normalise the typed text: letters arrive from
@@ -16,7 +17,8 @@ import { generateSpareCandidates } from './generateSpareCandidates.ts';
 import type { SpareCandidate, SpareCompositionError } from './generateSpareCandidates.ts';
 import { roundCoordinate } from './geometry.ts';
 import { getGlyph, isCapitalLetter } from './glyphs/index.ts';
-import { applyRecentring, chooseCandidate, recentringFor } from './score.ts';
+import { looksUpright } from './placement.ts';
+import { applyRecentring, chooseCandidate, findIsolatedLetters, recentringFor } from './score.ts';
 import type { Recentring } from './score.ts';
 import { simplifyStrokes } from './simplify.ts';
 
@@ -61,8 +63,8 @@ const SPARE_MARKS: Sigil['marks'] = [];
  *   letter per item, in order, repetitions included.
  * @param options - Vowel setting and variant number.
  * @returns `{ ok: true, data }` with the sigil in the 0–100 frame (no marks,
- *   `seed` set, centre of gravity on the frame centre, every point within the
- *   margin), or `{ ok: false, error }` with `INVALID_LETTER`,
+ *   `seed` set, centre of gravity on the frame centre, every point within 40 of
+ *   it, hence inside the margin), or `{ ok: false, error }` with `INVALID_LETTER`,
  *   `NO_LETTER_LEFT` or `INVALID_VARIANT`. Never throws. The same arguments
  *   always give deeply equal results.
  */
@@ -115,8 +117,10 @@ export function buildSpareSigil(letters: readonly string[], options: SpareOption
       chosenIndex: index,
       centreOffset: score.centreOffset,
       fill: score.fill,
-      isolatedLetters: score.isolatedLetters,
-      uprightLetters: score.uprightLetters,
+      isolatedLetters: findIsolatedLetters(chosen),
+      uprightLetters: chosen.placements.flatMap((placement, letter) =>
+        looksUpright(placement.letter, placement.mirrored, placement.rotation) ? [letter] : [],
+      ),
       penalty: score.penalty,
     },
     {

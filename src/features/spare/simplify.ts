@@ -219,26 +219,26 @@ function uncoveredPieces(
 }
 
 /**
- * Whether two segments lie on the same line: each one's endpoints are within
- * the merge tolerance of the other's line (`STRAIGHT_MERGE_TOLERANCE` when
- * both are at least `MIN_STRAIGHT_LENGTH` long, `POINT_MERGE_TOLERANCE`
- * otherwise). Checking both ways rejects a short segment that is merely near
- * a long one at an angle.
+ * Whether two segments lie on the same line: both ends of the shorter one
+ * are within the merge tolerance of the longer one's line
+ * (`STRAIGHT_MERGE_TOLERANCE` when both are at least `MIN_STRAIGHT_LENGTH`
+ * long, `POINT_MERGE_TOLERANCE` otherwise). The shorter one then runs along
+ * the longer one, never further from it than the tolerance, so drawing their
+ * shared stretch once changes nothing visible.
  *
  * @param a - First segment, of positive length.
  * @param b - Second segment.
  * @returns True when they are collinear (overlap is not checked here).
  */
 function areCollinear(a: Segment, b: Segment): boolean {
-  const bothStraight =
-    distance(a.start, a.end) >= MIN_STRAIGHT_LENGTH &&
-    distance(b.start, b.end) >= MIN_STRAIGHT_LENGTH;
+  const lengthA = distance(a.start, a.end);
+  const lengthB = distance(b.start, b.end);
+  const bothStraight = lengthA >= MIN_STRAIGHT_LENGTH && lengthB >= MIN_STRAIGHT_LENGTH;
   const tolerance = bothStraight ? STRAIGHT_MERGE_TOLERANCE : POINT_MERGE_TOLERANCE;
+  const [shorter, longer] = lengthA <= lengthB ? [a, b] : [b, a];
   return (
-    lineDistance(b.start, a) <= tolerance &&
-    lineDistance(b.end, a) <= tolerance &&
-    lineDistance(a.start, b) <= tolerance &&
-    lineDistance(a.end, b) <= tolerance
+    lineDistance(shorter.start, longer) <= tolerance &&
+    lineDistance(shorter.end, longer) <= tolerance
   );
 }
 

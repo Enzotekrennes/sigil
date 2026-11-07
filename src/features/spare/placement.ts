@@ -6,7 +6,7 @@
  *
  * Exposes `composeLetters`, the `LetterPlacement` trace it records for the
  * explanation panel, the bounds of every draw, and `looksUpright`, which
- * tells whether an orientation leaves a letter as readable as written. Works in "composition
+ * tells whether an orientation leaves a letter exactly as written. Works in "composition
  * units" (a glyph's larger side measures 1 at scale 1, centred on 0, y
  * downwards); fitting the result into the 0–100 sigil frame belongs to
  * `generateSpareCandidates`. Does not score, merge or simplify strokes.
@@ -71,21 +71,23 @@ export interface Composition {
 export const MIRROR_PROBABILITY = 0.5;
 
 /**
- * Smallest letter size. Below about half, a letter shrinks into a detail of
- * its neighbours and stops contributing strokes that read at tattoo size.
+ * Smallest letter size. A small letter sitting among large ones is crossed by
+ * few of their strokes and stays readable on its own (the C picked out at the
+ * first F2 acceptance run); from 0.7 up, every letter spans most of the seal
+ * and runs into the others.
  */
-export const MIN_LETTER_SCALE = 0.55;
+export const MIN_LETTER_SCALE = 0.7;
 
-/** Largest letter size: the unit size, so that no letter dominates by more than ~2×. */
+/** Largest letter size: the unit size, so that no letter is more than ~1.4× another. */
 export const MAX_LETTER_SCALE = 1;
 
 /**
  * Largest distance of a letter's centre from the composition's centre, on
- * each axis. A quarter of a letter keeps every pair of letters overlapping by
- * at least half their size (they are superimposed, never side by side) while
- * still letting their strokes separate enough to form a new figure.
+ * each axis. A tenth of a letter keeps the letters superimposed on almost
+ * their whole size, so that each one's strokes run into the others'; wider
+ * offsets let a letter slide out to the side, where it reads on its own.
  */
-export const MAX_CENTRE_OFFSET = 0.25;
+export const MAX_CENTRE_OFFSET = 0.1;
 
 /**
  * Chance that a letter with a vertical stem is moved onto the stem of the
@@ -254,15 +256,30 @@ export function looksUpright(
   mirrored: boolean,
   rotation: QuarterTurn,
 ): boolean {
-  const upright = unitStrokes(getGlyph(letter));
-  const oriented = upright.map((stroke) =>
-    stroke.map((point) => orient(point, mirrored, rotation)),
-  );
-  const uprightShape = segmentKeys(upright);
-  const orientedShape = segmentKeys(oriented);
+  const uprightShape = segmentKeys(orientedSkeleton(letter, false, 0));
+  const orientedShape = segmentKeys(orientedSkeleton(letter, mirrored, rotation));
   return (
     uprightShape.size === orientedShape.size &&
     [...orientedShape].every((key) => uprightShape.has(key))
+  );
+}
+
+/**
+ * Gives a letter's skeleton mirrored and turned, in the unit frame: centred on
+ * the middle of the upright glyph's box, its larger side 1, y downwards.
+ *
+ * @param letter - Upper-case letter A–Z.
+ * @param mirrored - Whether to flip it left to right first.
+ * @param rotation - Clockwise quarter turn applied after the mirror.
+ * @returns New strokes, every point within [−0.5, 0.5] on both axes.
+ */
+function orientedSkeleton(
+  letter: CapitalLetter,
+  mirrored: boolean,
+  rotation: QuarterTurn,
+): Point[][] {
+  return unitStrokes(getGlyph(letter)).map((stroke) =>
+    stroke.map((point) => orient(point, mirrored, rotation)),
   );
 }
 

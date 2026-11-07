@@ -1,13 +1,20 @@
 /**
  * Unit tests of the Spare candidate generation: seed (D6), determinism,
  * distinct variants, every candidate inside the frame, strokes and
- * transforms traced per letter, and business errors on invalid input.
+ * transforms traced per letter, the number of candidates per intention
+ * length, and business errors on invalid input.
  */
 import { describe, expect, it } from 'vitest';
 
 import { getGlyph } from './glyphs/index.ts';
 import { FRAME_MARGIN } from '../sigil/frame.ts';
-import { CANDIDATE_COUNT, generateSpareCandidates, spareSeed } from './index.ts';
+import {
+  MAX_CANDIDATE_COUNT,
+  MIN_CANDIDATE_COUNT,
+  candidateCountFor,
+  generateSpareCandidates,
+  spareSeed,
+} from './index.ts';
 import type { SpareCandidateOptions, SpareCandidates, SpareCompositionError } from './index.ts';
 
 /** Retained letters of "Je suis calme" with vowels removed. */
@@ -59,11 +66,11 @@ function generateError(
 }
 
 describe('generateSpareCandidates', () => {
-  it(`draws ${String(CANDIDATE_COUNT)} candidates from the D6 seed`, () => {
+  it('draws as many candidates as the scoring budget allows, from the D6 seed', () => {
     const { seed, candidates } = generate(JSCLM);
 
     expect(seed).toBe(spareSeed({ letters: JSCLM, ...DEFAULT_OPTIONS }));
-    expect(candidates).toHaveLength(CANDIDATE_COUNT);
+    expect(candidates).toHaveLength(candidateCountFor(JSCLM.length));
   });
 
   it('gives deeply equal results for the same letters and settings', () => {
@@ -86,7 +93,7 @@ describe('generateSpareCandidates', () => {
   it('draws candidates that differ from one another', () => {
     const { candidates } = generate(JSCLM);
     const shapes = new Set(candidates.map((candidate) => JSON.stringify(candidate.strokes)));
-    expect(shapes.size).toBe(CANDIDATE_COUNT);
+    expect(shapes.size).toBe(candidates.length);
   });
 
   it.each(LETTER_SETS.map((letters) => [letters.join('')]))(
@@ -142,7 +149,7 @@ describe('generateSpareCandidates', () => {
   });
 
   it('accepts a single letter', () => {
-    expect(generate(['K']).candidates).toHaveLength(CANDIDATE_COUNT);
+    expect(generate(['K']).candidates).toHaveLength(MAX_CANDIDATE_COUNT);
   });
 
   it('refuses an empty list of letters', () => {
@@ -172,5 +179,22 @@ describe('generateSpareCandidates', () => {
       code: 'INVALID_VARIANT',
       variant,
     });
+  });
+});
+
+describe('candidateCountFor', () => {
+  it('draws the most candidates for short intentions, which need them to hide every letter', () => {
+    expect(candidateCountFor(1)).toBe(MAX_CANDIDATE_COUNT);
+    expect(candidateCountFor(5)).toBe(MAX_CANDIDATE_COUNT);
+  });
+
+  it('shares the scoring budget among the letters of longer intentions', () => {
+    expect(candidateCountFor(6)).toBe(80);
+    expect(candidateCountFor(10)).toBe(48);
+  });
+
+  it('never draws fewer than the minimum, however long the intention', () => {
+    expect(candidateCountFor(15)).toBe(32);
+    expect(candidateCountFor(26)).toBe(MIN_CANDIDATE_COUNT);
   });
 });

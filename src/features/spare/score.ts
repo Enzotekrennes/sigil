@@ -1,13 +1,13 @@
 /**
  * Balance score of the Spare candidates and the final recentring: rates how
  * well a composition sits in the frame as a seal (centre of gravity, use of
- * the drawing area, every letter caught in the others, no letter left
- * upright), and moves the chosen one so that its centre of gravity lands on
- * the centre of the frame.
+ * the drawing area) and how well its letters dissolve into one another (see
+ * `legibility.ts`), and moves the chosen one so that its centre of gravity
+ * lands on the centre of the frame, inside the disc the framing circle surrounds.
  *
  * Exposes `scoreCandidate`, `chooseCandidate`, `recentringFor`,
- * `applyRecentring`, the weights of the score and the `CandidateScore` type.
- * Pure and deterministic. Does not merge or simplify strokes.
+ * `applyRecentring`, `findIsolatedLetters`, the weights of the score and the
+ * `CandidateScore` type. Pure and deterministic. Does not merge or simplify strokes.
  */
 import { DRAWING_SIZE, FRAME_SIZE } from '../sigil/frame.ts';
 import type { Point } from '../sigil/types.ts';
@@ -20,7 +20,8 @@ import {
   strokeSegments,
 } from './geometry.ts';
 import type { Segment } from './geometry.ts';
-import { looksUpright } from './placement.ts';
+import { letterLegibility } from './legibility.ts';
+import type { LetterLegibility } from './legibility.ts';
 
 /**
  * Largest distance allowed between a sigil's centre of gravity and the centre
@@ -45,24 +46,32 @@ export const BALANCE_WEIGHT = 1;
 export const FILL_WEIGHT = 1;
 
 /**
- * Weight of the isolation term: every letter touching no other letter
- * costs `ISOLATION_WEIGHT / letterCount`. A letter that stands apart stays
- * readable on its own, which the method precisely avoids, so a fully
- * separated composition (cost 2) loses against any connected one.
+ * Weight of the legibility term, applied to the sum over letters of their
+ * deficit (see `LetterLegibility.deficit`, 0–1). One readable letter is
+ * enough to fail, so deficits are summed, not averaged, and every letter
+ * still counts when one of them cannot be fully dissolved. A letter half as
+ * tangled as required costs 2, as much as a 20 % centring gap, far beyond the
+ * few percent that separate balanced candidates.
  */
-export const ISOLATION_WEIGHT = 2;
+export const LEGIBILITY_WEIGHT = 4;
 
 /**
- * Weight of the upright term: every letter whose orientation leaves it
- * exactly as written (see `looksUpright`) costs `UPRIGHT_WEIGHT / letterCount`.
- * Superimposed letters still read when one of them stands upright (a P, an M
- * in plain view): this term makes the score prefer turned and reversed
- * letters. One upright letter in five costs 0.3, as much as a 3 % centring
- * gap or a 0.3 loss of fill: enough to steer the choice among the many
- * balanced candidates, not enough to pick a lopsided one. Tuned on the
- * reference board of twelve sigils.
+ * Spread under which a composition counts as shrunk. The spread is the
+ * root-mean-square distance of the ink from the centre, as a share of
+ * `DRAWING_RADIUS`, once recentred. Seals measured on the reference boards
+ * spread 0.43–0.63; a small knot of letters with one stroke sticking far out
+ * (a dot with a tail, which the bounding box and the fill do not see) 0.30–0.34.
  */
-export const UPRIGHT_WEIGHT = 1.5;
+export const MIN_SPREAD = 0.4;
+
+/**
+ * Weight of the shrink term, `(MIN_SPREAD − spread) / MIN_SPREAD` when the
+ * spread is under `MIN_SPREAD`. Packing letters into a small knot tangles
+ * them all cheaply, so without a dominant cost the score would trade the
+ * seal's size for legibility: a knot at 0.3 costs 5, more than two letters
+ * left fully readable, and is chosen only when every candidate is one.
+ */
+export const SHRINK_WEIGHT = 20;
 
 /**
  * Distance under which two letters count as touching, in frame units: under
@@ -73,8 +82,13 @@ export const LETTER_CONTACT_DISTANCE = 0.5;
 /** Centre of the frame, where the centre of gravity of the final sigil lands. */
 const FRAME_CENTRE: Point = { x: FRAME_SIZE / 2, y: FRAME_SIZE / 2 };
 
-/** Largest distance from the frame centre a point may reach on each axis, staying in the margin. */
-const HALF_DRAWING = DRAWING_SIZE / 2;
+/**
+ * Radius of the disc the recentred sigil is fitted into, around the frame
+ * centre: half the drawing area. The disc lies inside the margin, so every
+ * point stays in the frame, and inside the framing circle (radius 46), which
+ * a square fit would cross with the corners of a drawing.
+ */
+export const DRAWING_RADIUS = DRAWING_SIZE / 2;
 
 /** Balance rating of one candidate, every term in its own unit for the explanation panel. */
 export interface CandidateScore {
@@ -85,11 +99,11 @@ export interface CandidateScore {
   readonly centreOffset: number;
   /** Share of the drawing area covered by the recentred drawing's bounding box, 0–1. */
   readonly fill: number;
-  /** Indices of the letters that touch no other letter, in input order. */
-  readonly isolatedLetters: readonly number[];
-  /** Indices of the letters drawn exactly as written (identity or a symmetry), in input order. */
-  readonly uprightLetters: readonly number[];
-  /** Weighted sum of the four penalties; the lowest wins. */
+  /** Root-mean-square distance of the recentred ink from the centre, as a share of `DRAWING_RADIUS`. */
+  readonly spread: number;
+  /** Legibility of each letter, in input order. */
+  readonly legibility: readonly LetterLegibility[];
+  /** Weighted sum of the penalties; the lowest wins. */
   readonly penalty: number;
 }
 
@@ -97,15 +111,15 @@ export interface CandidateScore {
 export interface Recentring {
   /** Centre of gravity before the move, mapped onto the frame centre. */
   readonly from: Point;
-  /** Uniform scale around it, so that every point stays within the margin. */
+  /** Uniform scale around it, so that every point stays within `DRAWING_RADIUS` of the centre. */
   readonly factor: number;
 }
 
 /**
  * Rates one candidate. Lower is better:
  * `BALANCE_WEIGHT × centreOffset / MAX_CENTRE_OFFSET_RATIO
- * + FILL_WEIGHT × (1 − fill) + ISOLATION_WEIGHT × isolated / letterCount
- * + UPRIGHT_WEIGHT × upright / letterCount`.
+ * + FILL_WEIGHT × (1 − fill) + SHRINK_WEIGHT × max(0, MIN_SPREAD − spread) / MIN_SPREAD
+ * + LEGIBILITY_WEIGHT × Σ deficit`.
  *
  * @param candidate - Composition fitted into the frame.
  * @returns The terms of the score and the total penalty.
@@ -115,17 +129,16 @@ export function scoreCandidate(candidate: SpareCandidate): CandidateScore {
   const recentring = recentringFor(candidate.strokes, points);
   const centreOffset = distance(recentring.from, FRAME_CENTRE) / FRAME_SIZE;
   const fill = boxArea(points, recentring.factor) / (DRAWING_SIZE * DRAWING_SIZE);
-  const isolatedLetters = findIsolatedLetters(candidate);
-  const uprightLetters = candidate.placements.flatMap((placement, index) =>
-    looksUpright(placement.letter, placement.mirrored, placement.rotation) ? [index] : [],
-  );
-  const letterCount = candidate.placements.length;
+  const spread =
+    (recentring.factor * inkRadius(candidate.strokes, recentring.from)) / DRAWING_RADIUS;
+  const legibility = letterLegibility(candidate);
+  const deficits = legibility.reduce((sum, letter) => sum + letter.deficit, 0);
   const penalty =
     (BALANCE_WEIGHT * centreOffset) / MAX_CENTRE_OFFSET_RATIO +
     FILL_WEIGHT * (1 - fill) +
-    (ISOLATION_WEIGHT * isolatedLetters.length) / letterCount +
-    (UPRIGHT_WEIGHT * uprightLetters.length) / letterCount;
-  return { centreOffset, fill, isolatedLetters, uprightLetters, penalty };
+    (SHRINK_WEIGHT * Math.max(0, MIN_SPREAD - spread)) / MIN_SPREAD +
+    LEGIBILITY_WEIGHT * deficits;
+  return { centreOffset, fill, spread, legibility, penalty };
 }
 
 /**
@@ -152,7 +165,8 @@ export function chooseCandidate(candidates: readonly SpareCandidate[]): {
 
 /**
  * Computes the move that puts a drawing's centre of gravity on the frame
- * centre at the largest size that keeps every point within the margin.
+ * centre at the largest size that keeps every point within `DRAWING_RADIUS`
+ * of it (hence within the margin and the framing circle).
  *
  * @param strokes - Polylines whose centre of gravity is used.
  * @param envelope - Points that must stay in the frame after the move; they
@@ -165,10 +179,8 @@ export function recentringFor(
 ): Recentring {
   const from = centreOfGravity(strokeSegments(strokes)) ?? FRAME_CENTRE;
   let reach = 0;
-  for (const point of envelope) {
-    reach = Math.max(reach, Math.abs(point.x - from.x), Math.abs(point.y - from.y));
-  }
-  return { from, factor: reach === 0 ? 1 : HALF_DRAWING / reach };
+  for (const point of envelope) reach = Math.max(reach, distance(point, from));
+  return { from, factor: reach === 0 ? 1 : DRAWING_RADIUS / reach };
 }
 
 /**
@@ -199,13 +211,14 @@ export function applyRecentring(
 
 /**
  * Lists the letters none of whose segments comes within
- * `LETTER_CONTACT_DISTANCE` of another letter's segment.
+ * `LETTER_CONTACT_DISTANCE` of another letter's segment, for the explanation
+ * step (the score itself relies on the finer entanglement measure).
  *
  * @param candidate - Candidate with the owner of each stroke.
  * @returns Letter indices in input order; empty for a single letter, which
  *   has nothing to touch.
  */
-function findIsolatedLetters(candidate: SpareCandidate): number[] {
+export function findIsolatedLetters(candidate: SpareCandidate): number[] {
   const letterCount = candidate.placements.length;
   if (letterCount < 2) return [];
   const byLetter: Segment[][] = Array.from({ length: letterCount }, () => []);
@@ -226,6 +239,29 @@ function findIsolatedLetters(candidate: SpareCandidate): number[] {
     if (!touches) isolated.push(letter);
   });
   return isolated;
+}
+
+/**
+ * Root-mean-square distance of the ink from a point, every stretch of stroke
+ * weighted by its length (exact second moment of each segment).
+ *
+ * @param strokes - Polylines of the drawing.
+ * @param centre - Point the distances are measured from.
+ * @returns The distance in frame units, 0 for a drawing without length.
+ */
+function inkRadius(strokes: readonly (readonly Point[])[], centre: Point): number {
+  let length = 0;
+  let moment = 0;
+  for (const { start, end } of strokeSegments(strokes)) {
+    const ax = start.x - centre.x;
+    const ay = start.y - centre.y;
+    const bx = end.x - centre.x;
+    const by = end.y - centre.y;
+    const segment = Math.hypot(bx - ax, by - ay);
+    length += segment;
+    moment += (segment * (ax * ax + ay * ay + ax * bx + ay * by + bx * bx + by * by)) / 3;
+  }
+  return length === 0 ? 0 : Math.sqrt(moment / length);
 }
 
 /**
