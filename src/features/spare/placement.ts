@@ -1,0 +1,230 @@
+/**
+ * Placement of the letter skeletons of a Spare composition: each Hershey glyph
+ * is brought into a common unit frame, then mirrored, turned, scaled and moved
+ * towards the centre by pseudo-random draws, so that the letters end up
+ * superimposed rather than written side by side.
+ *
+ * Exposes `composeLetters`, the `LetterPlacement` trace it records for the
+ * explanation panel, and the bounds of every draw. Works in "composition
+ * units" (a glyph's larger side measures 1 at scale 1, centred on 0, y
+ * downwards); fitting the result into the 0–100 sigil frame belongs to
+ * `generateSpareCandidates`. Does not score, merge or simplify strokes.
+ */
+import type { RandomSource } from '../../lib/random.ts';
+import { randomBetween, randomChoice } from '../../lib/random.ts';
+import type { Point } from '../sigil/types.ts';
+import { getGlyph } from './glyphs/index.ts';
+import type { CapitalLetter, Glyph } from './glyphs/index.ts';
+
+/**
+ * Turns applied to a letter, in degrees clockwise on screen. Quarter turns
+ * only: Spare's sigils turn and flip letters at right angles, and keeping
+ * stems vertical or horizontal lets letters share strokes (see
+ * `STEM_SHARING_PROBABILITY`) and keeps the geometric, fine-line look of the
+ * design. With the mirror they give the eight orientations of a square.
+ */
+export type QuarterTurn = 0 | 90 | 180 | 270;
+
+/** The four quarter turns, in drawing order of the choice. */
+const QUARTER_TURNS: readonly QuarterTurn[] = [0, 90, 180, 270];
+
+/**
+ * How one letter was placed in a composition, in the order the transforms are
+ * applied: mirror, then rotation, then scale, then offset.
+ */
+export interface LetterPlacement {
+  /** The letter, upper-case A–Z. */
+  readonly letter: CapitalLetter;
+  /**
+   * True when the letter is flipped left to right (reversed). A top-to-bottom
+   * flip needs no flag of its own: it equals this flip followed by a half turn.
+   */
+  readonly mirrored: boolean;
+  /** Clockwise turn applied after the mirror. */
+  readonly rotation: QuarterTurn;
+  /** Size relative to the other letters, in [`MIN_LETTER_SCALE`, `MAX_LETTER_SCALE`). */
+  readonly scale: number;
+  /**
+   * Where the letter's centre lands, in composition units from the
+   * composition's centre (1 = the larger side of an unscaled letter).
+   */
+  readonly offset: Point;
+  /**
+   * Index of the letter whose vertical stem this letter was moved onto, so
+   * that both share one vertical line; `null` when it was not aligned.
+   */
+  readonly sharedStemWith: number | null;
+}
+
+/** Letters placed in composition units, before fitting into the sigil frame. */
+export interface Composition {
+  /** Every stroke of every glyph, letter by letter, glyph stroke order kept. */
+  readonly strokes: readonly (readonly Point[])[];
+  /** Index in `placements` of the letter each stroke belongs to, same length as `strokes`. */
+  readonly strokeLetters: readonly number[];
+  /** One placement per letter, in input order. */
+  readonly placements: readonly LetterPlacement[];
+}
+
+/** Chance that a letter is reversed: even, so reversed and upright letters are equally likely. */
+export const MIRROR_PROBABILITY = 0.5;
+
+/**
+ * Smallest letter size. Below about half, a letter shrinks into a detail of
+ * its neighbours and stops contributing strokes that read at tattoo size.
+ */
+export const MIN_LETTER_SCALE = 0.55;
+
+/** Largest letter size: the unit size, so that no letter dominates by more than ~2×. */
+export const MAX_LETTER_SCALE = 1;
+
+/**
+ * Largest distance of a letter's centre from the composition's centre, on
+ * each axis. A quarter of a letter keeps every pair of letters overlapping by
+ * at least half their size (they are superimposed, never side by side) while
+ * still letting their strokes separate enough to form a new figure.
+ */
+export const MAX_CENTRE_OFFSET = 0.25;
+
+/**
+ * Chance that a letter with a vertical stem is moved onto the stem of the
+ * first letter that has one. Spare merges letters by letting them share
+ * strokes; half the time keeps the effect frequent without making every
+ * composition a column of stems.
+ */
+export const STEM_SHARING_PROBABILITY = 0.5;
+
+/**
+ * Shortest vertical segment counted as a stem, in unit glyph sizes. Half a
+ * letter keeps the real stems (B, D, E, H, T…, full height) and leaves out
+ * short verticals that would not read as a shared line.
+ */
+const MIN_STEM_LENGTH = 0.5;
+
+/** Horizontal tolerance for a segment to count as vertical; glyph points are integers, so tiny. */
+const VERTICAL_TOLERANCE = 1e-9;
+
+/** Sine and cosine of each quarter turn, exact so that vertical lines stay exactly vertical. */
+const TURN_MATRIX: Readonly<Record<QuarterTurn, { readonly cos: number; readonly sin: number }>> = {
+  0: { cos: 1, sin: 0 },
+  90: { cos: 0, sin: 1 },
+  180: { cos: -1, sin: 0 },
+  270: { cos: 0, sin: -1 },
+};
+
+/**
+ * Places every letter with pseudo-random transforms. Each letter consumes
+ * exactly six draws (mirror, turn, scale, two offsets, stem sharing),
+ * whatever the outcome, so that one letter's placement never shifts the draws
+ * of the next ones.
+ *
+ * Stem-sharing heuristic: the first letter whose oriented glyph has a
+ * vertical segment of at least `MIN_STEM_LENGTH` becomes the anchor; each
+ * later letter with such a stem is, with `STEM_SHARING_PROBABILITY`, moved
+ * horizontally so that its longest stem lies on the anchor's longest stem.
+ * Its vertical offset stays as drawn.
+ *
+ * @param letters - Distinct upper-case letters A–Z, already validated.
+ * @param random - Generator to draw from; advanced by six steps per letter.
+ * @returns The strokes in composition units, the owner of each stroke and the
+ *   placement of each letter.
+ */
+export function composeLetters(
+  letters: readonly CapitalLetter[],
+  random: RandomSource,
+): Composition {
+  const strokes: Point[][] = [];
+  const strokeLetters: number[] = [];
+  const placements: LetterPlacement[] = [];
+  let anchor: { readonly index: number; readonly x: number } | undefined;
+
+  for (const [index, letter] of letters.entries()) {
+    const mirrored = random() < MIRROR_PROBABILITY;
+    const rotation = randomChoice(random, QUARTER_TURNS);
+    const scale = randomBetween(random, MIN_LETTER_SCALE, MAX_LETTER_SCALE);
+    let offset: Point = {
+      x: randomBetween(random, -MAX_CENTRE_OFFSET, MAX_CENTRE_OFFSET),
+      y: randomBetween(random, -MAX_CENTRE_OFFSET, MAX_CENTRE_OFFSET),
+    };
+    const wantsSharedStem = random() < STEM_SHARING_PROBABILITY;
+
+    const oriented = unitStrokes(getGlyph(letter)).map((stroke) =>
+      stroke.map((point) => orient(point, mirrored, rotation)),
+    );
+    const stemX = longestStemX(oriented);
+    let sharedStemWith: number | null = null;
+    if (stemX !== undefined) {
+      if (anchor === undefined) {
+        anchor = { index, x: offset.x + scale * stemX };
+      } else if (wantsSharedStem) {
+        offset = { x: anchor.x - scale * stemX, y: offset.y };
+        sharedStemWith = anchor.index;
+      }
+    }
+
+    for (const stroke of oriented) {
+      strokes.push(
+        stroke.map((point) => ({ x: point.x * scale + offset.x, y: point.y * scale + offset.y })),
+      );
+      strokeLetters.push(index);
+    }
+    placements.push({ letter, mirrored, rotation, scale, offset, sharedStemWith });
+  }
+
+  return { strokes, strokeLetters, placements };
+}
+
+/**
+ * Brings a glyph from Hershey units into the unit frame: centred on the middle
+ * of its bounding box, its larger side scaled to 1, y still downwards. Letters
+ * keep their proportions (I stays narrow, M wide).
+ *
+ * @param glyph - Glyph in its own frame.
+ * @returns Its strokes in the unit frame, every point within [−0.5, 0.5] on both axes.
+ */
+function unitStrokes(glyph: Glyph): Point[][] {
+  const { bounds } = glyph;
+  const centreX = bounds.x + bounds.width / 2;
+  const centreY = bounds.y + bounds.height / 2;
+  const size = Math.max(bounds.width, bounds.height);
+  return glyph.strokes.map((stroke) =>
+    stroke.map((point) => ({ x: (point.x - centreX) / size, y: (point.y - centreY) / size })),
+  );
+}
+
+/**
+ * Applies the mirror then the clockwise quarter turn to a point of the unit frame.
+ *
+ * @param point - Point centred on the letter's middle.
+ * @param mirrored - Whether to flip left to right first.
+ * @param rotation - Clockwise turn on screen (y downwards).
+ * @returns The transformed point, still centred on the letter's middle.
+ */
+function orient(point: Point, mirrored: boolean, rotation: QuarterTurn): Point {
+  const x = mirrored ? -point.x : point.x;
+  const { cos, sin } = TURN_MATRIX[rotation];
+  return { x: x * cos - point.y * sin, y: x * sin + point.y * cos };
+}
+
+/**
+ * Finds the horizontal position of a letter's longest vertical segment.
+ *
+ * @param strokes - Oriented strokes in the unit frame.
+ * @returns The x of the longest vertical segment of at least
+ *   `MIN_STEM_LENGTH`, the first one on ties, or `undefined` when there is none.
+ */
+function longestStemX(strokes: readonly (readonly Point[])[]): number | undefined {
+  let best: { readonly x: number; readonly length: number } | undefined;
+  for (const stroke of strokes) {
+    for (let index = 1; index < stroke.length; index += 1) {
+      const from = stroke[index - 1];
+      const to = stroke[index];
+      if (from === undefined || to === undefined) continue;
+      if (Math.abs(to.x - from.x) > VERTICAL_TOLERANCE) continue;
+      const length = Math.abs(to.y - from.y);
+      if (length < MIN_STEM_LENGTH) continue;
+      if (best === undefined || length > best.length) best = { x: from.x, length };
+    }
+  }
+  return best?.x;
+}
