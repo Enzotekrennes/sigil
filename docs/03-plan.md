@@ -139,12 +139,13 @@ Voir `docs/design.md` et `src/styles/tokens.css`. Page de grimoire : beaucoup de
 | T8 | F2 | Spare 1/2 : PRNG (`lib/random.ts`), placement et transformations des glyphes (rotation, miroir, échelle, chevauchement), génération de candidats | dev | T2, T6 | `lib/random.ts`, `features/spare/` | Tests : déterminisme, variantes distinctes, candidats dans le cadre || [x] |
 | T9 | F2 | Spare 2/2 : score d'équilibre (centre de gravité, encombrement, chevauchement), fusion des traits proches, simplification, étapes explicatives | dev | T8 | `features/spare/` | Tests : critère de centre de gravité F2, aucun segment dupliqué ; planche de 12 exemples SVG générée pour le journal || [x] |
 | T10 | F2 | Intégration Spare dans l'écran : option voyelles, « autre variante », panneau étapes Spare | design | T7, T9 | `app/`, `features/explain/` | Scénarios F2 joués à la main, captures || [x] |
-| T11 | F3 | Panneau réglages de style et bouton rejouer | design | T7 | `features/sigil/`, `components/ui/` | Scénarios F3 joués à la main, captures | [ ] |
+| T11 | F3 | Panneau réglages de style et bouton rejouer | design | T7 | `features/sigil/`, `components/ui/` | Scénarios F3 joués à la main, captures || [x] |
 | T12 | F4 | Exports SVG et PNG, boutons, nom de fichier neutre ; couleurs du thème écrites en littéral (pas de `var()`) | dev | T4, T7 | `features/export/` | Tests : SVG valide, PNG 2048 px, aucune trace de l'intention | [ ] |
 | T13 | F5 | Mode pochoir et PDF A4 à taille réelle avec règle de contrôle | dev | T12 | `features/export/`, `features/sigil/` | Test : dimensions du chemin dans le PDF = taille demandée ± 0,5 mm ; plage refusée | [ ] |
 | T14 | F6 | i18n FR/EN (dictionnaire typé, détection, persistance) sur toutes les chaînes | dev | T10, T11 | `features/i18n/`, chaînes de l'UI | Test : aucune chaîne en dur hors dictionnaires ; bascule et persistance | [ ] |
 | T15 | F6 | Sélecteur de thème encre / or, finition des deux thèmes | design | T14 | `styles/`, `app/` | Captures des deux thèmes aux 3 largeurs, contrastes AA chiffrés | [ ] |
 | T16 | F1 | Boucles kamea proportionnées à la taille des cases (lisibles du 3×3 au 9×9), pas de boucles superposées sur une même case, pas de collision boucle / trait d'arrivée | dev | T7 | `features/kamea/` | Tests sur les 7 carrés + capture Lune « Belle allée » lisible || [x] |
+| T17 | F3 | Recul de la boucle finale kamea exprimé en fraction de l'épaisseur du trait : pas de contact boucle / trait d'arrivée de 0,4 à 4 | dev | T11 | `features/kamea/` (+ `sigil/style.ts` si l'API `scaleMark` doit l'exprimer) | Test sur 7 carrés × épaisseurs 0,4 / 1,2 / 4 : écart bord à bord > 0 | [ ] |
 
 Ordre : T1 → (T2, T3, T5, T6 en parallèle, 3 max) → T4 → T7 → test F1 (J2) → T8 → T9 → T10 → test F2 (J3) → T11 → test F3 → T12 → test F4 → test F7 → T13, T14, T15 → tests F5, F6 (J4).
 

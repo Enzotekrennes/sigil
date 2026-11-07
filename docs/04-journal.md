@@ -89,3 +89,10 @@
 - Bugs renvoyés : lisibilité → dev (reprise T9 : mesure de recouvrement par lettre, seuil, test) ; cercle d'encadrement débordé par le dessin → design (T11, mise à l'échelle dans le renderer).
 - Décision : critère « aucune lettre lisible » non applicable aux intentions de 1 ou 2 lettres retenues (ex. « Yeux » → Y X).
 - Tests e2e ajoutés : `e2e/f2-acceptance.spec.ts` (10 tests).
+
+## 2026-11-08 — T11 Réglages de style et rejouer
+- Rôle : design
+- Fait : panneau « Style » (épaisseur 0,4–4 pas 0,2, extrémités, cercle), pas-à-pas en mouvement réduit, cercle d'encadrement qui contient le dessin (`frameFitScale`, écart ≥ 2 épaisseurs), espacement du panneau kamea en deux colonnes, B1 (accord singulier) et B2 (pastilles derrière les chiffres de la grille) du test F1.
+- Vérifications : eslint + vitest sur ses dossiers → 107/107 verts (revérifié) ; e2e 58/58 sur un build sans tsc ; captures 375–1440 clair/sombre.
+- Écarts au plan : aucun ; seuils fin/moyen/épais 1,4 / 2,6 ; « Style » ouvert d'office dès 1024 px.
+- Points ouverts : boucle finale kamea touche le trait d'arrivée dès 1,6 d'épaisseur → T17 ajoutée ; export (T12) doit retirer `--settled` et appliquer `frameFitScale` ; panneau non synchronisé au tracé (plus tard).
