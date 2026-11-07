@@ -10,6 +10,7 @@ import { ChoiceCards } from './ChoiceCards.tsx';
 import { Disclosure } from './Disclosure.tsx';
 import { SegmentedControl } from './SegmentedControl.tsx';
 import { StatusMessage } from './StatusMessage.tsx';
+import { Switch } from './Switch.tsx';
 import { TextField } from './TextField.tsx';
 
 describe('Button', () => {
@@ -165,5 +166,47 @@ describe('StatusMessage', () => {
 
     expect(screen.getByRole('status')).toHaveTextContent('Caractères ignorés.');
     expect(screen.getByRole('status')).toHaveClass('status-message--warning');
+  });
+});
+
+describe('Switch', () => {
+  it('is a labelled switch described by its help, and reports a toggle', () => {
+    const onCheckedChange = vi.fn();
+    render(
+      <Switch
+        id="keep-vowels"
+        label="Garder les voyelles"
+        checked={false}
+        onCheckedChange={onCheckedChange}
+        onText="oui"
+        offText="non"
+        help="Par défaut, les voyelles sont retirées."
+      />,
+    );
+
+    const toggle = screen.getByRole('switch', { name: 'Garder les voyelles' });
+    expect(toggle).not.toBeChecked();
+    expect(toggle).toHaveAccessibleDescription('Par défaut, les voyelles sont retirées.');
+    expect(screen.getByText('non')).toHaveAttribute('aria-hidden', 'true');
+
+    fireEvent.click(toggle);
+
+    expect(onCheckedChange).toHaveBeenCalledWith(true);
+  });
+
+  it('writes the state next to the switch', () => {
+    render(
+      <Switch
+        id="keep-vowels"
+        label="Garder les voyelles"
+        checked
+        onCheckedChange={vi.fn()}
+        onText="oui"
+        offText="non"
+      />,
+    );
+
+    expect(screen.getByRole('switch')).toBeChecked();
+    expect(screen.getByText('oui')).toBeInTheDocument();
   });
 });

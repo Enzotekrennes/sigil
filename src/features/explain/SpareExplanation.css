@@ -1,0 +1,154 @@
+/*
+ * Styles of SpareExplanation.tsx and its StrokeDrawing.tsx drawings.
+ *
+ * The step list itself comes from ExplanationSteps.css. From a 34rem wide
+ * panel (1024–1279 px layout), the skeletons step, the one with drawings,
+ * moves to the second column next to the three text steps, as the kamea
+ * square does. Letters and transforms are in the monospace (the
+ * construction), sentences in the Garamond. Every colour, size and spacing
+ * comes from tokens.css.
+ */
+
+/* Strip of the intention's letters: removed ones struck through and muted (LetterStrip in docs/design.md). */
+.letter-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-16);
+  line-height: var(--line-height-tight);
+}
+
+.letter-strip__letter {
+  min-width: var(--space-5);
+  padding: var(--space-1) 0;
+  border-bottom: var(--focus-ring-width) solid var(--color-text);
+  font-weight: var(--font-weight-medium);
+  text-align: center;
+}
+
+/* Removed: struck through, muted and without the underline, so colour is never the only cue. */
+.letter-strip__letter.is-removed {
+  border-bottom-color: transparent;
+  font-weight: var(--font-weight-regular);
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+}
+
+/* Removed letters by reason, then the retained ones. */
+.spare-removal {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-label);
+  line-height: var(--line-height-body);
+}
+
+.spare-removal__row {
+  /* Each label and its letters share the grid of the list, so the labels line up. */
+  display: contents;
+}
+
+.spare-removal__row dt {
+  color: var(--color-text-muted);
+}
+
+.spare-removal__row dt::after {
+  content: "\a0:"; /* French spacing: no-break space before the colon */
+}
+
+.spare-removal__row dd {
+  margin: 0;
+  letter-spacing: var(--letter-spacing-label);
+}
+
+.spare-removal__row--kept dd {
+  font-weight: var(--font-weight-medium);
+}
+
+/* One tile per retained letter: its upright skeleton, the letter, the transform applied. */
+.glyph-tiles {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(6.5rem, 1fr)
+  ); /* 104 px: about 12 monospace characters of transform per line */
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.glyph-tile {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  text-align: center;
+  border-radius: var(--radius-field);
+  background: var(--color-surface-sunken);
+}
+
+.glyph-tile__drawing {
+  width: var(--space-7);
+  height: var(--space-7);
+  stroke: var(--sigil-stroke);
+}
+
+.glyph-tile__letter {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-16);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-tight);
+}
+
+.glyph-tile__transform {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-12);
+  line-height: var(--line-height-tight);
+  color: var(--color-text-muted);
+}
+
+/* The letters laid on top of each other, at their place in the frame, before the merge. */
+.spare-superimposed {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: start;
+  margin: var(--space-2) 0 0;
+}
+
+.spare-superimposed__drawing {
+  display: block;
+  width: 100%;
+  max-width: 15rem; /* 240 px: big enough to follow each letter, small next to the scene */
+  height: auto;
+  border-radius: var(--radius-field);
+  background: var(--color-surface-sunken);
+  stroke: var(--sigil-stroke);
+}
+
+.spare-superimposed__caption {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-12);
+  letter-spacing: var(--letter-spacing-label);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+@container (min-width: 34rem) {
+  /* The tall second column would stretch every row: the last one takes the extra height. */
+  .explain-steps--spare {
+    grid-template-rows: auto auto 1fr;
+  }
+
+  .spare-steps__skeletons {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+  }
+}

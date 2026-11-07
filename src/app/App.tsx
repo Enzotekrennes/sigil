@@ -1,10 +1,11 @@
 /**
  * Application shell: the single screen of Sigil.
  *
- * Assembles the header, the trace controls (intention, method, planet), the
- * sigil scene with its replay button, and the "how it is made" panel. Owns
- * the screen state only; normalisation and sigil construction live in the
- * features, chained by `traceKamea`.
+ * Assembles the header, the trace controls (intention, method, then the
+ * planet for kamea or the vowel option for Spare), the sigil scene with its
+ * actions (replay, another Spare variant), and the "how it is made" panel of
+ * the method used. Owns the screen state only; normalisation and sigil
+ * construction live in the features, chained by `trace.ts`.
  *
  * Privacy (decision D8): the intention lives in React state only. It is
  * never put in the URL, in storage or in an attribute; the form never
@@ -18,34 +19,54 @@ import {
   Disclosure,
   SegmentedControl,
   StatusMessage,
+  Switch,
   TextField,
 } from '../components/ui/index.ts';
 import type { SegmentedOption } from '../components/ui/index.ts';
 // The hidden headings and live region use the shared `visually-hidden` class.
 import '../components/ui/VisuallyHidden.css';
-import { KameaExplanation } from '../features/explain/index.ts';
+import { KameaExplanation, SpareExplanation } from '../features/explain/index.ts';
 import { normalizeIntention } from '../features/intention/index.ts';
 import type { Planet } from '../features/sigil/types.ts';
 import './App.css';
 import { PlanetPicker } from './PlanetPicker.tsx';
 import { SigilStage } from './SigilStage.tsx';
 import { STRINGS_FR } from './strings.fr.ts';
-import { traceErrorMessage, traceKamea } from './traceKamea.ts';
+import type { AppStrings } from './strings.fr.ts';
+import { traceErrorMessage, traceKamea, traceSpare } from './trace.ts';
+import type { Trace, TraceResult } from './trace.ts';
 
-/** Sigil methods offered on the screen; Spare is shown but not available yet. */
+/** Sigil methods offered on the screen. */
 type Method = 'kamea' | 'spare';
 
-/** What the user asked to trace, captured when the "Trace" button is pressed. */
-interface TraceRequest {
-  readonly source: string;
-  readonly planet: Planet;
-}
+/**
+ * What the user asked to trace, captured when "Trace" (or "Another variant")
+ * is pressed: later edits of the controls do not touch the sigil shown.
+ */
+type TraceRequest =
+  | { readonly method: 'kamea'; readonly source: string; readonly planet: Planet }
+  | {
+      readonly method: 'spare';
+      readonly source: string;
+      readonly keepVowels: boolean;
+      /** Variant number, 0 for the first sigil (see `nextSpareVariant`). */
+      readonly variant: number;
+    };
+
+/** Method selected on first load: kamea, the method of the F1 example. */
+const DEFAULT_METHOD: Method = 'kamea';
 
 /** Planet selected on first load: the smallest square, the one of the F1 example. */
 const DEFAULT_PLANET: Planet = 'saturn';
 
+/** Spare removes vowels unless asked to keep them (decision D4). */
+const DEFAULT_KEEP_VOWELS = false;
+
 /** Id of the intention input, from which its help and error ids derive. */
 const INTENTION_FIELD_ID = 'intention';
+
+/** Id of the "keep the vowels" switch, from which its help id derives. */
+const KEEP_VOWELS_FIELD_ID = 'keep-vowels';
 
 /** Id of the visually hidden heading of the controls section. */
 const CONTROLS_HEADING_ID = 'controls-heading';
@@ -55,27 +76,26 @@ const STAGE_HEADING_ID = 'stage-heading';
 
 /**
  * Renders the whole screen and wires the trace flow:
- * text → normalisation → kamea sigil → scene and explanation panel.
+ * text → normalisation → kamea or Spare sigil → scene and explanation panel.
  *
  * @returns The application screen.
  */
 export function App() {
   const strings = STRINGS_FR;
   const [source, setSource] = useState('');
-  const [method, setMethod] = useState<Method>('kamea');
+  const [method, setMethod] = useState<Method>(DEFAULT_METHOD);
   const [planet, setPlanet] = useState<Planet>(DEFAULT_PLANET);
+  const [keepVowels, setKeepVowels] = useState(DEFAULT_KEEP_VOWELS);
   const [request, setRequest] = useState<TraceRequest | null>(null);
   const [replayToken, setReplayToken] = useState(0);
   // null until the user opens or closes the panel: it then follows the result.
   const [explainToggled, setExplainToggled] = useState<boolean | null>(null);
   const intentionInput = useRef<HTMLInputElement>(null);
+  const keepVowelsInput = useRef<HTMLInputElement>(null);
 
   // Computed once per request: a new Sigil object would restart the tracing
-  // animation on every render of the screen.
-  const result = useMemo(
-    () => (request === null ? null : traceKamea(request.source, request.planet)),
-    [request],
-  );
+  // animation on every render of the screen (typing, toggling a control).
+  const result = useMemo(() => (request === null ? null : traceRequest(request)), [request]);
   const letterCount = useMemo(() => {
     const normalized = normalizeIntention(source);
     return normalized.ok ? normalized.intention.letters.length : 0;
@@ -84,6 +104,12 @@ export function App() {
   const traced = result?.ok === true ? result : undefined;
   const error = result?.ok === false ? traceErrorMessage(result.error, strings) : undefined;
   const explainOpen = explainToggled ?? traced !== undefined;
+  const offersKeepVowels =
+    result?.ok === false &&
+    result.error.code === 'NO_LETTER_LEFT' &&
+    result.error.suggestKeepVowels &&
+    request?.method === 'spare' &&
+    !request.keepVowels;
 
   // After a failed trace, focus goes back to the field, whose description now holds the error.
   useEffect(() => {
@@ -91,18 +117,27 @@ export function App() {
   }, [result]);
 
   const methodOptions: SegmentedOption<Method>[] = [
-    { value: 'spare', label: strings.method.spare, disabled: true, note: strings.method.soon },
+    { value: 'spare', label: strings.method.spare },
     { value: 'kamea', label: strings.method.kamea },
   ];
 
   /**
-   * Starts a trace with the current text and planet, without submitting anything.
+   * Starts a trace with the current controls, without submitting anything.
    *
    * @param event - Submit event of the controls form, cancelled here.
    */
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
-    setRequest({ source, planet });
+    setRequest(
+      method === 'kamea'
+        ? { method, source, planet }
+        : {
+            method,
+            source,
+            keepVowels,
+            variant: nextSpareVariant(request, source, keepVowels),
+          },
+    );
   }
 
   /**
@@ -113,6 +148,23 @@ export function App() {
   function handleIntentionChange(value: string) {
     setSource(value);
     if (result?.ok === false) setRequest(null);
+  }
+
+  /** Draws the next variant of the Spare sigil shown, with its own intention and option. */
+  function handleOtherVariant() {
+    if (request?.method !== 'spare') return;
+    setRequest({ ...request, variant: request.variant + 1 });
+  }
+
+  /**
+   * Answers the "only vowels" error in one step: turns the option on, traces
+   * again, and moves focus to the switch that just changed (the button that
+   * had it disappears with the error).
+   */
+  function handleKeepVowelsAndTrace() {
+    setKeepVowels(true);
+    setRequest({ method: 'spare', source, keepVowels: true, variant: 0 });
+    keepVowelsInput.current?.focus();
   }
 
   return (
@@ -141,6 +193,15 @@ export function App() {
                 autoCapitalize="sentences"
                 spellCheck={false}
               />
+              {offersKeepVowels && (
+                <Button
+                  variant="secondary"
+                  className="trace-form__keep-vowels"
+                  onClick={handleKeepVowelsAndTrace}
+                >
+                  {strings.spare.keepVowelsAndTrace}
+                </Button>
+              )}
             </div>
             <div className="trace-form__method">
               <SegmentedControl
@@ -150,8 +211,19 @@ export function App() {
                 value={method}
                 onChange={setMethod}
               />
-              {method === 'kamea' && (
+              {method === 'kamea' ? (
                 <PlanetPicker value={planet} onChange={setPlanet} strings={strings.planet} />
+              ) : (
+                <Switch
+                  id={KEEP_VOWELS_FIELD_ID}
+                  label={strings.spare.keepVowels}
+                  checked={keepVowels}
+                  onCheckedChange={setKeepVowels}
+                  onText={strings.spare.on}
+                  offText={strings.spare.off}
+                  help={strings.spare.keepVowelsHelp}
+                  inputRef={keepVowelsInput}
+                />
               )}
             </div>
             <Button type="submit" variant="primary" fullWidth className="trace-form__submit">
@@ -169,8 +241,8 @@ export function App() {
           </h2>
           <SigilStage
             sigil={traced?.sigil}
-            label={traced === undefined ? '' : strings.stage.label(traced.planet)}
-            emptyText={error === undefined ? strings.stage.empty : strings.stage.error}
+            label={traced === undefined ? '' : sigilLabel(traced, strings)}
+            emptyText={emptyText(method, error !== undefined, strings)}
             replayToken={replayToken}
           />
           <div className="stage-actions">
@@ -183,9 +255,24 @@ export function App() {
             >
               {strings.replay}
             </Button>
+            {method === 'spare' && (
+              <Button
+                variant="secondary"
+                disabled={traced?.method !== 'spare'}
+                onClick={handleOtherVariant}
+              >
+                <VariantIcon />
+                {strings.otherVariant}
+              </Button>
+            )}
           </div>
+          {traced?.method === 'spare' && (
+            <p className="stage-caption" aria-hidden="true">
+              {strings.stage.variant(displayedVariant(traced.variant))}
+            </p>
+          )}
           <p className="visually-hidden" role="status">
-            {traced === undefined ? '' : strings.stage.traced(traced.letterCount, traced.planet)}
+            {traced === undefined ? '' : tracedAnnouncement(traced, strings)}
           </p>
         </section>
 
@@ -195,18 +282,120 @@ export function App() {
             open={explainOpen}
             onOpenChange={setExplainToggled}
           >
-            {traced === undefined ? (
+            {traced === undefined && (
               <p className="app-layout__explain-empty">{strings.explain.empty}</p>
-            ) : (
-              <KameaExplanation
-                sigil={traced.sigil}
-                ignored={traced.ignored}
-                strings={strings.explain.kamea}
-              />
+            )}
+            {traced?.method === 'kamea' && (
+              <KameaExplanation sigil={traced.sigil} strings={strings.explain.kamea} />
+            )}
+            {traced?.method === 'spare' && (
+              <SpareExplanation sigil={traced.sigil} strings={strings.explain.spare} />
             )}
           </Disclosure>
         </section>
       </main>
     </div>
+  );
+}
+
+/**
+ * Runs the trace chain of the requested method.
+ *
+ * @param request - What the user asked to trace.
+ * @returns The sigil and what the screen needs, or the business error.
+ */
+function traceRequest(request: TraceRequest): TraceResult {
+  return request.method === 'kamea'
+    ? traceKamea(request.source, request.planet)
+    : traceSpare(request.source, { keepVowels: request.keepVowels, variant: request.variant });
+}
+
+/**
+ * Variant number of a new Spare trace: the variant shown is kept when the
+ * user traces again with the same intention and option, and goes back to 0
+ * as soon as the intention, the method or the option changed.
+ *
+ * @param previous - Request of the sigil (or error) currently shown, if any.
+ * @param source - Intention as typed now.
+ * @param keepVowels - Vowel option now.
+ * @returns The variant to trace, an integer ≥ 0.
+ */
+function nextSpareVariant(
+  previous: TraceRequest | null,
+  source: string,
+  keepVowels: boolean,
+): number {
+  if (previous?.method !== 'spare') return 0;
+  return previous.source === source && previous.keepVowels === keepVowels ? previous.variant : 0;
+}
+
+/**
+ * Number of a Spare variant as shown to the user: the first sigil is
+ * "variant 1", which reads more naturally than the internal 0.
+ *
+ * @param variant - Internal variant number, integer ≥ 0.
+ * @returns The 1-based number shown on screen and in the accessible name.
+ */
+function displayedVariant(variant: number): number {
+  return variant + 1;
+}
+
+/**
+ * Accessible name of the sigil: method and planet or variant, never the intention.
+ *
+ * @param traced - Sigil shown.
+ * @param strings - Interface texts.
+ * @returns For instance "Sigil kamea de Saturne" or "Sigil de Spare, variante 2".
+ */
+function sigilLabel(traced: Trace, strings: AppStrings): string {
+  return traced.method === 'kamea'
+    ? strings.stage.label(traced.planet)
+    : strings.stage.spareLabel(displayedVariant(traced.variant));
+}
+
+/**
+ * Sentence announced by the live region once a sigil is traced.
+ *
+ * @param traced - Sigil shown.
+ * @param strings - Interface texts.
+ * @returns How many letters were drawn, and on which square or as which variant.
+ */
+function tracedAnnouncement(traced: Trace, strings: AppStrings): string {
+  return traced.method === 'kamea'
+    ? strings.stage.traced(traced.letterCount, traced.planet)
+    : strings.stage.spareTraced(traced.keptCount, displayedVariant(traced.variant));
+}
+
+/**
+ * Text of the empty scene.
+ *
+ * @param method - Method selected.
+ * @param failed - Whether the last trace failed.
+ * @param strings - Interface texts.
+ * @returns A pointer to the error under the field, or the invitation of the method.
+ */
+function emptyText(method: Method, failed: boolean, strings: AppStrings): string {
+  if (failed) return strings.stage.error;
+  return method === 'kamea' ? strings.stage.empty : strings.stage.emptySpare;
+}
+
+/**
+ * Two arrows turning, before the "Another variant" label (design: icon and
+ * text). Decorative: the label carries the meaning.
+ *
+ * @returns An `aria-hidden` SVG icon.
+ */
+function VariantIcon() {
+  return (
+    <svg className="stage-actions__icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+      <path
+        d="M13 6.5A5 5 0 0 0 3.6 5M3 9.5A5 5 0 0 0 12.4 11M3.5 2.5V5H6M12.5 13.5V11H10"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }

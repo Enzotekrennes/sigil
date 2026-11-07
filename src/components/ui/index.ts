@@ -12,6 +12,8 @@ export { SegmentedControl } from './SegmentedControl.tsx';
 export type { SegmentedControlProps, SegmentedOption } from './SegmentedControl.tsx';
 export { StatusMessage } from './StatusMessage.tsx';
 export type { StatusMessageProps, StatusTone } from './StatusMessage.tsx';
+export { Switch } from './Switch.tsx';
+export type { SwitchProps } from './Switch.tsx';
 export { TextField } from './TextField.tsx';
 export type { TextFieldProps } from './TextField.tsx';
 export { VisuallyHidden } from './VisuallyHidden.tsx';

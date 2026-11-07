@@ -1,0 +1,69 @@
+/*
+ * Shared styles of the explanation panels (KameaExplanation.tsx,
+ * SpareExplanation.tsx): an ordered list of steps, each with a numbered
+ * monospace title, Garamond text and muted notes.
+ *
+ * Steps stack in one column; from a 34rem wide panel (the 1024–1279 px
+ * layout, where the panel sits under the scene) the list gets two columns
+ * and each method chooses which step moves to the second one. The panel's
+ * container (`container-type`) is declared by the page layout.
+ * Every colour, size and spacing comes from tokens.css.
+ */
+
+.explain-steps {
+  display: grid;
+  gap: var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: explain-step;
+}
+
+.explain-steps__step {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+  counter-increment: explain-step;
+}
+
+.explain-steps__title {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-section);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--letter-spacing-label);
+  line-height: var(--line-height-tight);
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.explain-steps__title::before {
+  content: counter(explain-step) ". ";
+}
+
+.explain-steps__text {
+  max-width: var(--measure);
+  margin: 0;
+}
+
+.explain-steps__note {
+  font-size: var(--font-size-16);
+  font-style: italic;
+  color: var(--color-text-muted);
+}
+
+.explain-steps__letters {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-16);
+  letter-spacing: var(--letter-spacing-label);
+  overflow-wrap: anywhere;
+}
+
+@container (min-width: 34rem) {
+  .explain-steps {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: var(--space-6);
+    align-items: start;
+  }
+}

@@ -1,7 +1,8 @@
 /**
  * Component tests of the main screen, through what a user sees and does:
- * empty state, tracing a kamea sigil, the explanation panel, business errors
- * under the field, replay, and the privacy guarantees (decision D8).
+ * empty state, tracing a kamea or a Spare sigil, Spare variants and vowel
+ * option, the explanation panels, business errors under the field, replay,
+ * and the privacy guarantees (decision D8).
  */
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -28,11 +29,38 @@ function clickTrace(): void {
 /**
  * Run key of the tracing animation currently shown.
  *
+ * @param name - Accessible name of the sigil shown.
  * @returns The `data-run` attribute of the sigil's ink group.
  */
-function currentRun(): string | null {
-  const ink = screen.getByRole('img', { name: /^Sigil kamea/ }).querySelector('[data-run]');
+function currentRun(name = /^Sigil kamea/): string | null {
+  const ink = screen.getByRole('img', { name }).querySelector('[data-run]');
   return ink?.getAttribute('data-run') ?? null;
+}
+
+/** Selects the Spare method. */
+function chooseSpare(): void {
+  fireEvent.click(screen.getByRole('radio', { name: 'Spare' }));
+}
+
+/**
+ * Path data of the Spare sigil shown, one entry per stroke.
+ *
+ * @returns The `d` attribute of every path of the sigil.
+ */
+function spareStrokes(): (string | null)[] {
+  const sigil = screen.getByRole('img', { name: /^Sigil de Spare/ });
+  return Array.from(sigil.querySelectorAll('path'), (path) => path.getAttribute('d'));
+}
+
+/**
+ * The open "how it is made" panel.
+ *
+ * @returns Queries bound to the panel.
+ */
+function explanationPanel() {
+  const panel = screen.getByRole('heading', { name: 'Comment c’est fait' }).closest('details');
+  if (panel === null) throw new Error('No explanation panel.');
+  return within(panel);
 }
 
 beforeEach(() => {
@@ -61,11 +89,10 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: 'Rejouer' })).toBeDisabled();
   });
 
-  it('shows Spare as unavailable and kamea selected', () => {
+  it('offers both methods, kamea selected', () => {
     render(<App />);
 
-    expect(screen.getByRole('radio', { name: /Spare/ })).toBeDisabled();
-    expect(screen.getByRole('radio', { name: /Spare/ })).toHaveAccessibleName('Spare bientôt');
+    expect(screen.getByRole('radio', { name: 'Spare' })).toBeEnabled();
     expect(screen.getByRole('radio', { name: 'Kamea' })).toBeChecked();
   });
 
@@ -222,6 +249,166 @@ describe('App', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Rejouer' }));
     expect(currentRun()).not.toBe(firstRun);
+  });
+
+  it('swaps the planets for the vowel option, off by default, when Spare is chosen (D4)', () => {
+    render(<App />);
+
+    chooseSpare();
+
+    expect(screen.queryByRole('group', { name: 'Carré planétaire' })).not.toBeInTheDocument();
+    const option = screen.getByRole('switch', { name: 'Garder les voyelles' });
+    expect(option).not.toBeChecked();
+    expect(option).toHaveAccessibleDescription(/Spare retire les voyelles/);
+    expect(screen.getByRole('button', { name: 'Autre variante' })).toBeDisabled();
+  });
+
+  it('traces a Spare sigil named without the intention, with its explanation (F2)', () => {
+    render(<App />);
+    chooseSpare();
+
+    typeIntention(INTENTION);
+    clickTrace();
+
+    const sigil = screen.getByRole('img', { name: 'Sigil de Spare, variante 1' });
+    expect(sigil.outerHTML.toLowerCase()).not.toContain('calme');
+    expect(sigil.querySelectorAll('[data-mark]')).toHaveLength(0);
+    expect(screen.getByText('Variante 1')).toBeInTheDocument();
+    expect(
+      screen.getByText('Sigil de Spare tracé : 5 lettres retenues, variante 1.'),
+    ).toBeInTheDocument();
+
+    const panel = explanationPanel();
+    const titles = panel.getAllByRole('heading', { level: 3 }).map((title) => title.textContent);
+    expect(titles).toEqual([
+      'Lettres retirées',
+      'Squelettes des lettres',
+      'Composition retenue',
+      'Simplification',
+    ]);
+    const strip = panel.getByRole('list', { name: 'Les 11 lettres de l’intention' });
+    expect(within(strip).getAllByRole('listitem')[1]).toHaveTextContent('E, retirée : voyelle');
+    expect(within(strip).getAllByRole('listitem')[5]).toHaveTextContent('S, retirée : doublon');
+    expect(panel.getByText('S E')).toBeInTheDocument();
+    expect(panel.getByText('E U I A')).toBeInTheDocument();
+    expect(panel.getByText('J S C L M')).toBeInTheDocument();
+    const tiles = panel.getByRole('list', {
+      name: 'Lettres retenues et transformation de chacune',
+    });
+    expect(within(tiles).getAllByRole('listitem')).toHaveLength(5);
+    expect(
+      panel.getByRole('img', { name: 'Les 5 lettres superposées avant fusion' }),
+    ).toBeInTheDocument();
+    expect(panel.getByText(/^Parmi 24 façons de poser ces lettres/)).toBeInTheDocument();
+    expect(panel.getByText(/segments (deviennent|restent tels quels)/)).toBeInTheDocument();
+  });
+
+  it('draws another, reproducible sigil for each variant', () => {
+    const { unmount } = render(<App />);
+    chooseSpare();
+    typeIntention(INTENTION);
+    clickTrace();
+    const first = spareStrokes();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Autre variante' }));
+
+    expect(screen.getByRole('img', { name: 'Sigil de Spare, variante 2' })).toBeInTheDocument();
+    const second = spareStrokes();
+    expect(second).not.toEqual(first);
+    unmount();
+
+    render(<App />);
+    chooseSpare();
+    typeIntention(INTENTION);
+    clickTrace();
+    expect(spareStrokes()).toEqual(first);
+    fireEvent.click(screen.getByRole('button', { name: 'Autre variante' }));
+    expect(spareStrokes()).toEqual(second);
+  });
+
+  it('keeps the variant when tracing again, and goes back to the first one on any change', () => {
+    render(<App />);
+    chooseSpare();
+    typeIntention(INTENTION);
+    clickTrace();
+    fireEvent.click(screen.getByRole('button', { name: 'Autre variante' }));
+
+    clickTrace();
+    expect(screen.getByRole('img', { name: 'Sigil de Spare, variante 2' })).toBeInTheDocument();
+
+    typeIntention('Je suis serein');
+    clickTrace();
+    expect(screen.getByRole('img', { name: 'Sigil de Spare, variante 1' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Autre variante' }));
+    fireEvent.click(screen.getByRole('switch', { name: 'Garder les voyelles' }));
+    clickTrace();
+    expect(screen.getByRole('img', { name: 'Sigil de Spare, variante 1' })).toBeInTheDocument();
+  });
+
+  it('keeps the vowels when asked, removing duplicates only', () => {
+    render(<App />);
+    chooseSpare();
+    typeIntention(INTENTION);
+    clickTrace();
+    const withoutVowels = spareStrokes();
+
+    fireEvent.click(screen.getByRole('switch', { name: 'Garder les voyelles' }));
+    clickTrace();
+
+    const panel = explanationPanel();
+    expect(panel.getByText('J E S U I C A L M')).toBeInTheDocument();
+    expect(panel.queryByText('Voyelles')).not.toBeInTheDocument();
+    expect(spareStrokes()).not.toEqual(withoutVowels);
+    expect(
+      screen.getByText('Sigil de Spare tracé : 9 lettres retenues, variante 1.'),
+    ).toBeInTheDocument();
+  });
+
+  it('does not replay the tracing when a control changes after a Spare trace', () => {
+    render(<App />);
+    chooseSpare();
+    typeIntention(INTENTION);
+    clickTrace();
+    const firstRun = currentRun(/^Sigil de Spare/);
+
+    fireEvent.click(screen.getByRole('switch', { name: 'Garder les voyelles' }));
+    typeIntention('Je suis calme et serein');
+
+    expect(currentRun(/^Sigil de Spare/)).toBe(firstRun);
+  });
+
+  it('offers to keep the vowels when none of the letters is left ("oui", F2)', () => {
+    render(<App />);
+    chooseSpare();
+    typeIntention('oui');
+    clickTrace();
+
+    const field = screen.getByLabelText('Intention');
+    expect(field).toHaveAttribute('aria-invalid', 'true');
+    expect(field).toHaveAccessibleDescription(/Gardez les voyelles pour la tracer/);
+    expect(screen.queryByRole('img', { name: /^Sigil de Spare/ })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Garder les voyelles et tracer' }));
+
+    expect(screen.getByRole('img', { name: 'Sigil de Spare, variante 1' })).toBeInTheDocument();
+    const option = screen.getByRole('switch', { name: 'Garder les voyelles' });
+    expect(option).toBeChecked();
+    expect(option).toHaveFocus();
+    expect(
+      screen.queryByRole('button', { name: 'Garder les voyelles et tracer' }),
+    ).not.toBeInTheDocument();
+    expect(field).toHaveAttribute('aria-invalid', 'false');
+  });
+
+  it('signals ignored characters once, for Spare as for kamea', () => {
+    render(<App />);
+    chooseSpare();
+
+    typeIntention('Calme 2026');
+    clickTrace();
+
+    expect(screen.getAllByText(/Caractères ignorés|Ignorés car/)).toHaveLength(1);
   });
 
   it('never writes the intention in the URL or in browser storage (D8)', () => {

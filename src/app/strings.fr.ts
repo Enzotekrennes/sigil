@@ -7,7 +7,10 @@
  * depend on a value are functions of that value. Contains no logic beyond
  * French grammar (plurals, elision).
  */
-import type { KameaExplanationStrings } from '../features/explain/index.ts';
+import type {
+  KameaExplanationStrings,
+  SpareExplanationStrings,
+} from '../features/explain/index.ts';
 import type { Planet } from '../features/sigil/types.ts';
 
 /** Planet names as shown on the picker. */
@@ -65,8 +68,6 @@ const KAMEA_EXPLANATION: KameaExplanationStrings = {
   lettersBody:
     'Accents retirés, majuscules, espaces et ponctuation ôtés. La méthode kamea garde chaque lettre, même répétée.',
   lettersLabel: (count) => `${counted(count, 'lettre', 'lettres')} :`,
-  ignoredCharacters: (characters) =>
-    `Ignorés car hors de l’alphabet latin : ${quoted(characters)}.`,
 
   ruleTitle: 'Règle de conversion',
   ruleBody: (planetOf, cellCount) =>
@@ -95,6 +96,48 @@ const KAMEA_EXPLANATION: KameaExplanationStrings = {
     `Carré ${planetOf}, ${String(order)} × ${String(order)}, avec le chemin : ${numbers.join(', ')}`,
 };
 
+/** Texts of the explanation panel for a Spare sigil. */
+const SPARE_EXPLANATION: SpareExplanationStrings = {
+  reductionTitle: 'Lettres retirées',
+  reductionBody: (keepVowels) =>
+    keepVowels
+      ? 'Accents et ponctuation ôtés, chaque lettre déjà écrite est retirée. Les voyelles sont gardées, comme demandé.'
+      : 'Accents et ponctuation ôtés, chaque lettre déjà écrite est retirée, puis les voyelles A, E, I, O, U. Le Y reste : il sert souvent de consonne.',
+  stripLabel: (count) => `Les ${counted(count, 'lettre', 'lettres')} de l’intention`,
+  letterStatus: (reason) => {
+    if (reason === 'duplicate') return ', retirée : doublon';
+    if (reason === 'vowel') return ', retirée : voyelle';
+    return ', gardée';
+  },
+  duplicatesLabel: 'Doublons',
+  vowelsLabel: 'Voyelles',
+  keptLabel: 'Retenues',
+  noneRemoved: 'aucune',
+
+  skeletonsTitle: 'Squelettes des lettres',
+  skeletonsBody:
+    'Chaque lettre retenue est réduite à un trait unique, puis retournée, tournée ou réduite avant d’être posée sur les autres.',
+  skeletonsLabel: 'Lettres retenues et transformation de chacune',
+  upright: 'droite',
+  mirrored: 'miroir',
+  turns: { 90: '¼ de tour', 180: 'demi-tour', 270: '¾ de tour' },
+  scale: (percent) => `${String(percent)}${NBSP}%`,
+  sharedStem: (letter) => `barre de ${letter}`,
+  superimposedTitle: 'Superposées, avant fusion',
+  superimposedLabel: (count) =>
+    `Les ${counted(count, 'lettre', 'lettres')} superposées avant fusion`,
+
+  choiceTitle: 'Composition retenue',
+  choiceBody: (number, count) =>
+    `Parmi ${String(count)} façons de poser ces lettres, toujours les mêmes pour cette intention et cette variante, la n°${NBSP}${String(number)} est la plus équilibrée : centrée, compacte, sans lettre isolée.`,
+
+  simplificationTitle: 'Simplification',
+  simplificationBody: (before, after) =>
+    before === after
+      ? `Aucun trait ne se recouvre : les ${counted(before, 'segment', 'segments')} restent tels quels. Le sigil est enfin recentré sur son centre de gravité.`
+      : `Les traits qui se recouvrent sont fusionnés et tracés une seule fois : ${counted(before, 'segment', 'segments')} deviennent ${String(after)}. Le sigil est enfin recentré sur son centre de gravité.`,
+};
+
 /** All French texts of the interface. */
 export const STRINGS_FR = {
   appTitle: 'Sigil',
@@ -116,7 +159,14 @@ export const STRINGS_FR = {
     legend: 'Méthode',
     kamea: 'Kamea',
     spare: 'Spare',
-    soon: 'bientôt',
+  },
+
+  spare: {
+    keepVowels: 'Garder les voyelles',
+    keepVowelsHelp: 'Par défaut, Spare retire les voyelles A, E, I, O, U.',
+    on: 'oui',
+    off: 'non',
+    keepVowelsAndTrace: 'Garder les voyelles et tracer',
   },
 
   planet: {
@@ -127,14 +177,20 @@ export const STRINGS_FR = {
 
   trace: 'Tracer',
   replay: 'Rejouer',
+  otherVariant: 'Autre variante',
 
   stage: {
     heading: 'Sigil',
     empty: 'Écrivez une intention, choisissez un carré, puis tracez.',
+    emptySpare: 'Écrivez une intention, puis tracez.',
     error: 'Rien à tracer : corrigez l’intention d’après le message sous le champ.',
     label: (planet: Planet): string => `Sigil kamea ${PLANET_OF[planet]}`,
     traced: (letterCount: number, planet: Planet): string =>
       `Sigil tracé : ${counted(letterCount, 'lettre', 'lettres')} sur le carré ${PLANET_OF[planet]}.`,
+    spareLabel: (variant: number): string => `Sigil de Spare, variante ${String(variant)}`,
+    spareTraced: (keptCount: number, variant: number): string =>
+      `Sigil de Spare tracé : ${counted(keptCount, 'lettre retenue', 'lettres retenues')}, variante ${String(variant)}.`,
+    variant: (variant: number): string => `Variante ${String(variant)}`,
   },
 
   errors: {
@@ -146,6 +202,10 @@ export const STRINGS_FR = {
     tooFewLetters: 'Une seule lettre ne trace aucun chemin. Écrivez au moins deux lettres.',
     singleCell: (number: number, planet: Planet): string =>
       `Toutes les lettres tombent sur la case ${String(number)} du carré ${PLANET_OF[planet]} : le tracé serait un simple point. Choisissez un autre carré ou ajoutez des lettres.`,
+    onlyVowels:
+      'Sans ses voyelles, cette intention ne laisse aucune lettre : Spare retire les doublons et les voyelles. Gardez les voyelles pour la tracer.',
+    noLetterLeft:
+      'Aucune lettre ne reste une fois les doublons retirés. Modifiez l’intention puis tracez à nouveau.',
     invalidLetter:
       'Un caractère n’a pas pu être converti en nombre. Modifiez l’intention puis tracez à nouveau.',
   },
@@ -157,6 +217,7 @@ export const STRINGS_FR = {
     title: 'Comment c’est fait',
     empty: 'Chaque étape du calcul s’affichera ici une fois le sigil tracé.',
     kamea: KAMEA_EXPLANATION,
+    spare: SPARE_EXPLANATION,
   },
 };
 

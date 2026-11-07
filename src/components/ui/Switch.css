@@ -1,0 +1,115 @@
+/*
+ * Styles of Switch.tsx. The checkbox is visually hidden; its state is drawn
+ * on the sibling track: off, an outlined pill with the thumb on the left;
+ * on, an accent pill with the thumb on the right. The state text next to it
+ * repeats the state in words. Every value comes from tokens.css.
+ */
+
+.switch {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.switch__control {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--tap-target);
+  cursor: pointer;
+}
+
+.switch__label {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--letter-spacing-label);
+  text-transform: uppercase;
+}
+
+/* Track: twice as wide as high (40 × 20 px), pill shaped. */
+.switch__track {
+  position: relative;
+  flex: none;
+  box-sizing: border-box;
+  width: calc(var(--space-5) + var(--space-4));
+  height: calc(var(--space-4) + var(--space-1));
+  margin-left: auto;
+  border: thin solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard);
+}
+
+.switch__thumb {
+  position: absolute;
+  top: 50%;
+  left: var(--space-1);
+  width: var(--space-3);
+  height: var(--space-3);
+  border-radius: var(--radius-pill);
+  background: var(--color-text-muted);
+  transform: translateY(-50%);
+  transition:
+    left var(--duration-fast) var(--ease-standard),
+    background-color var(--duration-fast) var(--ease-standard);
+}
+
+.switch__state {
+  /* Wide enough for "oui" and "non" alike, so the switch does not move when toggled. */
+  min-width: 3ch;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-label);
+  color: var(--color-text-muted);
+}
+
+.switch__help {
+  max-width: var(--measure);
+  margin: 0;
+  font-size: var(--font-size-16);
+  line-height: var(--line-height-body);
+  color: var(--color-text-muted);
+}
+
+.switch__control:hover .switch__track {
+  border-color: var(--color-text);
+}
+
+.switch__input:focus-visible ~ .switch__track {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.switch__control:active .switch__track {
+  background: var(--color-surface-sunken);
+}
+
+.switch__input:checked ~ .switch__track {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+}
+
+.switch__input:checked ~ .switch__track .switch__thumb {
+  left: calc(100% - var(--space-3) - var(--space-1));
+  background: var(--color-on-accent);
+}
+
+.switch__control:hover .switch__input:checked ~ .switch__track {
+  background: var(--color-accent-hover);
+}
+
+.switch__control:has(.switch__input:disabled) {
+  cursor: not-allowed;
+}
+
+.switch__input:disabled ~ .switch__label,
+.switch__input:disabled ~ .switch__state {
+  color: var(--color-text-disabled);
+}
+
+.switch__input:disabled ~ .switch__track,
+.switch__control:hover .switch__input:disabled ~ .switch__track {
+  border-color: var(--color-border-subtle);
+  background: transparent;
+}

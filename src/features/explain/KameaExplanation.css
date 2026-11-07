@@ -1,62 +1,13 @@
 /*
  * Styles of KameaExplanation.tsx and KameaGrid.tsx.
  *
- * Steps stack in one column; when the panel is at least 34rem wide (the
+ * The step list itself (numbered titles, texts, notes) comes from
+ * ExplanationSteps.css. When the panel is at least 34rem wide (the
  * 1024–1279 px layout, where it sits under the scene), the square moves to a
  * second column next to the first three steps, as docs/design.md asks. The
  * panel's container (`container-type`) is declared by the page layout.
  * Every colour, size and spacing comes from tokens.css.
  */
-
-.kamea-steps {
-  display: grid;
-  gap: var(--space-5);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  counter-reset: kamea-step;
-}
-
-.kamea-steps__step {
-  display: grid;
-  gap: var(--space-2);
-  min-width: 0;
-  counter-increment: kamea-step;
-}
-
-.kamea-steps__title {
-  margin: 0;
-  font-family: var(--font-mono);
-  font-size: var(--font-size-section);
-  font-weight: var(--font-weight-medium);
-  letter-spacing: var(--letter-spacing-label);
-  line-height: var(--line-height-tight);
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-}
-
-.kamea-steps__title::before {
-  content: counter(kamea-step) ". ";
-}
-
-.kamea-steps__text {
-  max-width: var(--measure);
-  margin: 0;
-}
-
-.kamea-steps__note {
-  font-size: var(--font-size-16);
-  font-style: italic;
-  color: var(--color-text-muted);
-}
-
-.kamea-steps__letters {
-  margin: 0;
-  font-family: var(--font-mono);
-  font-size: var(--font-size-16);
-  letter-spacing: var(--letter-spacing-label);
-  overflow-wrap: anywhere;
-}
 
 .kamea-steps__formula {
   margin: 0;
@@ -185,13 +136,7 @@
 }
 
 @container (min-width: 34rem) {
-  .kamea-steps {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    column-gap: var(--space-6);
-    align-items: start;
-  }
-
-  .kamea-steps__step--path {
+  .kamea-steps__path {
     grid-column: 2;
     grid-row: 1 / span 3;
   }

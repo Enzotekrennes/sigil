@@ -4,12 +4,14 @@
  * worked example, the letter → number table, and the square with the path.
  *
  * Exposes `KameaExplanation`. Reads everything from the sigil's explanation
- * steps; only the ignored characters come from the normalised intention.
- * Holds no wording: every text comes from `strings`. The intention itself is
- * never written into an attribute, only shown as letters on screen.
+ * steps. Holds no wording: every text comes from `strings`. The characters
+ * left out by the normalisation are reported once, under the form, not here.
+ * The intention itself is never written into an attribute, only shown as
+ * letters on screen.
  */
 import { VisuallyHidden } from '../../components/ui/index.ts';
 import type { Sigil } from '../sigil/types.ts';
+import './ExplanationSteps.css';
 import './KameaExplanation.css';
 import { KameaGrid } from './KameaGrid.tsx';
 import { conversionExample, readKameaSteps, ruleWraps } from './kameaSteps.ts';
@@ -19,8 +21,6 @@ import type { KameaExplanationStrings } from './strings.ts';
 export interface KameaExplanationProps {
   /** Sigil drawn by the kamea method. Another method's sigil renders nothing. */
   readonly sigil: Sigil;
-  /** Characters dropped by the normalisation (digits, symbols…), as typed. */
-  readonly ignored: readonly string[];
   /** Texts in the interface language. */
   readonly strings: KameaExplanationStrings;
 }
@@ -30,7 +30,7 @@ export interface KameaExplanationProps {
  *
  * @returns The list of steps, or `null` when the sigil carries no kamea steps.
  */
-export function KameaExplanation({ sigil, ignored, strings }: KameaExplanationProps) {
+export function KameaExplanation({ sigil, strings }: KameaExplanationProps) {
   const steps = readKameaSteps(sigil.steps);
   if (steps === undefined) return null;
 
@@ -42,24 +42,19 @@ export function KameaExplanation({ sigil, ignored, strings }: KameaExplanationPr
   const loopCount = sigil.marks.filter((mark) => mark.kind === 'loop').length;
 
   return (
-    <ol className="kamea-steps">
-      <li className="kamea-steps__step">
-        <h3 className="kamea-steps__title">{strings.lettersTitle}</h3>
-        <p className="kamea-steps__text">{strings.lettersBody}</p>
-        <p className="kamea-steps__letters">
+    <ol className="explain-steps explain-steps--kamea">
+      <li className="explain-steps__step">
+        <h3 className="explain-steps__title">{strings.lettersTitle}</h3>
+        <p className="explain-steps__text">{strings.lettersBody}</p>
+        <p className="explain-steps__letters">
           <VisuallyHidden>{strings.lettersLabel(letters.length)}</VisuallyHidden>
           {letters.join('')}
         </p>
-        {ignored.length > 0 && (
-          <p className="kamea-steps__text kamea-steps__note">
-            {strings.ignoredCharacters(ignored)}
-          </p>
-        )}
       </li>
 
-      <li className="kamea-steps__step">
-        <h3 className="kamea-steps__title">{strings.ruleTitle}</h3>
-        <p className="kamea-steps__text">
+      <li className="explain-steps__step">
+        <h3 className="explain-steps__title">{strings.ruleTitle}</h3>
+        <p className="explain-steps__text">
           {wraps ? strings.ruleBody(planetOf, rule.cellCount) : strings.ruleNoWrap(rule.cellCount)}
         </p>
         <p className="kamea-steps__formula">{strings.ruleFormula(rule.cellCount)}</p>
@@ -69,12 +64,12 @@ export function KameaExplanation({ sigil, ignored, strings }: KameaExplanationPr
           </p>
         )}
         {rule.planet === 'saturn' && (
-          <p className="kamea-steps__text kamea-steps__note">{strings.rulePythagorean}</p>
+          <p className="explain-steps__text explain-steps__note">{strings.rulePythagorean}</p>
         )}
       </li>
 
-      <li className="kamea-steps__step">
-        <h3 className="kamea-steps__title">{strings.tableTitle}</h3>
+      <li className="explain-steps__step">
+        <h3 className="explain-steps__title">{strings.tableTitle}</h3>
         <div className="letter-table">
           <div className="letter-table__headings" aria-hidden="true">
             <span>{strings.tableHeadings.letter}</span>
@@ -103,9 +98,9 @@ export function KameaExplanation({ sigil, ignored, strings }: KameaExplanationPr
         </div>
       </li>
 
-      <li className="kamea-steps__step kamea-steps__step--path">
-        <h3 className="kamea-steps__title">{strings.pathTitle}</h3>
-        <p className="kamea-steps__text">{strings.pathBody}</p>
+      <li className="explain-steps__step kamea-steps__path">
+        <h3 className="explain-steps__title">{strings.pathTitle}</h3>
+        <p className="explain-steps__text">{strings.pathBody}</p>
         <KameaGrid
           sigil={sigil}
           square={path.square}
@@ -117,7 +112,7 @@ export function KameaExplanation({ sigil, ignored, strings }: KameaExplanationPr
           {path.numbers.join(' → ')}
         </p>
         {loopCount > 0 && (
-          <p className="kamea-steps__text kamea-steps__note">{strings.loopCount(loopCount)}</p>
+          <p className="explain-steps__text explain-steps__note">{strings.loopCount(loopCount)}</p>
         )}
       </li>
     </ol>

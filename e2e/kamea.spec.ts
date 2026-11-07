@@ -93,7 +93,7 @@ test('works with the keyboard alone', async ({ page }) => {
   await page.keyboard.press('Tab');
   await expect(page.getByLabel('Intention')).toBeFocused();
   await page.keyboard.type(INTENTION);
-  // Into the method group (Kamea, Spare being disabled), then the planets.
+  // Into the method group, on its checked radio (Kamea), then the planets.
   await page.keyboard.press('Tab');
   await expect(page.getByRole('radio', { name: 'Kamea' })).toBeFocused();
   await page.keyboard.press('Tab');
