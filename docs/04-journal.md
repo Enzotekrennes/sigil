@@ -122,3 +122,9 @@
 - Vérifications : vitest sigil + app 174/174, eslint, typecheck verts (sigil revérifié) ; mesure navigateur : Spare 11 traits 3,35 → 2,85 s, 42 traits 5,83 → 2,86 s, kamea 2,70 s inchangé.
 - Écarts au plan : texte d'aide de l'épaisseur dans `strings.fr.ts` commité avec T12 (fichier partagé).
 - Points ouverts : commentaires des tests kamea mentionnant l'épaisseur 4 « la plus forte proposée » à rafraîchir.
+
+## 2026-11-08 — T18 Variété des compositions Spare
+- Rôle : dev
+- Fait : orientations pondérées (3/4 couchées), écart en travers de l'axe étroit, lettre « meneuse » par variante (sans état), C N O Q U X Z au centre, terme d'allongement (poids 3), pente de lisibilité plus raide.
+- Vérifications : eslint + vitest spare 229/229 verts (revérifié) ; suite complète 682/682 ×3 ; e2e F2 + spare 13/13 ; planche : ratio moyen 1,36 → 1,10, dissimilarité min entre variantes 0,36 → 0,48, 1 lettre lisible / 15 (2 limites) ; ≈ 68 ms à CPU ×4.
+- Points ouverts : C encore lisible sur « Je suis calme » v2 (traits colinéaires comptés comme recouvrement) ; intention longue plus large (1,50). Non-régression F2 à rejouer avec le test F3.
