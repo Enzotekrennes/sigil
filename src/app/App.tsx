@@ -3,8 +3,8 @@
  *
  * Assembles the header, the trace controls (intention, method, then the
  * planet for kamea or the vowel option for Spare), the sigil scene with its
- * actions (replay, another Spare variant), the "Style" section (stroke
- * width, ends, framing circle) and the "how it is made" panel of the method
+ * actions (replay, another Spare variant, SVG and PNG export), the "Style"
+ * section (stroke width, ends, framing circle) and the "how it is made" panel of the method
  * used. Owns the screen state only; normalisation and sigil construction live
  * in the features, chained by `trace.ts`, and the replay (animated, or step
  * by step under reduced motion) in `useTraceReplay`.
@@ -30,6 +30,7 @@ import type { SegmentedOption } from '../components/ui/index.ts';
 // The hidden headings and live region use the shared `visually-hidden` class.
 import '../components/ui/VisuallyHidden.css';
 import { KameaExplanation, SpareExplanation } from '../features/explain/index.ts';
+import { ExportActions } from '../features/export/index.ts';
 import { normalizeIntention } from '../features/intention/index.ts';
 import { DEFAULT_STYLE_OPTIONS, useTraceReplay } from '../features/sigil/index.ts';
 import type { Planet, StyleOptions } from '../features/sigil/types.ts';
@@ -285,6 +286,12 @@ export function App() {
                 {strings.otherVariant}
               </Button>
             )}
+            <ExportActions
+              sigil={traced?.sigil}
+              method={traced?.method}
+              styleOptions={styleOptions}
+              strings={strings.export}
+            />
           </div>
           {traced?.method === 'spare' && (
             <p className="stage-caption" aria-hidden="true">

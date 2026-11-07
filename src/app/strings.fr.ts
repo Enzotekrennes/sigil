@@ -11,6 +11,7 @@ import type {
   KameaExplanationStrings,
   SpareExplanationStrings,
 } from '../features/explain/index.ts';
+import type { ExportStrings } from '../features/export/index.ts';
 import type { StrokeWidthLevel } from '../features/sigil/index.ts';
 import type { Planet } from '../features/sigil/types.ts';
 
@@ -156,6 +157,15 @@ const SPARE_EXPLANATION: SpareExplanationStrings = {
       : `Les traits qui se recouvrent sont fusionnés et tracés une seule fois : ${counted(before, 'segment', 'segments')} deviennent ${String(after)}. Le sigil est enfin recentré sur son centre de gravité.`,
 };
 
+/** Texts of the export buttons under the scene. */
+const EXPORT: ExportStrings = {
+  label: 'Exporter',
+  svg: 'SVG',
+  png: 'PNG',
+  error: (format) =>
+    `L’export ${format} a échoué. Réessayez ; si l’échec persiste, essayez un autre navigateur.`,
+};
+
 /** All French texts of the interface. */
 export const STRINGS_FR = {
   appTitle: 'Sigil',
@@ -196,6 +206,7 @@ export const STRINGS_FR = {
   trace: 'Tracer',
   replay: 'Rejouer',
   otherVariant: 'Autre variante',
+  export: EXPORT,
   replayStepwiseHint:
     'Mouvement réduit : chaque clic sur « Rejouer » trace une étape de plus, sans animation.',
   replayStep: (step: number, count: number): string =>
@@ -210,7 +221,7 @@ export const STRINGS_FR = {
       `${STROKE_WIDTH_LEVELS[level]} · ${strokeWidthNumber(width)}`,
     strokeWidthSpoken: (width: number, level: StrokeWidthLevel): string =>
       `${strokeWidthNumber(width)}, ${STROKE_WIDTH_LEVELS[level]}`,
-    strokeWidthHelp: 'De 0,4 à 4 sur un cadre de 100 ; 1,2 par défaut.',
+    strokeWidthHelp: 'De 0,4 à 2,4 sur un cadre de 100 ; 1,2 par défaut.',
     roundEnds: 'Extrémités arrondies',
     frameCircle: 'Cercle d’encadrement',
     on: 'oui',
