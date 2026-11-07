@@ -128,3 +128,10 @@
 - Fait : orientations pondérées (3/4 couchées), écart en travers de l'axe étroit, lettre « meneuse » par variante (sans état), C N O Q U X Z au centre, terme d'allongement (poids 3), pente de lisibilité plus raide.
 - Vérifications : eslint + vitest spare 229/229 verts (revérifié) ; suite complète 682/682 ×3 ; e2e F2 + spare 13/13 ; planche : ratio moyen 1,36 → 1,10, dissimilarité min entre variantes 0,36 → 0,48, 1 lettre lisible / 15 (2 limites) ; ≈ 68 ms à CPU ×4.
 - Points ouverts : C encore lisible sur « Je suis calme » v2 (traits colinéaires comptés comme recouvrement) ; intention longue plus large (1,50). Non-régression F2 à rejouer avec le test F3.
+
+## 2026-11-08 — T12 Exports SVG et PNG
+- Rôle : dev
+- Fait : SVG construit depuis le modèle (mêmes géométries que le rendu, couleurs littérales, fond `--color-surface`, `<title>Sigil</title>`), PNG 2048 px par canvas, téléchargement par Blob URL révoquée, nom `sigil-<méthode>-AAAAMMJJ-HHMMSS`, boutons SVG/PNG désactivés sans sigil.
+- Vérifications : eslint + vitest export/app 80/80 (revérifié) ; e2e export 5/5 (PNG 2048×2048 lu dans IHDR, fond clair/sombre au pixel, aucune violation CSP) ; suite e2e 63/64 (échec `style.spec` sur token minifié, confié à l'rôle T19).
+- Écarts au plan : deux boutons directs au lieu du dialogue « Exporter » de design.md → reporté dans T13 ; planète absente du nom de fichier.
+- Points ouverts : logique d'ajustement dupliquée renderer / export → `fittedDrawing` en cours ; état chargement visuel de `Button` → T13.
