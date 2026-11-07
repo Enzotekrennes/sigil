@@ -1,0 +1,77 @@
+Sigil
+Copyright (c) 2026 Enzo Abel
+Licensed under the MIT License (see LICENSE).
+
+This project includes third-party data and fonts that are not covered by the
+MIT License. Their notices follow.
+
+--------------------------------------------------------------------------------
+Hershey Fonts (Roman Simplex capitals A-Z)
+--------------------------------------------------------------------------------
+
+Used in: src/features/spare/glyphs/hersheyRomanSimplex.ts
+Source:  rowmans.jhf, records 501-526, from
+         https://github.com/kamalmostafa/hershey-fonts (hershey-fonts/rowmans.jhf);
+         identical to the first Usenet distribution of the Hershey Fonts
+         (mod.sources, volume 4, issue 42, 1986, submitted by Pete Holzmann).
+Change:  converted from James Hurt's character-pair format into TypeScript
+         polylines with numeric coordinates (x from the left side bearing,
+         y downwards from the baseline), by
+         scripts/generate-hershey-glyphs.js. No glyph shape was altered.
+
+Acknowledgements required by the distribution notice:
+
+  - The Hershey Fonts were originally created by Dr. A. V. Hershey while
+    working at the U. S. National Bureau of Standards.
+  - The format of the Font data in this distribution was originally created by
+        James Hurt
+        Cognition, Inc.
+        900 Technology Park Drive
+        Billerica, MA 01821
+        (mit-eddie!ci-dandelion!hurt)
+
+Use restriction of the distribution, reproduced as published:
+
+  This distribution of the Hershey Fonts may be used by anyone for
+  any purpose, commercial or otherwise, providing that:
+    1. The following acknowledgements must be distributed with
+       the font data:
+       - The Hershey Fonts were originally created by Dr.
+         A. V. Hershey while working at the U. S.
+         National Bureau of Standards.
+       - The format of the Font data in this distribution
+         was originally created by
+           James Hurt
+           Cognition, Inc.
+           900 Technology Park Drive
+           Billerica, MA 01821
+           (mit-eddie!ci-dandelion!hurt)
+    2. The font data in this distribution may be converted into
+       any other format *EXCEPT* the format distributed by
+       the U.S. NTIS (which organization holds the rights
+       to the distribution and use of the font data in that
+       particular format). Not that anybody would really
+       *want* to use their format... each point is described
+       in eight bytes as "xxx yyy:", where xxx and yyy are
+       the coordinate values as ASCII numbers.
+
+The converted data is not in the NTIS format.
+
+--------------------------------------------------------------------------------
+EB Garamond
+--------------------------------------------------------------------------------
+
+Used in: src/assets/fonts/eb-garamond/
+Copyright 2017 The EB Garamond Project Authors
+(https://github.com/octaviopardo/EBGaramond12)
+Licensed under the SIL Open Font License, Version 1.1; full text in
+src/assets/fonts/eb-garamond/OFL.txt.
+
+--------------------------------------------------------------------------------
+IBM Plex Mono
+--------------------------------------------------------------------------------
+
+Used in: src/assets/fonts/ibm-plex-mono/
+Copyright 2017 IBM Corp. All rights reserved.
+Licensed under the SIL Open Font License, Version 1.1; full text in
+src/assets/fonts/ibm-plex-mono/OFL.txt.
