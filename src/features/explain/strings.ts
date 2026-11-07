@@ -1,7 +1,7 @@
 /**
  * Shape of the texts the explanation panels (kamea and Spare) need, so that
  * the panels hold no wording of their own and the interface language stays
- * in one module per language (`src/app/strings.fr.ts`).
+ * in one module per language (`src/app/strings.fr.ts`, `src/app/strings.en.ts`).
  *
  * Types only.
  */
@@ -16,7 +16,7 @@ export interface LetterTableHeadings {
 
 /** Every text of the kamea explanation, in the interface language. */
 export interface KameaExplanationStrings {
-  /** Planet name with its preposition and article ("de Saturne", "du Soleil"). */
+  /** Planet name with its preposition and article ("de Saturne", "du Soleil", "of the Sun"). */
   readonly planetOf: Readonly<Record<Planet, string>>;
 
   /** Title of step 1, the normalised letters. */

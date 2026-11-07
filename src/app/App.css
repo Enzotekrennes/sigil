@@ -16,11 +16,13 @@
   min-height: 100vh;
 }
 
-/* Header: 56 px on mobile, 64 px from 768 px, with a bottom rule. */
+/* Header: 56 px on mobile, 64 px from 768 px, with a bottom rule; title left, language selector right. */
 .app-header {
   box-sizing: border-box;
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
   min-height: calc(var(--header-height) - var(--space-2));
   padding: 0 var(--page-gutter);
   border-bottom: thin solid var(--color-border-subtle);

@@ -2,16 +2,19 @@
  * Every text shown by the interface, in French: labels, help, error and
  * status messages, the accessible names, and the explanation panel.
  *
- * Exposes `STRINGS_FR` and its type `AppStrings`. The English dictionary of
- * the i18n task copies this module and satisfies the same type. Texts that
- * depend on a value are functions of that value. Contains no logic beyond
- * French grammar (plurals, elision).
+ * Exposes `STRINGS_FR` and its type `AppStrings`, the shape the English
+ * dictionary (`strings.en.ts`) must satisfy key for key. Texts that depend on
+ * a value are functions of that value. Contains no logic beyond French
+ * grammar (plurals, elision); plurals and decimals go through the shared
+ * formatting of `features/i18n`.
  */
 import type {
   KameaExplanationStrings,
   SpareExplanationStrings,
 } from '../features/explain/index.ts';
 import type { ExportStrings } from '../features/export/index.ts';
+import { countNoun, formatDecimal } from '../features/i18n/index.ts';
+import type { LanguageToggleStrings } from '../features/i18n/index.ts';
 import type { StrokeWidthLevel } from '../features/sigil/index.ts';
 import type { Planet } from '../features/sigil/types.ts';
 
@@ -46,7 +49,7 @@ const PLANET_OF: Readonly<Record<Planet, string>> = {
  * @returns `"<count> <noun>"`.
  */
 function counted(count: number, singular: string, plural: string): string {
-  return `${String(count)} ${count > 1 ? plural : singular}`;
+  return countNoun(count, { one: singular, other: plural }, 'fr');
 }
 
 /** No-break space: French guillemets never get separated from what they quote. */
@@ -76,7 +79,7 @@ const STROKE_WIDTH_LEVELS: Readonly<Record<StrokeWidthLevel, string>> = {
  * @returns For instance `"1,2"` or `"4,0"`.
  */
 function strokeWidthNumber(width: number): string {
-  return width.toLocaleString('fr-FR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  return formatDecimal(width, 'fr', 1);
 }
 
 /** Texts of the explanation panel for a kamea sigil. */
@@ -166,9 +169,20 @@ const EXPORT: ExportStrings = {
     `L’export ${format} a échoué. Réessayez ; si l’échec persiste, essayez un autre navigateur.`,
 };
 
+/**
+ * Texts of the language selector. The language names are written in their own
+ * language (the same in both dictionaries), as language pickers usually do.
+ */
+const LANGUAGE: LanguageToggleStrings = {
+  legend: 'Langue de l’interface',
+  codes: { fr: 'FR', en: 'EN' },
+  names: { fr: 'Français', en: 'English' },
+};
+
 /** All French texts of the interface. */
 export const STRINGS_FR = {
   appTitle: 'Sigil',
+  language: LANGUAGE,
 
   controls: {
     heading: 'Tracer un sigil',

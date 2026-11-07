@@ -1,15 +1,19 @@
 /**
  * Application shell: the single screen of Sigil.
  *
- * Assembles the header, the trace controls (intention, method, then the
- * planet for kamea or the vowel option for Spare), the sigil scene with its
+ * Assembles the header (title and FR | EN selector), the trace controls
+ * (intention, method, then the planet for kamea or the vowel option for
+ * Spare), the sigil scene with its
  * actions (replay, another Spare variant, SVG and PNG export), the "Style"
  * section (stroke width, ends, framing circle) and the "how it is made" panel of the method
  * used. Owns the screen state only; normalisation and sigil construction live
  * in the features, chained by `trace.ts`, and the replay (animated, or step
  * by step under reduced motion) in `useTraceReplay`.
  *
- * Style settings live in React state only and are not persisted.
+ * Style settings live in React state only and are not persisted. The
+ * interface language is held by `LanguageProvider` around the screen:
+ * switching it only re-renders the screen, so the intention typed, the sigil
+ * shown and its animation are kept as they are.
  *
  * Privacy (decision D8): the intention lives in React state only. It is
  * never put in the URL, in storage or in an attribute; the form never
@@ -31,15 +35,16 @@ import type { SegmentedOption } from '../components/ui/index.ts';
 import '../components/ui/VisuallyHidden.css';
 import { KameaExplanation, SpareExplanation } from '../features/explain/index.ts';
 import { ExportActions } from '../features/export/index.ts';
+import { LanguageProvider, LanguageToggle, useLanguage } from '../features/i18n/index.ts';
 import { normalizeIntention } from '../features/intention/index.ts';
 import { DEFAULT_STYLE_OPTIONS, useTraceReplay } from '../features/sigil/index.ts';
 import type { Planet, StyleOptions } from '../features/sigil/types.ts';
 import './App.css';
 import { PlanetPicker } from './PlanetPicker.tsx';
 import { SigilStage } from './SigilStage.tsx';
-import { STRINGS_FR } from './strings.fr.ts';
-import { StylePanel } from './StylePanel.tsx';
 import type { AppStrings } from './strings.fr.ts';
+import { useStrings } from './strings.ts';
+import { StylePanel } from './StylePanel.tsx';
 import { traceErrorMessage, traceKamea, traceSpare } from './trace.ts';
 import type { Trace, TraceResult } from './trace.ts';
 
@@ -93,13 +98,28 @@ const REPLAY_HINT_ID = 'replay-hint';
 const STYLE_OPEN_QUERY = '(min-width: 1024px)';
 
 /**
+ * Renders the application: the screen inside the provider of the interface
+ * language (stored choice, else detected from the browser).
+ *
+ * @returns The application, ready to mount.
+ */
+export function App() {
+  return (
+    <LanguageProvider>
+      <SigilScreen />
+    </LanguageProvider>
+  );
+}
+
+/**
  * Renders the whole screen and wires the trace flow:
  * text → normalisation → kamea or Spare sigil → scene and explanation panel.
  *
- * @returns The application screen.
+ * @returns The application screen, in the current interface language.
  */
-export function App() {
-  const strings = STRINGS_FR;
+function SigilScreen() {
+  const strings = useStrings();
+  const { language, setLanguage } = useLanguage();
   const [source, setSource] = useState('');
   const [method, setMethod] = useState<Method>(DEFAULT_METHOD);
   const [planet, setPlanet] = useState<Planet>(DEFAULT_PLANET);
@@ -191,6 +211,7 @@ export function App() {
     <div className="app">
       <header className="app-header">
         <h1 className="app-header__title">{strings.appTitle}</h1>
+        <LanguageToggle value={language} onChange={setLanguage} strings={strings.language} />
       </header>
 
       <main className="app-layout">

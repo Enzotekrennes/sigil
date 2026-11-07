@@ -20,6 +20,9 @@ export default defineConfig({
   reporter: process.env.CI ? 'github' : 'list',
   use: {
     baseURL: BASE_URL,
+    // The interface follows the browser language on first load (F6); the specs
+    // read the French interface unless they set another locale themselves.
+    locale: 'fr-FR',
     trace: 'on-first-retry',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],

@@ -1,0 +1,64 @@
+/*
+ * Styles of LanguageToggle.tsx: the "FR | EN" pair of the header, following
+ * the segmented control of the method (selected = accent background,
+ * on-accent text) at header size. Each segment keeps a 44 px touch target.
+ * Every value comes from tokens.css.
+ */
+
+.language-toggle {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  border: thin solid var(--color-border);
+  border-radius: var(--radius-field);
+}
+
+.language-toggle__option {
+  position: relative;
+  display: flex;
+  cursor: pointer;
+}
+
+.language-toggle__option + .language-toggle__option {
+  border-left: thin solid var(--color-border);
+}
+
+.language-toggle__face {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--tap-target);
+  min-height: var(--tap-target);
+  padding: 0 var(--space-2);
+  box-sizing: border-box;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-label);
+  letter-spacing: var(--letter-spacing-label);
+  text-transform: uppercase;
+  color: var(--color-text);
+  transition:
+    background-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard);
+}
+
+.language-toggle__option:hover .language-toggle__face {
+  background: var(--color-surface);
+}
+
+.language-toggle__input:focus-visible ~ .language-toggle__face {
+  outline: var(--focus-ring-width) solid var(--color-focus);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.language-toggle__input:checked ~ .language-toggle__face {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.language-toggle__option:active .language-toggle__face {
+  background: var(--color-surface-sunken);
+}
+
+.language-toggle__input:checked:active ~ .language-toggle__face {
+  background: var(--color-accent-hover);
+}

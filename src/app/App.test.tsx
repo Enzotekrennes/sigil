@@ -3,7 +3,8 @@
  * empty state, tracing a kamea or a Spare sigil, Spare variants and vowel
  * option, the explanation panels, business errors under the field, replay
  * (animated, or step by step under reduced motion), the style settings, and
- * the privacy guarantees (decision D8).
+ * the privacy guarantees (decision D8). The browser is set to French; the
+ * language switch has its own tests in `App.i18n.test.tsx`.
  */
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -68,11 +69,14 @@ function explanationPanel() {
 beforeEach(() => {
   localStorage.clear();
   sessionStorage.clear();
+  // jsdom reports an English browser; these tests read the French interface.
+  vi.spyOn(navigator, 'languages', 'get').mockReturnValue(['fr-FR']);
 });
 
 afterEach(() => {
   window.history.replaceState(null, '', '/');
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 
 /**

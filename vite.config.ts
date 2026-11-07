@@ -79,6 +79,8 @@ export default defineConfig({
         short_name: 'Sigil',
         description:
           'Générateur de sigils déterministe : carrés magiques (kamea) et méthode de Spare, tracés en SVG dans le navigateur.',
+        // One manifest, in French, the project's default language: a manifest cannot
+        // follow the in-app language switch, and the installed name "Sigil" is the same in both.
         lang: 'fr',
         dir: 'ltr',
         start_url: BASE_PATH,
