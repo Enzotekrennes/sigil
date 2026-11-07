@@ -102,3 +102,9 @@
 - Fait : mesure de lisibilité par lettre (`legibility.ts` : recouvrement à 3 unités, orientations familières), nouveau score D13, superposition accrue, nombre de candidats adaptatif, cadrage dans un disque de rayon 40, fusion des segments qui se longent.
 - Vérifications : eslint + vitest spare → 216/216 verts (revérifié) ; planche des 16 cas du test : 1 lettre lisible / 15 (+1 limite), « Yeux » exempté ; ≈ 64 ms à CPU ×4.
 - Points ouverts : `App.test.tsx` figeait « 24 façons » (correctif en cours) ; un trait colinéaire compte comme recouvrement ; compositions plus horizontales et denses qu'avant (à juger au test F2 n° 2).
+
+## 2026-11-08 — F2 Spare : test
+- Verdict : VALIDÉ (passage n° 2)
+- Preuves : 5 scénarios OK ; 0 lettre nettement lisible / 15 (2 limites), « Yeux » exempté ; centre de gravité 50/50, tous les points dans le disque de rayon 40 ; premier affichage 22–39 ms (217 ms max à CPU ×4) ; confidentialité, CSP, 375 px, clavier OK.
+- Bugs mineurs planifiés : B2 compositions plus horizontales et répétitives (ratio moyen 1,37) → T18 ; B3 tracé animé de ~5,4 s sur 124 lettres → T19.
+- Tests e2e : `e2e/f2-acceptance.spec.ts` inchangé, 10/10.
