@@ -1,0 +1,201 @@
+/*
+ * Design tokens for Sigil: the single source of every visual value
+ * (colors, typography, spacing, radii, shadows, motion, sigil stroke).
+ *
+ * Exposes semantic CSS custom properties on :root. The default theme is
+ * "ink on paper" (light); "gold on black" (dark) redefines the same tokens
+ * under [data-theme="dark"], or follows prefers-color-scheme when no theme
+ * has been chosen explicitly (no data-theme attribute on <html>).
+ *
+ * Does not declare @font-face rules (see fonts.css) and does not style any
+ * element. The tattoo stencil export uses the --stencil-* values, which are
+ * theme-independent on purpose.
+ */
+
+:root {
+  color-scheme: light;
+
+  /* Color: ink on paper. Contrast ratios are listed in docs/design.md. */
+  --color-bg: #f3eee3;
+  --color-surface: #faf7f0;
+  --color-surface-sunken: #e9e2d3;
+  --color-text: #1c1914;
+  --color-text-muted: #5b5345;
+  --color-text-disabled: #9a907e;
+  --color-border: #847966;
+  --color-border-subtle: #d6cdbb;
+  --color-accent: #8e2a1d;
+  --color-accent-hover: #6e1f15;
+  --color-on-accent: #faf7f0;
+  --color-focus: var(--color-accent);
+  --color-selection: #ead3c8;
+
+  --color-success: #2f6b3a;
+  --color-warning: #8a5a00;
+  --color-error: #a12a1e;
+  --color-info: #2c5a7a;
+
+  /* Sigil scene: stroke, frame, kamea markers and grid. */
+  --sigil-stroke: var(--color-text);
+  --sigil-frame: var(--sigil-stroke);
+  --sigil-marker: var(--sigil-stroke);
+  --sigil-grid-line: #c9bfac;
+  --sigil-grid-number: #6b6253;
+  --color-cell-active: #ead3c8;
+
+  /* Tattoo stencil export: pure black on pure white whatever the theme. */
+  --stencil-stroke: #000000;
+  --stencil-bg: #ffffff;
+
+  /* Typography: two OFL families, served locally. */
+  --font-serif: "EB Garamond", Georgia, "Times New Roman", serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+
+  --font-size-12: 0.75rem;
+  --font-size-14: 0.875rem;
+  --font-size-16: 1rem;
+  --font-size-18: 1.125rem;
+  --font-size-20: 1.25rem;
+  --font-size-24: 1.5rem;
+  --font-size-30: 1.875rem;
+  --font-size-36: 2.25rem;
+  --font-size-48: 3rem;
+
+  --font-size-body: var(--font-size-18); /* Garamond reads small: 18 px keeps it comfortable */
+  --font-size-label: var(--font-size-14);
+  --font-size-section: var(--font-size-12);
+  --font-size-intention: var(--font-size-24);
+  --font-size-title: var(--font-size-30);
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+
+  --line-height-body: 1.55;
+  --line-height-tight: 1.2;
+  --letter-spacing-label: 0.08em; /* uppercase mono labels need air */
+  --letter-spacing-title: 0.04em;
+  --measure: 65ch;
+
+  /* Spacing: base 4. */
+  --space-1: 0.25rem; /* 4 */
+  --space-2: 0.5rem; /* 8 */
+  --space-3: 0.75rem; /* 12 */
+  --space-4: 1rem; /* 16 */
+  --space-5: 1.5rem; /* 24 */
+  --space-6: 2rem; /* 32 */
+  --space-7: 3rem; /* 48 */
+  --space-8: 4rem; /* 64 */
+
+  --page-gutter: var(--space-4); /* 16 at 375 px; widened in layout from 1024 px */
+  --tap-target: 2.75rem; /* 44 px minimum touch target */
+
+  /* Layout: column widths of the desktop grid and the sigil scene. */
+  --layout-controls-width: 20rem; /* 320 */
+  --layout-explain-width: 22.5rem; /* 360 */
+  --stage-max-size: 40rem; /* 640 */
+  --header-height: 4rem; /* 64 */
+
+  /* Radii: near-square boxes, geometry belongs to the sigil. */
+  --radius-field: 2px;
+  --radius-panel: 4px;
+  --radius-pill: 999px;
+
+  /* Shadows: one real level (dialog, menu); panels use rules and spacing. */
+  --shadow-overlay: 0 12px 32px rgb(28 25 20 / 0.18), 0 2px 6px rgb(28 25 20 / 0.12);
+  --shadow-none: none;
+
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+
+  /* Motion. */
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-fade: 150ms;
+  --duration-frame: 600ms; /* framing circle, drawn last */
+  --duration-trace: 2400ms; /* whole sigil, split by path length */
+  --duration-pen-lift: 80ms; /* pause between two Spare strokes */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-trace: cubic-bezier(0.45, 0, 0.25, 1);
+
+  /* Sigil stroke, in units of the 1000 x 1000 viewBox. */
+  --sigil-stroke-width: 12;
+  --sigil-stroke-width-min: 4;
+  --sigil-stroke-width-max: 40;
+  --sigil-linecap: round;
+  --sigil-linejoin: round;
+  --sigil-miterlimit: 4;
+}
+
+/* Gold on black, chosen explicitly. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-bg: #0f0e0c;
+  --color-surface: #1a1814;
+  --color-surface-sunken: #090807;
+  --color-text: #ece5d5;
+  --color-text-muted: #a89e8a;
+  --color-text-disabled: #5e5747;
+  --color-border: #71684f;
+  --color-border-subtle: #2e2a22;
+  --color-accent: #d2ae5c;
+  --color-accent-hover: #e4c47e;
+  --color-on-accent: #0f0e0c;
+  --color-selection: #33291a;
+
+  --color-success: #7fbf8a;
+  --color-warning: #e0b04f;
+  --color-error: #e58a7a;
+  --color-info: #86b7d9;
+
+  --sigil-stroke: var(--color-accent);
+  --sigil-grid-line: #3a3429;
+  --sigil-grid-number: #8f8672;
+  --color-cell-active: #33291a;
+
+  /* Shadows barely read on near-black: a subtle border carries the overlay. */
+  --shadow-overlay: 0 0 0 1px var(--color-border-subtle), 0 12px 32px rgb(0 0 0 / 0.5);
+}
+
+/* Gold on black from the system preference, unless light was chosen. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+
+    --color-bg: #0f0e0c;
+    --color-surface: #1a1814;
+    --color-surface-sunken: #090807;
+    --color-text: #ece5d5;
+    --color-text-muted: #a89e8a;
+    --color-text-disabled: #5e5747;
+    --color-border: #71684f;
+    --color-border-subtle: #2e2a22;
+    --color-accent: #d2ae5c;
+    --color-accent-hover: #e4c47e;
+    --color-on-accent: #0f0e0c;
+    --color-selection: #33291a;
+
+    --color-success: #7fbf8a;
+    --color-warning: #e0b04f;
+    --color-error: #e58a7a;
+    --color-info: #86b7d9;
+
+    --sigil-stroke: var(--color-accent);
+    --sigil-grid-line: #3a3429;
+    --sigil-grid-number: #8f8672;
+    --color-cell-active: #33291a;
+
+    --shadow-overlay: 0 0 0 1px var(--color-border-subtle), 0 12px 32px rgb(0 0 0 / 0.5);
+  }
+}
+
+/* Reduced motion: the sigil appears with a short fade instead of being traced. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+    --duration-frame: 0ms;
+    --duration-trace: 0ms;
+    --duration-pen-lift: 0ms;
+  }
+}
