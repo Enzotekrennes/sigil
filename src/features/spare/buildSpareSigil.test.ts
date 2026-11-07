@@ -53,6 +53,14 @@ const ALWAYS_LETTER_LIKE: ReadonlySet<string> = new Set(['C', 'N', 'O', 'Q', 'U'
 /** Overlap beyond which two segments on the same line count as drawn twice. */
 const MAX_OVERLAP = 0.5;
 
+/**
+ * Time allowed for the broad F2 sample, in milliseconds. It builds 156 sigils
+ * (52 intentions × 3 variants), each scoring up to 96 candidate compositions
+ * and checking every pair of segments: about 2.5 s alone, more than the
+ * default 5 s when the whole suite runs in parallel on a loaded machine.
+ */
+const SAMPLE_TEST_TIMEOUT = 20_000;
+
 /** Intentions in French and English, short and long, to sample the method. */
 const INTENTIONS: readonly string[] = [
   'Je suis calme',
@@ -208,43 +216,47 @@ describe('buildSpareSigil', () => {
     }
   });
 
-  it(`meets the F2 criteria on ${String(INTENTIONS.length)} intentions × 3 variants`, () => {
-    expect(INTENTIONS.length).toBeGreaterThanOrEqual(50);
-    for (const text of INTENTIONS) {
-      for (let variant = 0; variant < 3; variant += 1) {
-        const sigil = sigilOf(text, { keepVowels: false, variant });
-        const segments = strokeSegments(sigil.strokes);
-        const centre = centreOfGravity(segments);
-        if (centre === undefined) throw new Error(`Empty sigil for ${text}`);
+  it(
+    `meets the F2 criteria on ${String(INTENTIONS.length)} intentions × 3 variants`,
+    () => {
+      expect(INTENTIONS.length).toBeGreaterThanOrEqual(50);
+      for (const text of INTENTIONS) {
+        for (let variant = 0; variant < 3; variant += 1) {
+          const sigil = sigilOf(text, { keepVowels: false, variant });
+          const segments = strokeSegments(sigil.strokes);
+          const centre = centreOfGravity(segments);
+          if (centre === undefined) throw new Error(`Empty sigil for ${text}`);
 
-        // Centre of gravity within 10 % of the side from the frame centre.
-        const offset = Math.hypot(centre.x - FRAME_SIZE / 2, centre.y - FRAME_SIZE / 2);
-        expect(offset / FRAME_SIZE).toBeLessThan(MAX_CENTRE_OFFSET_RATIO);
+          // Centre of gravity within 10 % of the side from the frame centre.
+          const offset = Math.hypot(centre.x - FRAME_SIZE / 2, centre.y - FRAME_SIZE / 2);
+          expect(offset / FRAME_SIZE).toBeLessThan(MAX_CENTRE_OFFSET_RATIO);
 
-        // Every point inside the drawing disc, hence inside the frame's margin
-        // and the framing circle.
-        for (const point of sigil.strokes.flat()) {
-          const radius = Math.hypot(point.x - FRAME_SIZE / 2, point.y - FRAME_SIZE / 2);
-          expect(radius).toBeLessThanOrEqual(DRAWING_RADIUS + ROUNDING_TOLERANCE);
-          expect(point.x).toBeGreaterThanOrEqual(FRAME_MARGIN);
-          expect(point.x).toBeLessThanOrEqual(FRAME_SIZE - FRAME_MARGIN);
-          expect(point.y).toBeGreaterThanOrEqual(FRAME_MARGIN);
-          expect(point.y).toBeLessThanOrEqual(FRAME_SIZE - FRAME_MARGIN);
-        }
-
-        // Valid polylines: at least two points, no zero-length segment.
-        for (const stroke of sigil.strokes) expect(stroke.length).toBeGreaterThanOrEqual(2);
-        for (const segment of segments) expect(segmentLength(segment)).toBeGreaterThan(0);
-
-        // No segment drawn twice, even partly, after simplification.
-        segments.forEach((segment, index) => {
-          for (const other of segments.slice(index + 1)) {
-            expect(collinearOverlap(segment, other)).toBeLessThanOrEqual(MAX_OVERLAP);
+          // Every point inside the drawing disc, hence inside the frame's margin
+          // and the framing circle.
+          for (const point of sigil.strokes.flat()) {
+            const radius = Math.hypot(point.x - FRAME_SIZE / 2, point.y - FRAME_SIZE / 2);
+            expect(radius).toBeLessThanOrEqual(DRAWING_RADIUS + ROUNDING_TOLERANCE);
+            expect(point.x).toBeGreaterThanOrEqual(FRAME_MARGIN);
+            expect(point.x).toBeLessThanOrEqual(FRAME_SIZE - FRAME_MARGIN);
+            expect(point.y).toBeGreaterThanOrEqual(FRAME_MARGIN);
+            expect(point.y).toBeLessThanOrEqual(FRAME_SIZE - FRAME_MARGIN);
           }
-        });
+
+          // Valid polylines: at least two points, no zero-length segment.
+          for (const stroke of sigil.strokes) expect(stroke.length).toBeGreaterThanOrEqual(2);
+          for (const segment of segments) expect(segmentLength(segment)).toBeGreaterThan(0);
+
+          // No segment drawn twice, even partly, after simplification.
+          segments.forEach((segment, index) => {
+            for (const other of segments.slice(index + 1)) {
+              expect(collinearOverlap(segment, other)).toBeLessThanOrEqual(MAX_OVERLAP);
+            }
+          });
+        }
       }
-    }
-  });
+    },
+    SAMPLE_TEST_TIMEOUT,
+  );
 
   it.each(REFUSED_CASES)(
     'leaves no letter of « %s » (variant %i) upright or upside down when it can be avoided',
