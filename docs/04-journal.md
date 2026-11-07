@@ -135,3 +135,8 @@
 - Vérifications : eslint + vitest export/app 80/80 (revérifié) ; e2e export 5/5 (PNG 2048×2048 lu dans IHDR, fond clair/sombre au pixel, aucune violation CSP) ; suite e2e 63/64 (échec `style.spec` sur token minifié, confié à l'rôle T19).
 - Écarts au plan : deux boutons directs au lieu du dialogue « Exporter » de design.md → reporté dans T13 ; planète absente du nom de fichier.
 - Points ouverts : logique d'ajustement dupliquée renderer / export → `fittedDrawing` en cours ; état chargement visuel de `Button` → T13.
+
+## 2026-11-08 — F2 Spare : non-régression après T18 et T19
+- Verdict : VALIDÉ (passage n° 3, sur le commit 2aa51b2 en worktree isolé)
+- Preuves : 5 scénarios OK ; 0 lettre nettement lisible / 15, 4 cas limites (aucune lettre entière et isolée) ; ratio moyen 1,09 (B2 corrigé) ; tracé ~2,87 s sur 124 lettres (B3 corrigé) ; CSP, confidentialité, 375 px OK.
+- Réserve mineure : air de famille (courbe en S + zigzag) entre certaines variantes de « Je suis calme » — non bloquant, à noter en limite connue.
