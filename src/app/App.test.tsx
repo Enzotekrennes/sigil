@@ -8,6 +8,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { candidateCountFor } from '../features/spare/index.ts';
 import { App } from './App.tsx';
 
 /** Intention of the F1 scenario. */
@@ -462,7 +463,12 @@ describe('App', () => {
     expect(
       panel.getByRole('img', { name: 'Les 5 lettres superposées avant fusion' }),
     ).toBeInTheDocument();
-    expect(panel.getByText(/^Parmi 24 façons de poser ces lettres/)).toBeInTheDocument();
+    // J S C L M: five retained letters, as many candidates as the Spare budget gives them.
+    expect(
+      panel.getByText(
+        new RegExp(`^Parmi ${String(candidateCountFor(5))} façons de poser ces lettres`),
+      ),
+    ).toBeInTheDocument();
     expect(panel.getByText(/segments (deviennent|restent tels quels)/)).toBeInTheDocument();
   });
 
