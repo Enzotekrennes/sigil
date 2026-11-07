@@ -1,5 +1,5 @@
 # Brief — Enzo / Sigil
-Statut : brouillon
+Statut : validé le 2026-11-07
 
 ## Client
 - Structure, secteur, taille : projet personnel d'Enzo, vitrine pour son GitHub public.
