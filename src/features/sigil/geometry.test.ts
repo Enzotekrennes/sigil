@@ -1,6 +1,7 @@
 /**
  * Unit tests of the sigil geometry: coordinate formatting, path data,
- * polyline lengths, tracing schedule and end bar placement.
+ * polyline lengths, tracing schedule, cap on the tracing duration and end
+ * bar placement.
  */
 import { describe, expect, it } from 'vitest';
 
@@ -9,7 +10,11 @@ import {
   formatCoordinate,
   polylineLength,
   polylinePathData,
+  PEN_LIFT_MS,
+  TRACE_DURATION_MS,
+  TRACE_MAX_MS,
   traceSchedule,
+  traceTimeScale,
 } from './geometry.ts';
 import type { EndBarMark } from './types.ts';
 
@@ -138,5 +143,43 @@ describe('endBarEndpoints', () => {
     expect(from.y).toBeCloseTo(40);
     expect(to.x).toBeCloseTo(50);
     expect(to.y).toBeCloseTo(60);
+  });
+});
+
+describe('traceTimeScale', () => {
+  /**
+   * Strokes and pen lifts together once scaled, in ms.
+   *
+   * @param strokeCount - Strokes of the sigil.
+   * @returns The tracing duration the renderer schedules.
+   */
+  function tracingMs(strokeCount: number): number {
+    const scale = traceTimeScale(strokeCount);
+    return (TRACE_DURATION_MS + PEN_LIFT_MS * (strokeCount - 1)) * scale;
+  }
+
+  it('keeps the kamea path (one stroke) at full speed', () => {
+    expect(traceTimeScale(1)).toBe(1);
+    expect(tracingMs(1)).toBe(2400);
+  });
+
+  it('keeps full speed while strokes and pen lifts fit the cap', () => {
+    // 2400 + 3 × 80 = 2640 ms.
+    expect(traceTimeScale(4)).toBe(1);
+    expect(traceTimeScale(5)).toBeLessThan(1);
+  });
+
+  it.each(Array.from({ length: 40 }, (_, index) => index + 1))(
+    'never exceeds the cap with %i strokes',
+    (strokeCount) => {
+      expect(tracingMs(strokeCount)).toBeLessThanOrEqual(TRACE_MAX_MS + 1e-9);
+    },
+  );
+
+  it('shrinks tracing and pen lifts in the same proportion', () => {
+    // "Je suis calme" with Spare: 11 strokes, 10 pen lifts, 3200 ms at full speed.
+    const scale = traceTimeScale(11);
+    expect(scale).toBeCloseTo(2700 / 3200, 12);
+    expect(tracingMs(11)).toBeCloseTo(2700, 9);
   });
 });

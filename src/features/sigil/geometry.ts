@@ -1,7 +1,7 @@
 /**
  * Pure geometry used to draw and animate a sigil: SVG path data of a
- * polyline, end points of the end bar, polyline lengths and the timing
- * schedule of the tracing animation.
+ * polyline, end points of the end bar, polyline lengths, the timing
+ * schedule of the tracing animation and the cap on its total duration.
  *
  * Lengths are computed from the model instead of `getTotalLength()`, so the
  * schedule is known before the SVG exists and can be tested without a
@@ -14,6 +14,24 @@ import type { EndBarMark, Point } from './types.ts';
  * below a pixel even on a 4096 px export, and keeps the markup short.
  */
 const COORDINATE_DECIMALS = 3;
+
+/**
+ * Tracing time of the strokes at full speed, in ms: `--duration-trace` of
+ * tokens.css (a test keeps both equal).
+ */
+export const TRACE_DURATION_MS = 2400;
+
+/** Pause between two strokes at full speed, in ms: `--duration-pen-lift` of tokens.css. */
+export const PEN_LIFT_MS = 80;
+
+/**
+ * Longest tracing, strokes and pen lifts together, in ms: `--duration-trace-max`
+ * of tokens.css. With the 150 ms fade of the start mark before and of the end
+ * mark after, a sigil is complete within 3 s whatever its number of strokes
+ * (the framing circle, when on, adds its own 600 ms). The kamea path (2.4 s,
+ * no pen lift) and Spare sigils of up to four strokes keep their full speed.
+ */
+export const TRACE_MAX_MS = 2700;
 
 /** Share of the tracing given to one stroke, and where it starts. */
 export interface StrokeTiming {
@@ -90,6 +108,22 @@ export function traceSchedule(strokes: readonly (readonly Point[])[]): StrokeTim
     elapsed += share;
     return timing;
   });
+}
+
+/**
+ * Factor applied to the tracing time and to every pen lift so that strokes
+ * and pauses together never exceed `TRACE_MAX_MS`. Both shrink in the same
+ * proportion: the pen keeps its rhythm, only faster, and the order of the
+ * strokes does not change.
+ *
+ * @param strokeCount - Strokes of the sigil, at least 1.
+ * @returns 1 while `TRACE_DURATION_MS + PEN_LIFT_MS × (strokeCount − 1)` fits
+ *   the cap, otherwise the factor in (0, 1) that brings it to the cap.
+ */
+export function traceTimeScale(strokeCount: number): number {
+  const penLifts = Math.max(strokeCount - 1, 0);
+  const natural = TRACE_DURATION_MS + PEN_LIFT_MS * penLifts;
+  return Math.min(1, TRACE_MAX_MS / natural);
 }
 
 /**

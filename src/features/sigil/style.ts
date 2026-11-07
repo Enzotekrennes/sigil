@@ -35,10 +35,12 @@ export const DEFAULT_STYLE_OPTIONS: StyleOptions = {
 export const STROKE_WIDTH_MIN = 0.4;
 
 /**
- * Thickest stroke offered by the width setting, in frame units: 40 in the
- * design's 1000-unit frame, a bold line that still leaves the cells apart.
+ * Thickest stroke offered by the width setting, in frame units: 24 in the
+ * design's 1000-unit frame, twice the default (decision D15). Beyond it the
+ * stroke alone fills a quarter of a Moon cell and the kamea marks, capped by
+ * their cell, no longer read as rings.
  */
-export const STROKE_WIDTH_MAX = 4;
+export const STROKE_WIDTH_MAX = 2.4;
 
 /** Step of the width setting, in frame units: 2 in the design's 1000-unit frame. */
 export const STROKE_WIDTH_STEP = 0.2;
@@ -49,8 +51,12 @@ export const STROKE_WIDTH_STEP = 0.2;
  */
 const THIN_STROKE_MAX = 1.4;
 
-/** Widest stroke still called "medium"; anything wider is "thick". 26 in the design's frame. */
-const MEDIUM_STROKE_MAX = 2.6;
+/**
+ * Widest stroke still called "medium"; anything wider is "thick". 18 in the
+ * design's frame: the 1.6–2.4 range above "thin" splits into two medium steps
+ * (1.6, 1.8) and three thick ones (2.0–2.4).
+ */
+const MEDIUM_STROKE_MAX = 1.8;
 
 /** How a stroke width is described next to the slider. */
 export type StrokeWidthLevel = 'thin' | 'medium' | 'thick';
@@ -75,7 +81,7 @@ export function snapStrokeWidth(width: number): number {
  * Word for a stroke width, shown with its value ("fin", "moyen", "épais").
  *
  * @param width - Width in frame units.
- * @returns `thin` up to 1.4, `medium` up to 2.6, `thick` above.
+ * @returns `thin` up to 1.4, `medium` up to 1.8, `thick` above.
  */
 export function strokeWidthLevel(width: number): StrokeWidthLevel {
   if (width <= THIN_STROKE_MAX) return 'thin';

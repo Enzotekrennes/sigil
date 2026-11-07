@@ -334,9 +334,9 @@ describe('App', () => {
 
     const width = screen.getByRole('slider', { name: 'Épaisseur' });
     expect(width).toHaveAttribute('aria-valuetext', '1,2, fin');
-    fireEvent.change(width, { target: { value: '4' } });
-    expect(width).toHaveAttribute('aria-valuetext', '4,0, épais');
-    expect(kameaInk()).toHaveAttribute('stroke-width', '4');
+    fireEvent.change(width, { target: { value: '2.4' } });
+    expect(width).toHaveAttribute('aria-valuetext', '2,4, épais');
+    expect(kameaInk()).toHaveAttribute('stroke-width', '2.4');
 
     fireEvent.click(screen.getByRole('switch', { name: 'Extrémités arrondies' }));
     expect(kameaInk()).toHaveAttribute('stroke-linecap', 'butt');

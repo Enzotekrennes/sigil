@@ -93,9 +93,9 @@ test('redraws the style settings at once, without replaying nor changing the sha
     'aria-valuetext',
     '1,2, fin',
   );
-  await setStrokeWidth(page, 4);
-  await expect(ink).toHaveAttribute('stroke-width', '4');
-  await expect(page.getByText('épais · 4,0')).toBeVisible();
+  await setStrokeWidth(page, 2.4);
+  await expect(ink).toHaveAttribute('stroke-width', '2.4');
+  await expect(page.getByText('épais · 2,4')).toBeVisible();
 
   await page.getByRole('switch', { name: 'Extrémités arrondies' }).click({ force: true });
   await expect(ink).toHaveAttribute('stroke-linecap', 'butt');
@@ -137,6 +137,18 @@ test('keeps the drawing inside the framing circle with a visible gap', async ({ 
     });
   // Circle radius 46, minus half its stroke, minus two strokes of gap, minus half the path stroke.
   expect(reach).toBeLessThanOrEqual(46 - 0.6 - 2.4 - 0.6 + 0.01);
+});
+
+test('serves the duration tokens the tracing cap is computed from', async ({ page }) => {
+  await page.goto('./');
+  const tokens = await page.evaluate(() => {
+    const style = getComputedStyle(document.documentElement);
+    return ['--duration-trace', '--duration-pen-lift', '--duration-trace-max'].map((name) =>
+      style.getPropertyValue(name).trim(),
+    );
+  });
+  // TRACE_DURATION_MS, PEN_LIFT_MS and TRACE_MAX_MS of src/features/sigil/geometry.ts.
+  expect(tokens).toEqual(['2400ms', '80ms', '2700ms']);
 });
 
 test('replays the tracing on demand (F3)', async ({ page }) => {
@@ -204,8 +216,8 @@ test('sets every style control with the keyboard', async ({ page }) => {
   await page.keyboard.press('ArrowRight');
   await expect(slider).toHaveAttribute('aria-valuetext', '1,4, fin');
   await page.keyboard.press('End');
-  await expect(slider).toHaveAttribute('aria-valuetext', '4,0, épais');
-  await expect(sigil(page).locator('[data-run]')).toHaveAttribute('stroke-width', '4');
+  await expect(slider).toHaveAttribute('aria-valuetext', '2,4, épais');
+  await expect(sigil(page).locator('[data-run]')).toHaveAttribute('stroke-width', '2.4');
 
   await page.keyboard.press('Tab');
   const roundEnds = page.getByRole('switch', { name: 'Extrémités arrondies' });

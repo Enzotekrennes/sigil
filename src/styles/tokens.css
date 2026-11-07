@@ -114,13 +114,18 @@
   --duration-frame: 600ms; /* framing circle, drawn last */
   --duration-trace: 2400ms; /* whole sigil, split by path length */
   --duration-pen-lift: 80ms; /* pause between two Spare strokes */
+  /*
+   * Longest tracing, strokes and pen lifts together: past it both shrink in
+   * proportion (traceTimeScale in features/sigil/geometry.ts mirrors these three values).
+   */
+  --duration-trace-max: 2700ms;
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --ease-trace: cubic-bezier(0.45, 0, 0.25, 1);
 
   /* Sigil stroke, in units of the 1000 x 1000 viewBox. */
   --sigil-stroke-width: 12;
   --sigil-stroke-width-min: 4;
-  --sigil-stroke-width-max: 40;
+  --sigil-stroke-width-max: 24;
   --sigil-linecap: round;
   --sigil-linejoin: round;
   --sigil-miterlimit: 4;

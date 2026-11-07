@@ -5,11 +5,13 @@
  * Tracing (see "Animation du tracé" in docs/design.md): each animated path
  * and the framing circle have pathLength="1", so stroke-dashoffset goes from
  * 1 (hidden) to 0 (fully drawn). The component sets per stroke:
- *   --trace-share     fraction of --duration-trace spent on the stroke;
- *   --trace-offset    fraction of --duration-trace elapsed before it;
+ *   --trace-share     fraction of the tracing time spent on the stroke;
+ *   --trace-offset    fraction of the tracing time elapsed before it;
  *   --trace-pen-lifts number of pen lifts before it;
- * and on the root --trace-pen-lifts-total. Order: start mark (fade), strokes,
- * other marks (fade), framing circle (--duration-frame).
+ * and on the root --trace-pen-lifts-total and --trace-scale, the factor
+ * that keeps strokes and pen lifts within --duration-trace-max (see
+ * traceTimeScale in geometry.ts). Order: start mark (fade), strokes, other
+ * marks (fade), framing circle (--duration-frame).
  */
 
 .sigil-renderer {
@@ -17,10 +19,13 @@
   width: 100%;
   height: auto;
 
+  /* Tracing time and pen lift once scaled to the number of strokes. */
+  --trace-time: calc(var(--duration-trace) * var(--trace-scale, 1));
+  --pen-lift-time: calc(var(--duration-pen-lift) * var(--trace-scale, 1));
+
   /* Moment the last stroke ends, shared by the marks and the framing circle. */
   --trace-end: calc(
-    var(--duration-fade) + var(--duration-trace) + var(--duration-pen-lift) *
-      var(--trace-pen-lifts-total)
+    var(--duration-fade) + var(--trace-time) + var(--pen-lift-time) * var(--trace-pen-lifts-total)
   );
 }
 
@@ -67,9 +72,9 @@
 }
 
 .sigil-renderer--trace .sigil-renderer__stroke {
-  animation-duration: calc(var(--duration-trace) * var(--trace-share));
+  animation-duration: calc(var(--trace-time) * var(--trace-share));
   animation-delay: calc(
-    var(--duration-fade) + var(--duration-trace) * var(--trace-offset) + var(--duration-pen-lift) *
+    var(--duration-fade) + var(--trace-time) * var(--trace-offset) + var(--pen-lift-time) *
       var(--trace-pen-lifts)
   );
 }

@@ -230,6 +230,26 @@ describe('SigilRenderer animation', () => {
     expect(path?.getAttribute('style')).toContain('--trace-offset: 0');
   });
 
+  it('keeps a single path at full speed', () => {
+    const { svg } = renderSigil(kamea(JE_SUIS_CALME));
+    expect(svg.getAttribute('style')).toContain('--trace-scale: 1');
+  });
+
+  it('speeds up a sigil of many strokes so its tracing stays within the cap', () => {
+    const manyStrokes: Sigil = {
+      ...kamea(JE_SUIS_CALME),
+      marks: [],
+      strokes: Array.from({ length: 11 }, (_, index) => [
+        { x: 10, y: 10 + index * 7 },
+        { x: 90, y: 10 + index * 7 },
+      ]),
+    };
+    const many = renderSigil(manyStrokes).svg;
+    expect(
+      Number(/--trace-scale: ([\d.]+)/.exec(many.getAttribute('style') ?? '')?.[1]),
+    ).toBeCloseTo(2700 / 3200, 6);
+  });
+
   it('also traces when matchMedia is unavailable', () => {
     const { svg } = renderSigil(kamea(JE_SUIS_CALME));
 

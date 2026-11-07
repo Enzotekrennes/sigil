@@ -20,7 +20,13 @@ import type { CSSProperties } from 'react';
 
 import { frameFitScale, scaleDrawing } from './frameFit.ts';
 import './SigilRenderer.css';
-import { endBarEndpoints, formatCoordinate, polylinePathData, traceSchedule } from './geometry.ts';
+import {
+  endBarEndpoints,
+  formatCoordinate,
+  polylinePathData,
+  traceSchedule,
+  traceTimeScale,
+} from './geometry.ts';
 import {
   frameCenter,
   FRAME_CIRCLE_RADIUS,
@@ -125,6 +131,7 @@ export function SigilRenderer({
   ];
   const rootStyle: TraceStyle = {
     '--trace-pen-lifts-total': String(Math.max(sigil.strokes.length - 1, 0)),
+    '--trace-scale': String(traceTimeScale(sigil.strokes.length)),
   };
 
   return (

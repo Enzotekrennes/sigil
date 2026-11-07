@@ -188,8 +188,8 @@ describe('endLoopClearance', () => {
 });
 
 describe('stroke width setting', () => {
-  it('spans the design range 4–40 by 2 (0.4–4 by 0.2 in the 0–100 frame)', () => {
-    expect([STROKE_WIDTH_MIN, STROKE_WIDTH_MAX, STROKE_WIDTH_STEP]).toEqual([0.4, 4, 0.2]);
+  it('spans the design range 4–24 by 2 (0.4–2.4 by 0.2 in the 0–100 frame)', () => {
+    expect([STROKE_WIDTH_MIN, STROKE_WIDTH_MAX, STROKE_WIDTH_STEP]).toEqual([0.4, 2.4, 0.2]);
     expect(DEFAULT_STYLE_OPTIONS.strokeWidth).toBe(snapStrokeWidth(1.2));
   });
 
@@ -202,17 +202,18 @@ describe('stroke width setting', () => {
 
   it('clamps to the range and falls back to the default for NaN', () => {
     expect(snapStrokeWidth(0)).toBe(0.4);
-    expect(snapStrokeWidth(12)).toBe(4);
+    expect(snapStrokeWidth(12)).toBe(2.4);
+    expect(snapStrokeWidth(4)).toBe(2.4);
     expect(snapStrokeWidth(Number.NaN)).toBe(1.2);
   });
 
-  it('names thin up to 1.4, medium up to 2.6, thick above', () => {
+  it('names thin up to 1.4, medium up to 1.8, thick above', () => {
     expect(strokeWidthLevel(0.4)).toBe('thin');
     expect(strokeWidthLevel(1.2)).toBe('thin');
     expect(strokeWidthLevel(1.4)).toBe('thin');
     expect(strokeWidthLevel(1.6)).toBe('medium');
-    expect(strokeWidthLevel(2.6)).toBe('medium');
-    expect(strokeWidthLevel(2.8)).toBe('thick');
-    expect(strokeWidthLevel(4)).toBe('thick');
+    expect(strokeWidthLevel(1.8)).toBe('medium');
+    expect(strokeWidthLevel(2)).toBe('thick');
+    expect(strokeWidthLevel(2.4)).toBe('thick');
   });
 });
