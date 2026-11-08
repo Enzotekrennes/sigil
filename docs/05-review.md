@@ -1,5 +1,5 @@
 # Review — Sigil
-Statut : brouillon
+Statut : validé le 2026-11-08
 Périmètre : tout le dépôt versionné hors `docs/` au commit a444eaf — `src/` (app, components/ui, features/*, lib, styles), `scripts/`, `public/`, `index.html`, `vite.config.ts`, configs (eslint, tsconfig, playwright), `package.json` et lockfile, `.github/workflows/deploy.yml`, `e2e/`, README, NOTICE, LICENSE ; plus le build `dist/`.
 
 ## Verdicts
