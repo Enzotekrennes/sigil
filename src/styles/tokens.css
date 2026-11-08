@@ -1,6 +1,6 @@
 /*
  * Design tokens for Sigil: the single source of every visual value
- * (colors, typography, spacing, radii, shadows, motion, sigil stroke).
+ * (colors, typography, spacing, radii, shadows, motion, sigil colors).
  *
  * Exposes semantic CSS custom properties on :root. The default theme is
  * "ink on paper" (light); "gold on black" (dark) redefines the same tokens
@@ -13,7 +13,9 @@
  *
  * Does not declare @font-face rules (see fonts.css) and does not style any
  * element. The tattoo stencil export uses the --stencil-* values, which are
- * theme-independent on purpose.
+ * theme-independent on purpose. The sigil's stroke width, line ends and
+ * joins are not tokens: they follow the style settings, in units of the
+ * 0–100 sigil frame (features/sigil/style.ts).
  */
 
 :root {
@@ -127,14 +129,6 @@
   --duration-trace-max: 2700ms;
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
   --ease-trace: cubic-bezier(0.45, 0, 0.25, 1);
-
-  /* Sigil stroke, in units of the 1000 x 1000 viewBox. */
-  --sigil-stroke-width: 12;
-  --sigil-stroke-width-min: 4;
-  --sigil-stroke-width-max: 24;
-  --sigil-linecap: round;
-  --sigil-linejoin: round;
-  --sigil-miterlimit: 4;
 }
 
 /* Gold on black, chosen explicitly. */

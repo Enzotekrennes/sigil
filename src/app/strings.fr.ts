@@ -153,7 +153,7 @@ const SPARE_EXPLANATION: SpareExplanationStrings = {
 
   choiceTitle: 'Composition retenue',
   choiceBody: (number, count) =>
-    `Parmi ${String(count)} façons de poser ces lettres, toujours les mêmes pour cette intention et cette variante, la n°${NBSP}${String(number)} est la plus équilibrée : centrée, compacte, sans lettre isolée.`,
+    `Parmi ${String(count)} façons de poser ces lettres, toujours les mêmes pour cette intention et cette variante, la n°${NBSP}${String(number)} est la mieux composée : centrée, proche du carré, chaque lettre aussi fondue que possible dans les autres pour qu’aucune ne se lise seule.`,
 
   simplificationTitle: 'Simplification',
   simplificationBody: (before, after) => {

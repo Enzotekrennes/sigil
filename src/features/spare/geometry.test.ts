@@ -1,36 +1,11 @@
 /**
  * Unit tests of the plane geometry shared by the Spare scoring and
- * simplification: segment distances and the length-weighted centre of gravity.
+ * simplification: the length-weighted centre of gravity and the rounding of
+ * frame coordinates.
  */
 import { describe, expect, it } from 'vitest';
 
-import { centreOfGravity, roundCoordinate, segmentDistance, strokeSegments } from './geometry.ts';
-
-describe('segmentDistance', () => {
-  it('is zero for crossing segments', () => {
-    const a = { start: { x: 0, y: 0 }, end: { x: 10, y: 10 } };
-    const b = { start: { x: 0, y: 10 }, end: { x: 10, y: 0 } };
-    expect(segmentDistance(a, b)).toBe(0);
-  });
-
-  it('is zero for segments meeting at an end', () => {
-    const a = { start: { x: 0, y: 0 }, end: { x: 10, y: 0 } };
-    const b = { start: { x: 10, y: 0 }, end: { x: 10, y: 10 } };
-    expect(segmentDistance(a, b)).toBe(0);
-  });
-
-  it('is the gap between the closest points of separate segments', () => {
-    const a = { start: { x: 0, y: 0 }, end: { x: 10, y: 0 } };
-    const b = { start: { x: 5, y: 3 }, end: { x: 5, y: 8 } };
-    expect(segmentDistance(a, b)).toBeCloseTo(3, 12);
-  });
-
-  it('measures to the end of a segment, not to its infinite line', () => {
-    const a = { start: { x: 0, y: 0 }, end: { x: 10, y: 0 } };
-    const b = { start: { x: 14, y: 3 }, end: { x: 20, y: 3 } };
-    expect(segmentDistance(a, b)).toBeCloseTo(5, 12);
-  });
-});
+import { centreOfGravity, roundCoordinate, strokeSegments } from './geometry.ts';
 
 describe('centreOfGravity', () => {
   it('weights each segment by its length', () => {

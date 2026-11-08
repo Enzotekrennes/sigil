@@ -4,9 +4,10 @@
  */
 import { describe, expect, it } from 'vitest';
 
-import { buildKameaSigil, PLANETS } from '../kamea/index.ts';
+import { buildKameaSigil, kameaCellSize, PLANETS } from '../kamea/index.ts';
+import { FRAME_MARGIN } from '../sigil/frame.ts';
 import type { KameaLetterEntry, Sigil } from '../sigil/types.ts';
-import { conversionExample, gridCellCenter, readKameaSteps, ruleWraps } from './kameaSteps.ts';
+import { conversionExample, readKameaSteps, ruleWraps } from './kameaSteps.ts';
 
 /** "Je suis calme" after normalisation. */
 const JE_SUIS_CALME = ['J', 'E', 'S', 'U', 'I', 'S', 'C', 'A', 'L', 'M', 'E'];
@@ -37,7 +38,7 @@ describe('readKameaSteps', () => {
   });
 });
 
-describe('gridCellCenter', () => {
+describe('square drawn by the panel', () => {
   it.each(PLANETS)('puts every visited cell of %s on a point of the path', (planet) => {
     const sigil = kamea(planet);
     const steps = readKameaSteps(sigil.steps);
@@ -45,7 +46,12 @@ describe('gridCellCenter', () => {
     const order = steps?.path.square.length ?? 0;
 
     for (const cell of steps?.path.cells ?? []) {
-      const center = gridCellCenter(cell, order);
+      // Same layout as `KameaGrid`: cells of `kameaCellSize` from the frame margin.
+      const size = kameaCellSize(order);
+      const center = {
+        x: FRAME_MARGIN + (cell.column + 0.5) * size,
+        y: FRAME_MARGIN + (cell.row + 0.5) * size,
+      };
       const onPath = path.some(
         (point) => Math.abs(point.x - center.x) < 1e-9 && Math.abs(point.y - center.y) < 1e-9,
       );

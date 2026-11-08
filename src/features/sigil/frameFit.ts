@@ -14,13 +14,8 @@
  * share, and its parts `frameFitScale` and `scaleDrawing`. Pure functions.
  */
 import { endBarEndpoints } from './geometry.ts';
-import {
-  FRAME_CIRCLE_RADIUS,
-  frameCenter,
-  loopSide,
-  scaleMark,
-  showsFrameCircle,
-} from './style.ts';
+import { loopSide } from './markGeometry.ts';
+import { FRAME_CIRCLE_RADIUS, frameCenter, scaleMark, showsFrameCircle } from './style.ts';
 import type { LoopMark, Mark, Point, Sigil, StyleOptions } from './types.ts';
 
 /**

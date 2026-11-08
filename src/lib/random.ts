@@ -4,10 +4,9 @@
  * from them, so that the same settings always give the same sigil.
  *
  * Exposes `cyrb53` (string → 53-bit integer), `mulberry32` (32-bit seed →
- * generator), `createRandom` (53-bit seed → generator) and small drawing
- * helpers (`randomBetween`, `randomInt`, `randomChoice`). Not suitable for
- * anything security related: these are fast, well-distributed, predictable
- * algorithms by design. Never uses `Math.random`.
+ * generator), `createRandom` (53-bit seed → generator) and the drawing
+ * helper `randomBetween`. Not suitable for anything security related: these
+ * are fast, well-distributed, predictable algorithms by design. Never uses `Math.random`.
  */
 
 /** A generator of numbers uniformly spread over [0, 1), like `Math.random`. */
@@ -84,35 +83,4 @@ export function createRandom(seed: number): RandomSource {
  */
 export function randomBetween(random: RandomSource, min: number, max: number): number {
   return min + random() * (max - min);
-}
-
-/**
- * Draws an integer uniformly between two bounds, both included.
- *
- * @param random - Generator to draw from; advanced by one step.
- * @param min - Smallest value, an integer.
- * @param max - Largest value, an integer not below `min`.
- * @returns An integer in [min, max].
- * @throws {RangeError} When a bound is not an integer or `max` is below `min`.
- */
-export function randomInt(random: RandomSource, min: number, max: number): number {
-  if (!Number.isInteger(min) || !Number.isInteger(max) || max < min) {
-    throw new RangeError(`Invalid integer range [${String(min)}, ${String(max)}].`);
-  }
-  return min + Math.floor(random() * (max - min + 1));
-}
-
-/**
- * Picks one item of a list, each with the same probability.
- *
- * @param random - Generator to draw from; advanced by one step.
- * @param items - Non-empty list.
- * @returns One of the items.
- * @throws {RangeError} When `items` is empty.
- */
-export function randomChoice<T>(random: RandomSource, items: readonly T[]): T {
-  if (items.length === 0) throw new RangeError('Cannot pick from an empty list.');
-  const index = randomInt(random, 0, items.length - 1);
-  // `index` is within bounds of a non-empty list; the narrowing is for the compiler only.
-  return items[index] as T;
 }

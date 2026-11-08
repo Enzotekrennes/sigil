@@ -35,9 +35,11 @@ export const MAX_CANDIDATE_COUNT = 96;
 
 /**
  * Letters × candidates scored per sigil. Scoring cost grows with both, so a
- * fixed budget keeps every intention within the same time: 480 is five
- * letters × 96, measured under 40 ms with a four-times slowed CPU, well
- * inside the 150 ms target for a phone.
+ * fixed budget keeps every intention within about the same time: 480 is five
+ * letters × 96. A whole Spare sigil was measured at about 68 ms with a
+ * four-times slowed CPU on the reference boards, and the first display at
+ * 217 ms at worst under the same slowdown, at acceptance; the time on a real
+ * phone is still to be measured.
  */
 export const SCORING_BUDGET = 480;
 

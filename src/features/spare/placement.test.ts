@@ -2,18 +2,17 @@
  * Unit tests of the placement of letters in a Spare composition: transforms
  * applied as traced, bounds of every draw, stem sharing, a fixed number of
  * draws per letter, the weighted turns, the spread across a letter's narrow
- * axis, the lead letter of each variant, and the detection of orientations
- * that leave a letter readable as written.
+ * axis, and the lead letter of each variant.
  */
 import { describe, expect, it } from 'vitest';
 
 import { mulberry32 } from '../../lib/random.ts';
 import type { RandomSource } from '../../lib/random.ts';
 import type { Point } from '../sigil/types.ts';
-import { getGlyph, isCapitalLetter } from './glyphs/index.ts';
+import { getGlyph } from './glyphs/index.ts';
 import type { CapitalLetter } from './glyphs/index.ts';
 import {
-  MAX_CENTRE_OFFSET,
+  MAX_LETTER_OFFSET,
   MAX_LETTER_SCALE,
   MAX_SUPPORT_SCALE,
   MIN_LETTER_SCALE,
@@ -22,7 +21,6 @@ import {
   composeLetters,
   drawTurn,
   leadLetterFor,
-  looksUpright,
 } from './placement.ts';
 import type { Composition } from './placement.ts';
 
@@ -141,7 +139,7 @@ describe('composeLetters', () => {
         }
         // O reads in any orientation: it stays near the centre.
         const reach =
-          placement.letter === 'O' ? MAX_CENTRE_OFFSET : MAX_CENTRE_OFFSET + NARROW_AXIS_SPREAD;
+          placement.letter === 'O' ? MAX_LETTER_OFFSET : MAX_LETTER_OFFSET + NARROW_AXIS_SPREAD;
         expect(Math.abs(placement.offset.y)).toBeLessThanOrEqual(reach);
         if (placement.sharedStemWith === null) {
           expect(Math.abs(placement.offset.x)).toBeLessThanOrEqual(reach);
@@ -218,8 +216,8 @@ describe('composeLetters, spread across the narrow axis', () => {
       scripted([0.9, 0.3, 0.5, 0.999999, 0.999999, 0.9]),
       NO_LEAD,
     ).placements;
-    expect(placement?.offset.x).toBeCloseTo(MAX_CENTRE_OFFSET, 4);
-    expect(placement?.offset.y ?? 0).toBeGreaterThan(MAX_CENTRE_OFFSET + 0.1);
+    expect(placement?.offset.x).toBeCloseTo(MAX_LETTER_OFFSET, 4);
+    expect(placement?.offset.y ?? 0).toBeGreaterThan(MAX_LETTER_OFFSET + 0.1);
   });
 
   it('keeps a letter readable in any orientation near the centre', () => {
@@ -228,8 +226,8 @@ describe('composeLetters, spread across the narrow axis', () => {
       scripted([0.9, 0.3, 0.5, 0.999999, 0.999999, 0.9]),
       NO_LEAD,
     ).placements;
-    expect(placement?.offset.x).toBeCloseTo(MAX_CENTRE_OFFSET, 4);
-    expect(placement?.offset.y).toBeCloseTo(MAX_CENTRE_OFFSET, 4);
+    expect(placement?.offset.x).toBeCloseTo(MAX_LETTER_OFFSET, 4);
+    expect(placement?.offset.y).toBeCloseTo(MAX_LETTER_OFFSET, 4);
   });
 });
 
@@ -268,28 +266,5 @@ describe('leadLetterFor', () => {
 
   it('falls back to every letter when all read in any orientation', () => {
     expect(leadLetterFor(['O', 'X'], 3)).toBe(1);
-  });
-});
-
-describe('looksUpright', () => {
-  it('flags every letter left untransformed', () => {
-    const alphabet = Array.from({ length: 26 }, (_, rank) =>
-      String.fromCharCode('A'.charCodeAt(0) + rank),
-    ).filter(isCapitalLetter);
-    expect(alphabet).toHaveLength(26);
-    for (const letter of alphabet) expect(looksUpright(letter, false, 0)).toBe(true);
-  });
-
-  it('flags the symmetries of a letter: a reversed M, a Z turned upside down, an O any way', () => {
-    expect(looksUpright('M', true, 0)).toBe(true);
-    expect(looksUpright('Z', false, 180)).toBe(true);
-    expect(looksUpright('O', true, 180)).toBe(true);
-  });
-
-  it('does not flag an orientation that changes the letter', () => {
-    expect(looksUpright('M', false, 180)).toBe(false);
-    expect(looksUpright('P', true, 0)).toBe(false);
-    expect(looksUpright('Z', true, 0)).toBe(false);
-    expect(looksUpright('L', false, 90)).toBe(false);
   });
 });

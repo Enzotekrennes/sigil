@@ -10,9 +10,10 @@
  * sides of it. Colours come from the
  * tokens through `KameaExplanation.css`.
  */
+import { kameaCellSize } from '../kamea/index.ts';
+import { DRAWING_SIZE, FRAME_MARGIN } from '../sigil/frame.ts';
 import { endBarEndpoints, formatCoordinate, polylinePathData, scaleMark } from '../sigil/index.ts';
 import type { GridCell, Mark, Point, Sigil } from '../sigil/types.ts';
-import { cellSize, KAMEA_GRID_MARGIN, KAMEA_GRID_SIZE } from './kameaSteps.ts';
 
 /**
  * Stroke width of the path on the grid, in frame units: half the sigil's
@@ -84,16 +85,13 @@ export interface KameaGridProps {
  */
 export function KameaGrid({ sigil, square, cells, label }: KameaGridProps) {
   const order = square.length;
-  const size = cellSize(order);
+  const size = kameaCellSize(order);
   const numberSize = Math.min(size * NUMBER_SIZE_RATIO, NUMBER_SIZE_MAX);
   const visited = new Set(cells.map((cell) => cellKey(cell)));
   const marks = sigil.marks.map((mark) => scaleMark(mark, GRID_PATH_WIDTH));
-  const viewOrigin = KAMEA_GRID_MARGIN - VIEW_MARGIN;
-  const viewSize = KAMEA_GRID_SIZE + 2 * VIEW_MARGIN;
-  const lineOffsets = Array.from(
-    { length: order + 1 },
-    (_, index) => KAMEA_GRID_MARGIN + index * size,
-  );
+  const viewOrigin = FRAME_MARGIN - VIEW_MARGIN;
+  const viewSize = DRAWING_SIZE + 2 * VIEW_MARGIN;
+  const lineOffsets = Array.from({ length: order + 1 }, (_, index) => FRAME_MARGIN + index * size);
 
   return (
     <svg
@@ -104,10 +102,10 @@ export function KameaGrid({ sigil, square, cells, label }: KameaGridProps) {
     >
       <rect
         className="kamea-grid__background"
-        x={KAMEA_GRID_MARGIN}
-        y={KAMEA_GRID_MARGIN}
-        width={KAMEA_GRID_SIZE}
-        height={KAMEA_GRID_SIZE}
+        x={FRAME_MARGIN}
+        y={FRAME_MARGIN}
+        width={DRAWING_SIZE}
+        height={DRAWING_SIZE}
       />
       {square.flatMap((values, row) =>
         values.map((_, column) =>
@@ -115,8 +113,8 @@ export function KameaGrid({ sigil, square, cells, label }: KameaGridProps) {
             <rect
               key={cellKey({ row, column })}
               className="kamea-grid__cell--visited"
-              x={formatCoordinate(KAMEA_GRID_MARGIN + column * size)}
-              y={formatCoordinate(KAMEA_GRID_MARGIN + row * size)}
+              x={formatCoordinate(FRAME_MARGIN + column * size)}
+              y={formatCoordinate(FRAME_MARGIN + row * size)}
               width={formatCoordinate(size)}
               height={formatCoordinate(size)}
             />
@@ -128,14 +126,14 @@ export function KameaGrid({ sigil, square, cells, label }: KameaGridProps) {
           <g key={offset}>
             <line
               x1={formatCoordinate(offset)}
-              y1={KAMEA_GRID_MARGIN}
+              y1={FRAME_MARGIN}
               x2={formatCoordinate(offset)}
-              y2={KAMEA_GRID_MARGIN + KAMEA_GRID_SIZE}
+              y2={FRAME_MARGIN + DRAWING_SIZE}
             />
             <line
-              x1={KAMEA_GRID_MARGIN}
+              x1={FRAME_MARGIN}
               y1={formatCoordinate(offset)}
-              x2={KAMEA_GRID_MARGIN + KAMEA_GRID_SIZE}
+              x2={FRAME_MARGIN + DRAWING_SIZE}
               y2={formatCoordinate(offset)}
             />
           </g>
@@ -158,8 +156,8 @@ export function KameaGrid({ sigil, square, cells, label }: KameaGridProps) {
         {square.flatMap((values, row) =>
           values.flatMap((value, column) => {
             const corner: Point = {
-              x: KAMEA_GRID_MARGIN + column * size + size * NUMBER_INSET_RATIO,
-              y: KAMEA_GRID_MARGIN + row * size + size * NUMBER_INSET_RATIO,
+              x: FRAME_MARGIN + column * size + size * NUMBER_INSET_RATIO,
+              y: FRAME_MARGIN + row * size + size * NUMBER_INSET_RATIO,
             };
             const isVisited = visited.has(cellKey({ row, column }));
             const padding = size * NUMBER_PLATE_PADDING_RATIO;

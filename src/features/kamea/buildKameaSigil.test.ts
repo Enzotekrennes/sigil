@@ -7,7 +7,13 @@ import { describe, expect, it } from 'vitest';
 
 import { frameFitScale, scaleDrawing } from '../sigil/frameFit.ts';
 import type { Drawing } from '../sigil/frameFit.ts';
-import { frameCenter, scaleMark } from '../sigil/style.ts';
+import {
+  frameCenter,
+  MARK_REFERENCE_STROKE_WIDTH,
+  scaleMark,
+  STROKE_WIDTH_MAX,
+  STROKE_WIDTH_MIN,
+} from '../sigil/style.ts';
 import type { EndBarMark, LoopMark, Mark, Point, Sigil } from '../sigil/types.ts';
 import { buildKameaSigil } from './buildKameaSigil.ts';
 import type { KameaError } from './buildKameaSigil.ts';
@@ -135,8 +141,12 @@ function marksOf<K extends Mark['kind']>(sigil: Sigil, kind: K): Extract<Mark, {
   return sigil.marks.filter((mark): mark is Extract<Mark, { kind: K }> => mark.kind === kind);
 }
 
-/** Stroke widths checked: the thinnest, the reference and the thickest offered. */
-const WIDTHS = [0.4, 1.2, 4];
+/**
+ * Stroke widths checked: the thinnest, the reference and the thickest the
+ * setting offers (decision D15), plus 4, the former maximum, as a margin
+ * beyond the range.
+ */
+const WIDTHS = [STROKE_WIDTH_MIN, MARK_REFERENCE_STROKE_WIDTH, STROKE_WIDTH_MAX, 4];
 
 /** Intentions whose last cell carries a loop, reaching it from several directions. */
 const END_LOOP_INTENTIONS: readonly (readonly string[])[] = [

@@ -156,10 +156,18 @@ describe('SpareExplanation', () => {
     expect(
       screen.getByText(
         new RegExp(
-          `^Parmi ${String(choice.candidateCount)} façons.*la n°\\s${String(choice.chosenIndex + 1)} est la plus équilibrée`,
+          `^Parmi ${String(choice.candidateCount)} façons.*la n°\\s${String(choice.chosenIndex + 1)} est la mieux composée`,
         ),
       ),
     ).toBeInTheDocument();
+  });
+
+  it('words the choice with the criteria of the score (D13), without letter isolation', () => {
+    render(<SpareExplanation sigil={spare(JE_SUIS_CALME)} strings={STRINGS} />);
+
+    const sentence = screen.getByText(/^Parmi \d+ façons/);
+    expect(sentence).toHaveTextContent(/centrée, proche du carré, chaque lettre .*fondue/);
+    expect(sentence).not.toHaveTextContent(/isolée/);
   });
 
   it.each([

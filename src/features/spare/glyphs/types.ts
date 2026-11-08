@@ -39,7 +39,18 @@ export type CapitalLetter =
   | 'Y'
   | 'Z';
 
-/** One capital letter as generated from the Hershey data, with its provenance. */
+/**
+ * One capital letter as generated from the Hershey data, with its provenance.
+ *
+ * The provenance fields (`hersheyId`, `hersheyRecord`, `hersheyLeft`,
+ * `hersheyRight`) are not read by the app, yet stay in the generated module
+ * and so in the bundle (about 2.5 kB before compression for the 26 letters):
+ * the idempotence test of the regeneration rebuilds the source file from
+ * them, and they let the committed data be checked against its source record
+ * by record. Splitting
+ * them into a separate module would change the generator, its tests and the
+ * committed file for no gain worth the risk.
+ */
 export interface HersheyGlyphRecord {
   /** Hershey glyph number in the NBS repertoire (Roman Simplex A = 501 … Z = 526). */
   readonly hersheyId: number;

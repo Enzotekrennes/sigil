@@ -10,7 +10,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { stubNativeDialog } from '../../components/ui/dialogStub.ts';
+import { stubNativeDialog } from '../../test/dialogStub.ts';
 import { buildKameaSigil } from '../kamea/index.ts';
 import { DEFAULT_STYLE_OPTIONS } from '../sigil/index.ts';
 import type { Sigil } from '../sigil/types.ts';

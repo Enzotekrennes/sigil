@@ -7,9 +7,4 @@
 export { normalizeIntention } from './normalize.ts';
 export type { Intention, NormalizeIntentionError, NormalizeIntentionResult } from './normalize.ts';
 export { reduceForSpare } from './reduce.ts';
-export type {
-  RemovalReason,
-  RemovedLetter,
-  SpareReductionOptions,
-  SpareReductionResult,
-} from './reduce.ts';
+export type { SpareReductionOptions, SpareReductionResult } from './reduce.ts';

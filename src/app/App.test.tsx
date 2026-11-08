@@ -10,7 +10,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { stubNativeDialog } from '../components/ui/dialogStub.ts';
+import { stubNativeDialog } from '../test/dialogStub.ts';
 import { candidateCountFor } from '../features/spare/index.ts';
 import { App } from './App.tsx';
 

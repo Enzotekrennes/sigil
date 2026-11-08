@@ -10,13 +10,8 @@
  * randomness, no I/O.
  * Does not normalise the intention: letters arrive already reduced to A–Z.
  */
-import {
-  DRAWING_SIZE,
-  FRAME_MARGIN,
-  FRAME_SIZE,
-  MARK_REFERENCE_STROKE_WIDTH,
-} from '../sigil/frame.ts';
-import { placeEndLoop } from '../sigil/style.ts';
+import { FRAME_SIZE, MARK_REFERENCE_STROKE_WIDTH } from '../sigil/frame.ts';
+import { placeEndLoop } from '../sigil/index.ts';
 import type {
   EndBarMark,
   ExplanationStep,
@@ -29,16 +24,8 @@ import type {
   Sigil,
 } from '../sigil/types.ts';
 import { CONVERSION_RULE, letterRank, rankToNumber } from './conversion.ts';
+import { kameaCellCenter, kameaCellSize } from './grid.ts';
 import { KAMEA_SQUARES } from './squares.ts';
-
-/**
- * Empty band around the grid, so that marks near the border stay inside the
- * frame: the shared frame margin.
- */
-const GRID_MARGIN = FRAME_MARGIN;
-
-/** Side of the grid the path is drawn on: the shared drawing area. */
-const GRID_SIZE = DRAWING_SIZE;
 
 /**
  * Stroke width mark sizes are expressed in, as multiples of it, as in the
@@ -92,9 +79,10 @@ const MARK_REFERENCE_CELL_SIZE = 18;
  * Largest loop diameter as a share of the cell side, whatever the stroke
  * width: 45 %. The loop then stays within its cell up to a stroke of about
  * 2, and the last cell's loop, its radius plus its clearance from the end bar
- * (5.2 at the thickest stroke, 4), still fits beside a last segment one cell
- * long: 0.225 × 8.9 + 5.2 = 7.2 on the Moon. Never reached at the reference
- * width (the loop is at most 40 % of the cell there).
+ * (3.6 at the thickest stroke offered, `STROKE_WIDTH_MAX` 2.4), still fits
+ * beside a last segment one cell long: 0.225 × 8.9 + 3.6 = 5.6 on the Moon.
+ * Never reached at the reference width (the loop is at most 40 % of the cell
+ * there).
  */
 const LOOP_MAX_DIAMETER_SHARE = 0.45;
 
@@ -181,7 +169,7 @@ export function buildKameaSigil(letters: readonly string[], planet: Planet): Kam
   const cellOf = indexCells(square);
   // Every number 1 … N² is in the square (checked by the tests), so the fallback never applies.
   const cells = numbers.map((value) => cellOf.get(value) ?? { row: 0, column: 0 });
-  const visited = cells.map((cell) => cellCenter(cell, order));
+  const visited = cells.map((cell) => kameaCellCenter(cell, order));
   const stroke = removeConsecutiveDuplicates(visited);
 
   const steps: ExplanationStep[] = [
@@ -217,21 +205,6 @@ function indexCells(square: readonly (readonly number[])[]): Map<number, GridCel
 }
 
 /**
- * Centre of a cell once the grid is laid in the frame, inside its margin.
- *
- * @param cell - Zero-based cell.
- * @param order - Side N of the square.
- * @returns The centre in frame units.
- */
-function cellCenter(cell: GridCell, order: number): Point {
-  const cellSize = GRID_SIZE / order;
-  return {
-    x: GRID_MARGIN + (cell.column + 0.5) * cellSize,
-    y: GRID_MARGIN + (cell.row + 0.5) * cellSize,
-  };
-}
-
-/**
  * Sizes of the marks for one square, in frame units: at the reference stroke
  * width, and the caps the renderer may not exceed as the stroke thickens.
  */
@@ -256,7 +229,7 @@ interface MarkSizes {
  * @returns The start circle radius, end bar length and loop radius, and their caps.
  */
 function markSizes(order: number): MarkSizes {
-  const cellSize = GRID_SIZE / order;
+  const cellSize = kameaCellSize(order);
   const markScale = Math.min(1, cellSize / MARK_REFERENCE_CELL_SIZE);
   return {
     startCircleRadius: Math.max(START_CIRCLE_RADIUS * markScale, START_CIRCLE_MIN_RADIUS),

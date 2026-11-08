@@ -6,13 +6,34 @@
 import { describe, expect, it } from 'vitest';
 
 import type { Point } from '../sigil/types.ts';
-import { pointSegmentDistance, strokeSegments } from './geometry.ts';
+import { distance, strokeSegments } from './geometry.ts';
+import type { Segment } from './geometry.ts';
 import {
   MIN_STRAIGHT_LENGTH,
   POINT_MERGE_TOLERANCE,
   STRAIGHT_MERGE_TOLERANCE,
   simplifyStrokes,
 } from './simplify.ts';
+
+/**
+ * Shortest distance from a point to a segment (not to its infinite line).
+ *
+ * @param point - Any point.
+ * @param segment - Any segment; a zero-length one acts as a point.
+ * @returns The distance in frame units.
+ */
+function pointSegmentDistance(point: Point, segment: Segment): number {
+  const { start, end } = segment;
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const squared = dx * dx + dy * dy;
+  if (squared === 0) return distance(point, start);
+  const t = Math.min(
+    1,
+    Math.max(0, ((point.x - start.x) * dx + (point.y - start.y) * dy) / squared),
+  );
+  return distance(point, { x: start.x + t * dx, y: start.y + t * dy });
+}
 
 /**
  * Shorthand for a point.

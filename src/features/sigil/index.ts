@@ -1,7 +1,8 @@
 /**
  * Public API of the sigil feature: the renderer, its style settings, its
- * replay (animated or step by step), the stencil-mode scale and the pure
- * geometry the export feature may reuse.
+ * replay (animated or step by step), the stencil-mode scale, the pure
+ * geometry the export feature may reuse, and the mark geometry the methods
+ * share with the renderer (`placeEndLoop`).
  *
  * Model types (`Sigil`, `Mark`, `StyleOptions`…) stay importable from
  * `types.ts`, and the frame constants from `frame.ts`, where the methods take
@@ -33,6 +34,7 @@ export {
 } from './style.ts';
 export type { LineEnds, StrokeWidthLevel } from './style.ts';
 export { fittedDrawing, frameFitScale, scaleDrawing } from './frameFit.ts';
+export { placeEndLoop } from './markGeometry.ts';
 export {
   inkBounds,
   snapStencilStrokeMm,

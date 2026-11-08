@@ -1,25 +1,19 @@
 /**
  * Balance score of the Spare candidates and the final recentring: rates how
  * well a composition sits in the frame as a seal (centre of gravity, use of
- * the drawing area, a roughly square outline) and how well its letters dissolve into one another (see
- * `legibility.ts`), and moves the chosen one so that its centre of gravity
- * lands on the centre of the frame, inside the disc the framing circle surrounds.
+ * the drawing area, a roughly square outline) and how well its letters
+ * dissolve into one another (see `legibility.ts`), and moves the chosen one so
+ * that its centre of gravity lands on the centre of the frame, inside the disc
+ * the framing circle surrounds.
  *
  * Exposes `scoreCandidate`, `chooseCandidate`, `recentringFor`,
- * `applyRecentring`, `findIsolatedLetters`, the weights of the score and the
- * `CandidateScore` type. Pure and deterministic. Does not merge or simplify strokes.
+ * `applyRecentring`, the weights of the score and the `CandidateScore` type.
+ * Pure and deterministic. Does not merge or simplify strokes.
  */
 import { DRAWING_SIZE, FRAME_SIZE } from '../sigil/frame.ts';
 import type { Point } from '../sigil/types.ts';
 import type { SpareCandidate } from './generateSpareCandidates.ts';
-import {
-  centreOfGravity,
-  distance,
-  roundCoordinate,
-  segmentDistance,
-  strokeSegments,
-} from './geometry.ts';
-import type { Segment } from './geometry.ts';
+import { centreOfGravity, distance, roundCoordinate, strokeSegments } from './geometry.ts';
 import { letterLegibility } from './legibility.ts';
 import type { LetterLegibility } from './legibility.ts';
 
@@ -86,12 +80,6 @@ export const ELONGATION_WEIGHT = 3;
 /** Elongation given to a drawing with no thickness at all, far above any real composition. */
 const MAX_ELONGATION = 100;
 
-/**
- * Distance under which two letters count as touching, in frame units: under
- * half the default stroke width (1.2), where drawn strokes already merge.
- */
-export const LETTER_CONTACT_DISTANCE = 0.5;
-
 /** Centre of the frame, where the centre of gravity of the final sigil lands. */
 const FRAME_CENTRE: Point = { x: FRAME_SIZE / 2, y: FRAME_SIZE / 2 };
 
@@ -103,7 +91,7 @@ const FRAME_CENTRE: Point = { x: FRAME_SIZE / 2, y: FRAME_SIZE / 2 };
  */
 export const DRAWING_RADIUS = DRAWING_SIZE / 2;
 
-/** Balance rating of one candidate, every term in its own unit for the explanation panel. */
+/** Rating of one candidate, every term of the penalty in its own unit. */
 export interface CandidateScore {
   /**
    * Distance of the centre of gravity from the frame centre, before
@@ -224,38 +212,6 @@ export function applyRecentring(
     }
     return moved;
   });
-}
-
-/**
- * Lists the letters none of whose segments comes within
- * `LETTER_CONTACT_DISTANCE` of another letter's segment, for the explanation
- * step (the score itself relies on the finer entanglement measure).
- *
- * @param candidate - Candidate with the owner of each stroke.
- * @returns Letter indices in input order; empty for a single letter, which
- *   has nothing to touch.
- */
-export function findIsolatedLetters(candidate: SpareCandidate): number[] {
-  const letterCount = candidate.placements.length;
-  if (letterCount < 2) return [];
-  const byLetter: Segment[][] = Array.from({ length: letterCount }, () => []);
-  candidate.strokes.forEach((stroke, index) => {
-    const owner = candidate.strokeLetters[index];
-    if (owner !== undefined) byLetter[owner]?.push(...strokeSegments([stroke]));
-  });
-
-  const isolated: number[] = [];
-  byLetter.forEach((own, letter) => {
-    const touches = byLetter.some(
-      (other, otherLetter) =>
-        otherLetter !== letter &&
-        own.some((segment) =>
-          other.some((against) => segmentDistance(segment, against) <= LETTER_CONTACT_DISTANCE),
-        ),
-    );
-    if (!touches) isolated.push(letter);
-  });
-  return isolated;
 }
 
 /**

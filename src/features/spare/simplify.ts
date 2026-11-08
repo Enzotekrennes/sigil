@@ -5,10 +5,12 @@
  * straight runs lose their useless middle points.
  *
  * Exposes `simplifyStrokes` and its tolerances. The shape is kept: a point
- * moves by at most `POINT_MERGE_TOLERANCE`, a long straight stroke is dropped
- * only where another one runs within `STRAIGHT_MERGE_TOLERANCE` of it, and
- * stroke order is preserved
- * (the tracing animation follows it). Does not score, recentre or round.
+ * snapped onto an earlier one moves by at most `POINT_MERGE_TOLERANCE`; a
+ * long straight stroke is dropped only where another one runs within
+ * `STRAIGHT_MERGE_TOLERANCE` of it, and the end of the piece left over is
+ * joined to the covering stroke's endpoint, so it moves by at most
+ * `STRAIGHT_MERGE_TOLERANCE` too; stroke order is preserved (the tracing
+ * animation follows it). Does not score, recentre or round.
  */
 import type { Point } from '../sigil/types.ts';
 import { distance, strokeSegments } from './geometry.ts';
@@ -23,8 +25,9 @@ export const POINT_MERGE_TOLERANCE = 0.5;
 
 /**
  * Deviation under which a middle point of a polyline counts as lying on the
- * straight line between its neighbours, in frame units. Hundredths of the
- * stroke width: only points that change nothing visible are dropped.
+ * straight line between its neighbours, in frame units. About a thousandth
+ * of the default stroke width (1.2): only points that change nothing visible
+ * are dropped.
  */
 export const STRAIGHT_TOLERANCE = 1e-3;
 

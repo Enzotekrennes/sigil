@@ -2,7 +2,8 @@
  * Builds a sigil with Austin Osman Spare's method: the normalised letters are
  * reduced (duplicates, vowels by default; decision D4), their single-stroke
  * skeletons superimposed in several seeded compositions (D6, D7), the
- * composition that is best balanced and leaves no letter readable kept, its
+ * composition with the lowest penalty kept (D13: centred, close to a square,
+ * filling the drawing area, each letter dissolved into the others), its
  * strokes merged and simplified, and the result recentred on its centre of
  * gravity, inside a disc that the framing circle surrounds. Also produces the explanation steps.
  *
@@ -17,8 +18,7 @@ import { generateSpareCandidates } from './generateSpareCandidates.ts';
 import type { SpareCandidate, SpareCompositionError } from './generateSpareCandidates.ts';
 import { roundCoordinate } from './geometry.ts';
 import { getGlyph, isCapitalLetter } from './glyphs/index.ts';
-import { looksUpright } from './placement.ts';
-import { applyRecentring, chooseCandidate, findIsolatedLetters, recentringFor } from './score.ts';
+import { applyRecentring, chooseCandidate, recentringFor } from './score.ts';
 import type { Recentring } from './score.ts';
 import { simplifyStrokes } from './simplify.ts';
 
@@ -88,11 +88,10 @@ export function buildSpareSigil(letters: readonly string[], options: SpareOption
   if (!generated.ok) return generated;
   const { seed, candidates } = generated.data;
 
-  const { index, scores } = chooseCandidate(candidates);
+  const { index } = chooseCandidate(candidates);
   const chosen = candidates[index];
-  const score = scores[index];
   // `chooseCandidate` returns an index of the list it was given; the guard is for the compiler.
-  if (chosen === undefined || score === undefined) throw new Error('Chosen candidate missing.');
+  if (chosen === undefined) throw new Error('Chosen candidate missing.');
 
   const simplified = simplifyStrokes(chosen.strokes);
   // The unmerged letters are part of the envelope, so the panel's
@@ -115,13 +114,6 @@ export function buildSpareSigil(letters: readonly string[], options: SpareOption
       kind: 'spare-candidate-choice',
       candidateCount: candidates.length,
       chosenIndex: index,
-      centreOffset: score.centreOffset,
-      fill: score.fill,
-      isolatedLetters: findIsolatedLetters(chosen),
-      uprightLetters: chosen.placements.flatMap((placement, letter) =>
-        looksUpright(placement.letter, placement.mirrored, placement.rotation) ? [letter] : [],
-      ),
-      penalty: score.penalty,
     },
     {
       kind: 'spare-simplification',

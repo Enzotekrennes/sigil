@@ -1,30 +1,19 @@
 /**
  * Reading helpers over the explanation steps of a kamea sigil: picks each
- * step out of `Sigil.steps`, chooses the letter used to illustrate the
- * conversion rule, and places the square on the sigil's frame.
+ * step out of `Sigil.steps`, and chooses the letter used to illustrate the
+ * conversion rule. Where the square sits in the frame comes from the kamea
+ * method (`kameaCellSize`), so the panel's square lies under the sigil's path.
  *
  * Pure functions, no rendering. Does not recompute anything the kamea method
  * already produced: numbers, cells and path all come from the sigil.
  */
 import type {
   ExplanationStep,
-  GridCell,
   KameaConversionRuleStep,
   KameaLetterEntry,
   KameaLetterTableStep,
   KameaSquarePathStep,
-  Point,
 } from '../sigil/types.ts';
-
-/**
- * Offset of the square inside the 0–100 frame of a kamea sigil. Must match
- * `GRID_MARGIN` in `features/kamea/buildKameaSigil.ts`; the unit tests check
- * that the cell centres computed here fall on the sigil's path.
- */
-export const KAMEA_GRID_MARGIN = 10;
-
-/** Side of the square inside the frame: the frame (100) minus both margins. */
-export const KAMEA_GRID_SIZE = 100 - 2 * KAMEA_GRID_MARGIN;
 
 /** Number of letters in the Latin alphabet: squares this large never wrap. */
 const ALPHABET_LENGTH = 26;
@@ -81,29 +70,4 @@ export function conversionExample(
  */
 export function ruleWraps(cellCount: number): boolean {
   return cellCount < ALPHABET_LENGTH;
-}
-
-/**
- * Side of one cell of an N × N square in frame units.
- *
- * @param order - Side N of the square.
- * @returns The cell size.
- */
-export function cellSize(order: number): number {
-  return KAMEA_GRID_SIZE / order;
-}
-
-/**
- * Centre of a cell in the sigil's 0–100 frame, where the path passes.
- *
- * @param cell - Zero-based cell.
- * @param order - Side N of the square.
- * @returns The centre in frame units.
- */
-export function gridCellCenter(cell: GridCell, order: number): Point {
-  const size = cellSize(order);
-  return {
-    x: KAMEA_GRID_MARGIN + (cell.column + 0.5) * size,
-    y: KAMEA_GRID_MARGIN + (cell.row + 0.5) * size,
-  };
 }

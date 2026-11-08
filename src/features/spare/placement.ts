@@ -6,11 +6,9 @@
  * superimposed rather than written side by side, in a roughly square seal.
  *
  * Exposes `composeLetters`, the `LetterPlacement` trace it records for the
- * explanation panel, the bounds and weights of every draw (`drawTurn`,
- * `offsetReach`, `leadLetterFor`), and `looksUpright`, which tells whether an
- * orientation leaves a letter exactly as written. Works in "composition
- * units" (a glyph's larger side measures 1 at scale 1, centred on 0, y
- * downwards); fitting the result into the 0–100 sigil frame belongs to
+ * explanation panel, and the bounds and weights of every draw (`drawTurn`,
+ * `offsetReach`, `leadLetterFor`). Works in "composition units" (a glyph's
+ * larger side measures 1 at scale 1, centred on 0, y downwards); fitting the result into the 0–100 sigil frame belongs to
  * `generateSpareCandidates`. Does not score, merge or simplify strokes.
  */
 import type { RandomSource } from '../../lib/random.ts';
@@ -116,11 +114,11 @@ export const MAX_SUPPORT_SCALE = 0.85;
  * length, so that each one's strokes run into the others'; wider offsets let
  * a letter slide out to the side, where it reads on its own.
  */
-export const MAX_CENTRE_OFFSET = 0.1;
+export const MAX_LETTER_OFFSET = 0.1;
 
 /**
  * Extra offset allowed across a letter's narrow axis, per unit of width it
- * lacks: a letter 0.6 wide may move `MAX_CENTRE_OFFSET + 0.4 × NARROW_AXIS_SPREAD`
+ * lacks: a letter 0.6 wide may move `MAX_LETTER_OFFSET + 0.4 × NARROW_AXIS_SPREAD`
  * across. Letters are taller than wide, and those laid on their side (the
  * orientations that hide them best) are wider than tall: superimposed on a
  * common centre they made wide, flat seals (width ≈ 1.4 × height). Fanning
@@ -146,13 +144,6 @@ const MIN_STEM_LENGTH = 0.5;
 
 /** Horizontal tolerance for a segment to count as vertical; glyph points are integers, so tiny. */
 const VERTICAL_TOLERANCE = 1e-9;
-
-/**
- * Decimals kept when comparing two orientations of a skeleton. Unit-frame
- * coordinates are exact ratios of small integers, so a millionth only absorbs
- * floating-point noise.
- */
-const SHAPE_COMPARISON_DECIMALS = 6;
 
 /** Sine and cosine of each quarter turn, exact so that vertical lines stay exactly vertical. */
 const TURN_MATRIX: Readonly<Record<QuarterTurn, { readonly cos: number; readonly sin: number }>> = {
@@ -206,7 +197,7 @@ export function composeLetters(
     // A letter readable in any orientation is only hidden by being covered:
     // it stays at the heart of the seal, without the narrow-axis spread.
     const reach = readsInAnyOrientation(letter)
-      ? { x: MAX_CENTRE_OFFSET, y: MAX_CENTRE_OFFSET }
+      ? { x: MAX_LETTER_OFFSET, y: MAX_LETTER_OFFSET }
       : offsetReach(oriented);
     let offset: Point = {
       x: randomBetween(random, -reach.x, reach.x),
@@ -270,7 +261,7 @@ export function drawTurn(draw: number): QuarterTurn {
 }
 
 /**
- * Largest offset of a letter's centre on each axis: `MAX_CENTRE_OFFSET`
+ * Largest offset of a letter's centre on each axis: `MAX_LETTER_OFFSET`
  * along the axis it spans fully, more across a narrow axis (see
  * `NARROW_AXIS_SPREAD`).
  *
@@ -284,8 +275,8 @@ export function offsetReach(strokes: readonly (readonly Point[])[]): Point {
   const width = Math.max(...xs) - Math.min(...xs);
   const height = Math.max(...ys) - Math.min(...ys);
   return {
-    x: MAX_CENTRE_OFFSET + NARROW_AXIS_SPREAD * Math.max(0, 1 - width),
-    y: MAX_CENTRE_OFFSET + NARROW_AXIS_SPREAD * Math.max(0, 1 - height),
+    x: MAX_LETTER_OFFSET + NARROW_AXIS_SPREAD * Math.max(0, 1 - width),
+    y: MAX_LETTER_OFFSET + NARROW_AXIS_SPREAD * Math.max(0, 1 - height),
   };
 }
 
@@ -342,71 +333,4 @@ function longestStemX(strokes: readonly (readonly Point[])[]): number | undefine
     }
   }
   return best?.x;
-}
-
-/**
- * Tells whether a letter, once mirrored and turned, still has exactly the
- * shape it has upright: the identity, or a symmetry of the letter (a reversed
- * M, an X or a Z turned by a half turn). Such a letter stays readable inside
- * the sigil, which the balance score penalises.
- *
- * @param letter - Upper-case letter A–Z.
- * @param mirrored - Whether the letter is flipped left to right.
- * @param rotation - Clockwise quarter turn applied after the mirror.
- * @returns True when the transformed skeleton draws the same set of segments
- *   as the upright one, whatever their direction or order.
- */
-export function looksUpright(
-  letter: CapitalLetter,
-  mirrored: boolean,
-  rotation: QuarterTurn,
-): boolean {
-  const uprightShape = segmentKeys(orientedSkeleton(letter, false, 0));
-  const orientedShape = segmentKeys(orientedSkeleton(letter, mirrored, rotation));
-  return (
-    uprightShape.size === orientedShape.size &&
-    [...orientedShape].every((key) => uprightShape.has(key))
-  );
-}
-
-/**
- * Gives a letter's skeleton mirrored and turned, in the unit frame: centred on
- * the middle of the upright glyph's box, its larger side 1, y downwards.
- *
- * @param letter - Upper-case letter A–Z.
- * @param mirrored - Whether to flip it left to right first.
- * @param rotation - Clockwise quarter turn applied after the mirror.
- * @returns New strokes, every point within [−0.5, 0.5] on both axes.
- */
-function orientedSkeleton(
-  letter: CapitalLetter,
-  mirrored: boolean,
-  rotation: QuarterTurn,
-): Point[][] {
-  return unitStrokes(getGlyph(letter)).map((stroke) =>
-    stroke.map((point) => orient(point, mirrored, rotation)),
-  );
-}
-
-/**
- * Describes a drawing as a set of direction-free segment keys, for comparing shapes.
- *
- * @param strokes - Strokes in the unit frame.
- * @returns One key per segment, its endpoints rounded and sorted.
- */
-function segmentKeys(strokes: readonly (readonly Point[])[]): Set<string> {
-  const factor = 10 ** SHAPE_COMPARISON_DECIMALS;
-  // `+ 0` turns −0 into 0, so that a point on an axis gets one key only.
-  const rounded = (value: number): string => String(Math.round(value * factor) + 0);
-  const pointKey = (point: Point): string => `${rounded(point.x)},${rounded(point.y)}`;
-  const keys = new Set<string>();
-  for (const stroke of strokes) {
-    for (let index = 1; index < stroke.length; index += 1) {
-      const from = stroke[index - 1];
-      const to = stroke[index];
-      if (from === undefined || to === undefined) continue;
-      keys.add([pointKey(from), pointKey(to)].sort().join(' '));
-    }
-  }
-  return keys;
 }

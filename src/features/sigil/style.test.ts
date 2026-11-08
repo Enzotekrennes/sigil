@@ -6,12 +6,9 @@ import { describe, expect, it } from 'vitest';
 
 import {
   DEFAULT_STYLE_OPTIONS,
-  endLoopClearance,
   frameCenter,
   lineEndsFor,
   MARK_REFERENCE_STROKE_WIDTH,
-  loopSide,
-  placeEndLoop,
   scaleMark,
   showsFrameCircle,
   snapStrokeWidth,
@@ -20,6 +17,7 @@ import {
   STROKE_WIDTH_STEP,
   strokeWidthLevel,
 } from './style.ts';
+import { placeEndLoop } from './markGeometry.ts';
 import type { LoopMark } from './types.ts';
 
 describe('DEFAULT_STYLE_OPTIONS', () => {
@@ -169,21 +167,6 @@ describe('scaleMark', () => {
         expect(scaled.anchor).toEqual(end);
       },
     );
-
-    it('keeps the loop on its side of the segment', () => {
-      const right = loopSide(lastSegment, { x: 3, y: 5.4 });
-      const left = loopSide(lastSegment, { x: -3, y: 5.4 });
-      expect([right.x, right.y + 0]).toEqual([1, 0]);
-      expect([left.x, left.y + 0]).toEqual([-1, 0]);
-    });
-  });
-});
-
-describe('endLoopClearance', () => {
-  it('is one stroke width for the touching strokes plus a gap capped at 1.2', () => {
-    expect(endLoopClearance(0.4)).toBeCloseTo(0.8, 9);
-    expect(endLoopClearance(1.2)).toBeCloseTo(2.4, 9);
-    expect(endLoopClearance(4)).toBeCloseTo(5.2, 9);
   });
 });
 

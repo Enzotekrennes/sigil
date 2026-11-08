@@ -1,18 +1,11 @@
 /**
  * Unit tests of the deterministic randomness helpers: reference values of
  * cyrb53 and Mulberry32, determinism, seed folding, rough uniformity and the
- * drawing helpers' bounds.
+ * bounds of `randomBetween`.
  */
 import { describe, expect, it } from 'vitest';
 
-import {
-  createRandom,
-  cyrb53,
-  mulberry32,
-  randomBetween,
-  randomChoice,
-  randomInt,
-} from './random.ts';
+import { createRandom, cyrb53, mulberry32, randomBetween } from './random.ts';
 import type { RandomSource } from './random.ts';
 
 /** Number of draws used by the statistical checks: enough for ±2 % bucket noise. */
@@ -136,40 +129,5 @@ describe('randomBetween', () => {
       expect(value).toBeGreaterThanOrEqual(-2.5);
       expect(value).toBeLessThan(4);
     }
-  });
-});
-
-describe('randomInt', () => {
-  it('reaches both bounds and nothing outside them', () => {
-    const random = mulberry32(5);
-    const seen = new Set<number>();
-    for (let index = 0; index < 1000; index += 1) seen.add(randomInt(random, -1, 2));
-    expect([...seen].sort((a, b) => a - b)).toEqual([-1, 0, 1, 2]);
-  });
-
-  it('refuses an inverted or fractional range', () => {
-    const random = mulberry32(5);
-    expect(() => randomInt(random, 3, 2)).toThrow(RangeError);
-    expect(() => randomInt(random, 0, 1.5)).toThrow(RangeError);
-  });
-});
-
-describe('randomChoice', () => {
-  it('picks every item with roughly the same frequency', () => {
-    const random = mulberry32(11);
-    const items = ['a', 'b', 'c', 'd'] as const;
-    const counts = new Map<string, number>();
-    for (let index = 0; index < DRAWS; index += 1) {
-      const item = randomChoice(random, items);
-      counts.set(item, (counts.get(item) ?? 0) + 1);
-    }
-    for (const item of items) {
-      expect((counts.get(item) ?? 0) / DRAWS).toBeGreaterThan(0.23);
-      expect((counts.get(item) ?? 0) / DRAWS).toBeLessThan(0.27);
-    }
-  });
-
-  it('refuses an empty list', () => {
-    expect(() => randomChoice(mulberry32(1), [])).toThrow(RangeError);
   });
 });

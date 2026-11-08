@@ -12,7 +12,7 @@
  * translation leaves them as they were drawn.
  */
 import { VisuallyHidden } from '../../components/ui/index.ts';
-import { FRAME_MARGIN } from '../sigil/frame.ts';
+import { FRAME_MARGIN, FRAME_SIZE } from '../sigil/frame.ts';
 import type { Box, Sigil, SpareLetterPlacement } from '../sigil/types.ts';
 import './ExplanationSteps.css';
 import './SpareExplanation.css';
@@ -35,8 +35,8 @@ const GLYPH_VIEW_PADDING = 2;
 const GLYPH_VIEW: Box = {
   x: FRAME_MARGIN - GLYPH_VIEW_PADDING,
   y: FRAME_MARGIN - GLYPH_VIEW_PADDING,
-  width: 100 - 2 * (FRAME_MARGIN - GLYPH_VIEW_PADDING),
-  height: 100 - 2 * (FRAME_MARGIN - GLYPH_VIEW_PADDING),
+  width: FRAME_SIZE - 2 * (FRAME_MARGIN - GLYPH_VIEW_PADDING),
+  height: FRAME_SIZE - 2 * (FRAME_MARGIN - GLYPH_VIEW_PADDING),
 };
 
 /** Separator between the parts of a transform description. */

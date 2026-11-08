@@ -1,14 +1,15 @@
 /**
  * Style settings of the sigil renderer: default `StyleOptions`, the range,
  * step and wording level of the stroke width setting, the framing circle
- * geometry, the SVG line cap and join for each setting, the resizing of
- * marks to the chosen stroke width (up to their cap) and the placement of the
- * loop of a path's last cell, clear of the end bar.
+ * geometry, the SVG line cap and join for each setting, and the resizing of
+ * marks to the chosen stroke width (up to their cap). Where the loop of a
+ * path's last cell sits belongs to `markGeometry.ts`.
  *
  * Pure values and functions; colours are not here, they come from the CSS
  * tokens (see `SigilRenderer.css`).
  */
 import { MARK_REFERENCE_STROKE_WIDTH } from './frame.ts';
+import { loopSide, placeEndLoop } from './markGeometry.ts';
 import type { Box, LoopMark, Mark, Point, StyleOptions } from './types.ts';
 
 // Re-exported so that the renderer's public API keeps offering it; the value lives in `frame.ts`.
@@ -136,55 +137,6 @@ export function frameCenter(viewBox: Box): Point {
 }
 
 /**
- * Widest paper gap kept between the end loop and the end bar, in frame units:
- * one reference stroke width. Below that width the gap equals the stroke
- * width; above it the gap stops growing, so that at the thickest stroke (4)
- * the loop, its clearance and its radius still fit beside a last segment one
- * Moon cell long (8.9 units).
- */
-const END_LOOP_GAP_MAX = MARK_REFERENCE_STROKE_WIDTH;
-
-/**
- * Distance from the end bar's axis to the nearest point of the end loop's
- * centre line: half the bar stroke and half the loop stroke (one stroke
- * width), plus a paper gap of one stroke width up to `END_LOOP_GAP_MAX`.
- *
- * @param strokeWidth - Stroke width in frame units, positive.
- * @returns The clearance in frame units: 2.4 at the reference width 1.2.
- */
-export function endLoopClearance(strokeWidth: number): number {
-  return strokeWidth + Math.min(strokeWidth, END_LOOP_GAP_MAX);
-}
-
-/**
- * Centre of the loop of a path's last cell. The loop touches the last segment
- * back from the end point by its radius plus `endLoopClearance`, on the
- * `side` given, so it never touches the end bar that crosses the end point.
- * Shared by the kamea method (at the reference width) and by `scaleMark`.
- *
- * @param end - Last point of the path, the loop's anchor.
- * @param lastSegment - Vector from `end` back to the previous point; not null.
- * @param side - Unit vector perpendicular to `lastSegment`, towards the loop.
- * @param radius - Loop radius in frame units.
- * @param strokeWidth - Stroke width in frame units, positive.
- * @returns The loop centre in frame units.
- */
-export function placeEndLoop(
-  end: Point,
-  lastSegment: Point,
-  side: Point,
-  radius: number,
-  strokeWidth: number,
-): Point {
-  const length = Math.hypot(lastSegment.x, lastSegment.y);
-  const back = (radius + endLoopClearance(strokeWidth)) / length;
-  return {
-    x: end.x + lastSegment.x * back + side.x * radius,
-    y: end.y + lastSegment.y * back + side.y * radius,
-  };
-}
-
-/**
  * Resizes a mark so it keeps its proportions to the stroke, up to the cap
  * its method set: marks are sized by the methods for
  * `MARK_REFERENCE_STROKE_WIDTH` and follow the stroke width until they reach
@@ -256,18 +208,4 @@ function scaleLoop(loop: LoopMark, radius: number, strokeWidth: number): LoopMar
       strokeWidth,
     ),
   };
-}
-
-/**
- * Unit vector across the last segment, on the side where the loop sits.
- *
- * @param lastSegment - Vector from the end point back to the previous point; not null.
- * @param offset - Loop centre minus anchor.
- * @returns The unit normal of `lastSegment` pointing towards `offset`.
- */
-export function loopSide(lastSegment: Point, offset: Point): Point {
-  const length = Math.hypot(lastSegment.x, lastSegment.y);
-  const normal = { x: -lastSegment.y / length, y: lastSegment.x / length };
-  const towards = normal.x * offset.x + normal.y * offset.y >= 0;
-  return towards ? normal : { x: -normal.x, y: -normal.y };
 }

@@ -29,6 +29,9 @@ export const STENCIL_STROKE_MM_MAX = 1.2;
 /** Step of the millimetre setting. */
 export const STENCIL_STROKE_MM_STEP = 0.1;
 
+/** Steps of the stroke setting per millimetre, an exact integer (10). */
+const STEPS_PER_MM = Math.round(1 / STENCIL_STROKE_MM_STEP);
+
 /**
  * Fixed-point rounds of `stencilScale`. Each round shrinks the error by the
  * share of the stroke in the drawing (below 0.6 even at 1 cm and 1.2 mm), so
@@ -41,7 +44,8 @@ const SCALE_TOLERANCE = 1e-12;
 
 /**
  * Brings any millimetre value onto the setting's grid: clamped to
- * [`STENCIL_STROKE_MM_MIN`, `STENCIL_STROKE_MM_MAX`] and rounded to a tenth.
+ * [`STENCIL_STROKE_MM_MIN`, `STENCIL_STROKE_MM_MAX`] and rounded to the
+ * nearest `STENCIL_STROKE_MM_STEP`.
  *
  * @param millimetres - Value read from a slider; `NaN` gives the default.
  * @returns A value the setting offers, with at most one decimal.
@@ -49,7 +53,10 @@ const SCALE_TOLERANCE = 1e-12;
 export function snapStencilStrokeMm(millimetres: number): number {
   if (Number.isNaN(millimetres)) return STENCIL_STROKE_MM_DEFAULT;
   const clamped = Math.min(Math.max(millimetres, STENCIL_STROKE_MM_MIN), STENCIL_STROKE_MM_MAX);
-  return Math.round(clamped / STENCIL_STROKE_MM_STEP) / 10;
+  // Dividing the step count by the steps per millimetre (rather than
+  // multiplying by the step) keeps the result free of binary noise (0.7, not
+  // 0.7000000000000001).
+  return Math.round(clamped / STENCIL_STROKE_MM_STEP) / STEPS_PER_MM;
 }
 
 /**

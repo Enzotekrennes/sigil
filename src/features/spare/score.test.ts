@@ -1,8 +1,8 @@
 /**
  * Unit tests of the Spare balance score and recentring: each term measured
  * on hand-made compositions, the weighted total, the choice of the best
- * candidate, the isolated letters reported to the panel, and the recentring
- * on the centre of gravity inside the drawing disc.
+ * candidate, and the recentring on the centre of gravity inside the drawing
+ * disc.
  */
 import { describe, expect, it } from 'vitest';
 
@@ -23,7 +23,6 @@ import {
   SHRINK_WEIGHT,
   applyRecentring,
   chooseCandidate,
-  findIsolatedLetters,
   recentringFor,
   scoreCandidate,
 } from './score.ts';
@@ -227,29 +226,6 @@ describe('chooseCandidate', () => {
 
   it('refuses an empty list', () => {
     expect(() => chooseCandidate([])).toThrow(RangeError);
-  });
-});
-
-describe('findIsolatedLetters', () => {
-  it('lists the letters touching no other letter', () => {
-    const candidate = candidateOf([
-      { letter: 'L', strokes: [line(10, 50, 90, 50)] },
-      { letter: 'T', strokes: [line(50, 10, 50, 90)] },
-      { letter: 'K', strokes: [line(80, 80, 90, 90)] },
-    ]);
-    expect(findIsolatedLetters(candidate)).toEqual([2]);
-  });
-
-  it('counts letters as touching when their strokes merely meet', () => {
-    const candidate = candidateOf([
-      { letter: 'L', strokes: [line(10, 10, 50, 10)] },
-      { letter: 'T', strokes: [line(50, 10, 90, 90)] },
-    ]);
-    expect(findIsolatedLetters(candidate)).toEqual([]);
-  });
-
-  it('never isolates a lone letter, which has nothing to touch', () => {
-    expect(findIsolatedLetters(LONE_L)).toEqual([]);
   });
 });
 

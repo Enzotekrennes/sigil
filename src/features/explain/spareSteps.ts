@@ -82,7 +82,8 @@ export function lettersRemovedFor(
 /**
  * Size of a letter relative to the largest possible one, for display.
  *
- * @param scale - `SpareLetterPlacement.scale`, about 0.55–1.
+ * @param scale - `SpareLetterPlacement.scale`, 0.7–1 (`MIN_LETTER_SCALE` of the
+ *   Spare placement).
  * @returns A whole percentage.
  */
 export function scalePercent(scale: number): number {

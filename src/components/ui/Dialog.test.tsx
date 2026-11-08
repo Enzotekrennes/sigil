@@ -12,7 +12,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Button } from './Button.tsx';
 import { Dialog } from './Dialog.tsx';
-import { stubNativeDialog } from './dialogStub.ts';
+import { stubNativeDialog } from '../../test/dialogStub.ts';
 
 beforeEach(() => {
   stubNativeDialog();

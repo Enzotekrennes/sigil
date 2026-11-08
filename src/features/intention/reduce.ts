@@ -2,27 +2,11 @@
  * Letter reduction of the Spare method (plan decision D4): duplicates are
  * always removed, vowels by default.
  *
- * Exposes `reduceForSpare` and the trace of removed letters that the
- * explanation panel displays. The kamea method does not use it: it traces
- * every normalised letter (D3).
+ * Exposes `reduceForSpare`, whose trace of removed letters is the one the
+ * explanation panel displays (`SpareRemovedLetter` of the sigil model). The
+ * kamea method does not use it: it traces every normalised letter (D3).
  */
-
-/** Why a letter was removed from the intention. */
-export type RemovalReason =
-  /** The letter already appeared earlier in the intention. */
-  | 'duplicate'
-  /** The letter is a vowel and vowels were not kept. */
-  | 'vowel';
-
-/** One letter removed by the reduction, for the explanation panel. */
-export interface RemovedLetter {
-  /** The removed letter, A–Z. */
-  letter: string;
-  /** Zero-based index of the letter in the normalised letters given as input. */
-  position: number;
-  /** Rule that removed it. */
-  reason: RemovalReason;
-}
+import type { SpareRemovedLetter } from '../sigil/types.ts';
 
 /** Settings of the Spare reduction. */
 export interface SpareReductionOptions {
@@ -37,7 +21,7 @@ export type SpareReductionResult =
       /** Retained letters, in their order of first appearance. */
       kept: string[];
       /** Removed letters in input order, each with the rule that removed it. */
-      removed: RemovedLetter[];
+      removed: SpareRemovedLetter[];
     }
   | {
       ok: false;
@@ -75,7 +59,7 @@ export function reduceForSpare(
 ): SpareReductionResult {
   const seen = new Set<string>();
   const kept: string[] = [];
-  const removed: RemovedLetter[] = [];
+  const removed: SpareRemovedLetter[] = [];
 
   letters.forEach((letter, position) => {
     if (seen.has(letter)) {

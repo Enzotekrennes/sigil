@@ -93,7 +93,7 @@ export interface LoopMark {
    * the vector from the end point back to the previous point of the path.
    * The loop then touches that segment back from the end by its radius plus
    * a clearance growing with the stroke width (see `placeEndLoop` in
-   * `style.ts`), so it never touches the end bar crossing the end point.
+   * `markGeometry.ts`), so it never touches the end bar crossing the end point.
    */
   readonly lastSegment?: Point;
   /**
@@ -159,7 +159,10 @@ export interface KameaSquarePathStep {
   readonly cells: readonly GridCell[];
 }
 
-/** A letter removed by the Spare reduction (decision D4). */
+/**
+ * A letter removed by the Spare reduction (decision D4): the trace
+ * `reduceForSpare` produces and the explanation panel displays.
+ */
 export interface SpareRemovedLetter {
   /** The removed letter, A–Z. */
   readonly letter: string;
@@ -190,7 +193,10 @@ export interface SpareLetterPlacement {
   readonly mirrored: boolean;
   /** Clockwise quarter turn on screen, in degrees, applied after the mirror. */
   readonly rotation: 0 | 90 | 180 | 270;
-  /** Size relative to the other letters (1 = largest possible), about 0.55–1. */
+  /**
+   * Size relative to the other letters (1 = largest possible), 0.7–1
+   * (`MIN_LETTER_SCALE` of the Spare placement).
+   */
   readonly scale: number;
   /** Index in `letters` of the letter whose vertical stem this one shares, or `null`. */
   readonly sharedStemWith: number | null;
@@ -218,22 +224,11 @@ export interface SpareCandidateChoiceStep {
   readonly kind: 'spare-candidate-choice';
   /** Number of compositions drawn from the seed and scored. */
   readonly candidateCount: number;
-  /** Zero-based index of the chosen composition, in draw order. */
-  readonly chosenIndex: number;
   /**
-   * Distance of the chosen composition's centre of gravity from the frame
-   * centre before recentring, as a fraction of the frame side (0.03 = 3 %).
-   * The final sigil is recentred on it.
+   * Zero-based index of the chosen composition, in draw order: the one with
+   * the lowest penalty (decision D13).
    */
-  readonly centreOffset: number;
-  /** Share of the drawing area covered by the recentred bounding box, 0–1. */
-  readonly fill: number;
-  /** Indices in the retained letters of the letters touching no other one. */
-  readonly isolatedLetters: readonly number[];
-  /** Indices in the retained letters of the letters drawn exactly as written (upright or symmetric). */
-  readonly uprightLetters: readonly number[];
-  /** Total penalty of the chosen composition (lower is better), the lowest of all. */
-  readonly penalty: number;
+  readonly chosenIndex: number;
 }
 
 /** Spare step: the superimposed strokes merged and simplified into the sigil. */

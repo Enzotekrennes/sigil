@@ -151,7 +151,7 @@ const SPARE_EXPLANATION: SpareExplanationStrings = {
 
   choiceTitle: 'Composition chosen',
   choiceBody: (number, count) =>
-    `Of ${String(count)} possible layouts (always the same for this intention and variant), number ${String(number)} is the most balanced: centred, compact, with no letter left on its own.`,
+    `Of ${String(count)} possible layouts (always the same for this intention and variant), number ${String(number)} is the best composed: centred, close to a square, each letter blended into the others as far as possible so that none reads on its own.`,
 
   simplificationTitle: 'Simplification',
   simplificationBody: (before, after) => {

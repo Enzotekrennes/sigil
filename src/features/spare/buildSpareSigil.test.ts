@@ -16,7 +16,7 @@ import type { Segment } from './geometry.ts';
 import { buildSpareSigil, candidateCountFor, generateSpareCandidates, spareSeed } from './index.ts';
 import type { SpareError, SpareOptions } from './index.ts';
 import { isCapitalLetter } from './glyphs/index.ts';
-import { readsAsLetter } from './legibility.ts';
+import { readsAsLetter, readsInAnyOrientation } from './legibility.ts';
 import { DRAWING_RADIUS, MAX_CENTRE_OFFSET_RATIO, chooseCandidate } from './score.ts';
 
 /** Default settings: vowels removed, first variant. */
@@ -44,12 +44,6 @@ const REFUSED_CASES: readonly (readonly [string, number])[] = [
   ['Je trouve ma voie', 1],
   ['La paix est en moi', 0],
 ];
-
-/**
- * Letters that read as a letter in every orientation (see `readsAsLetter`):
- * no draw can avoid them, so the regression test leaves them out.
- */
-const ALWAYS_LETTER_LIKE: ReadonlySet<string> = new Set(['C', 'N', 'O', 'Q', 'U', 'X', 'Z']);
 
 /**
  * The sixteen cases of the F2 acceptance board (internal variant numbers):
@@ -374,7 +368,8 @@ describe('buildSpareSigil', () => {
       const familiar = letters.filter(
         (placement) =>
           isCapitalLetter(placement.letter) &&
-          !ALWAYS_LETTER_LIKE.has(placement.letter) &&
+          // Letters that read in every orientation cannot be hidden by a turn.
+          !readsInAnyOrientation(placement.letter) &&
           readsAsLetter(placement.letter, placement.rotation),
       );
       expect(
@@ -451,10 +446,9 @@ describe('buildSpareSigil', () => {
 
     expect(step.candidateCount).toBe(candidateCountFor(5));
     expect(step.chosenIndex).toBe(index);
-    expect(step.penalty).toBe(Math.min(...scores.map((score) => score.penalty)));
-    expect(step.centreOffset).toBeGreaterThanOrEqual(0);
-    expect(step.fill).toBeGreaterThan(0);
-    expect(step.fill).toBeLessThanOrEqual(1);
+    expect(scores[step.chosenIndex]?.penalty).toBe(
+      Math.min(...scores.map((score) => score.penalty)),
+    );
   });
 
   it('explains the simplification with segment counts matching the sigil', () => {
