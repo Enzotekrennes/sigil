@@ -330,6 +330,22 @@ async function openExport(
 }
 
 /**
+ * Waits until the export dialog is closed for the app, not only for the eye.
+ *
+ * Escape closes the native `<dialog>` at once, but the app learns it from the
+ * `close` event a task later and only then unmounts the dialog's content. A
+ * key pressed in between (a test is faster than a person) would reach the
+ * button while the app still believes the dialog is open and be lost, so the
+ * test waits for the content to be gone.
+ *
+ * @param page - Page on the app.
+ */
+async function expectClosed(page: Page): Promise<void> {
+  await expect(exportDialog(page)).toBeHidden();
+  await expect(page.locator('dialog.dialog .dialog__body')).toHaveCount(0);
+}
+
+/**
  * Exports through the dialog and waits for the file, keeping a copy as evidence.
  *
  * @param page - Page showing a sigil.
@@ -1161,7 +1177,7 @@ test.describe('keyboard and small screen', () => {
     const frame = await dialog.boundingBox();
     expect((frame?.x ?? -1) >= 0 && (frame?.x ?? 0) + (frame?.width ?? 0) <= 375).toBe(true);
     await page.keyboard.press('Escape');
-    await expect(dialog).toBeHidden();
+    await expectClosed(page);
     await expect(exporter).toBeFocused();
 
     // Choose PNG with the arrow keys, reach "Télécharger" with Tab, download with Enter.
@@ -1293,8 +1309,9 @@ test.describe('the export dialog', () => {
     await expect(dialog).toBeHidden();
     await expect(openButton(page)).toBeFocused();
     await openButton(page).click();
+    await expect(dialog).toBeVisible();
     await page.keyboard.press('Escape');
-    await expect(dialog).toBeHidden();
+    await expectClosed(page);
     await page.waitForTimeout(500);
     expect(downloads).toBe(0);
     await expectClean(seen);
