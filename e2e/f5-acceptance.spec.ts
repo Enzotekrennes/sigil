@@ -26,7 +26,7 @@ import {
   type Page,
   type TestInfo,
 } from '@playwright/test';
-import { decodePDFRawStream, PDFDict, PDFDocument, PDFRawStream } from 'pdf-lib';
+import { decodePDFRawStream, PDFDict, PDFDocument, PDFName, PDFRawStream } from 'pdf-lib';
 
 import { waitForServiceWorkerControl } from './service-worker.ts';
 
@@ -724,6 +724,8 @@ test('the PDF has neutral metadata and never contains the intention, its letters
       }
     }
   }
+  // No XMP stream: the catalog has no /Metadata entry.
+  expect(pdf.document.catalog.has(PDFName.of('Metadata'))).toBe(false);
   const lowered = everything.toLowerCase();
   for (const forbidden of [
     'pdf-lib',
