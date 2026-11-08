@@ -38,7 +38,9 @@ Périmètre : tout le dépôt versionné hors `docs/` au commit a444eaf — `src
 ## Hors code
 - Informations personnelles retirées de `docs/` avant publication.
 
+## Vérifié au pilotage
+- `npm audit --omit=dev` : 0 vulnérabilité (2026-11-08).
+
 ## Non vérifié
 - Réglages du dépôt GitHub (protection de branche, environnement `github-pages`, HTTPS forcé), autres sites Pages du compte.
 - Navigateurs autres que Chromium ; impression papier réelle ; lecteurs PDF grand public ; performance sur téléphone.
-- `npm audit --omit=dev` (dépendances de production : react, react-dom, scheduler, pdf-lib et ses sous-paquets, pako, tslib).
