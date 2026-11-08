@@ -28,8 +28,12 @@ export type PrintSizeResult =
   | { readonly ok: true; readonly centimetres: number }
   | { readonly ok: false; readonly error: PrintSizeError };
 
-/** A decimal number written with a point or a comma, as both languages type it. */
-const DECIMAL = /^\d+(?:[.,]\d+)?$/;
+/**
+ * A decimal number written with a point or a comma, as both languages type it,
+ * optionally negative (hyphen or the typographic minus U+2212): a negative size
+ * is a number out of the range, not a typing error.
+ */
+const DECIMAL = /^[-\u2212]?\d+(?:[.,]\d+)?$/;
 
 /**
  * Reads a print size typed in the dialog.
@@ -37,13 +41,14 @@ const DECIMAL = /^\d+(?:[.,]\d+)?$/;
  * @param text - Field content, for instance `8`, `6,5` or `6.5`; surrounding
  *   spaces are ignored.
  * @returns The size in centimetres when it is a number within
- *   [`PRINT_SIZE_MIN_CM`, `PRINT_SIZE_MAX_CM`]; otherwise `not-a-number`
- *   (empty, letters, negative sign, several separators) or `out-of-range`.
+ *   [`PRINT_SIZE_MIN_CM`, `PRINT_SIZE_MAX_CM`]; otherwise `out-of-range`
+ *   for any other number (zero and negatives included), or `not-a-number`
+ *   (empty, letters, a lone sign, several separators).
  */
 export function parsePrintSize(text: string): PrintSizeResult {
   const trimmed = text.trim();
   if (!DECIMAL.test(trimmed)) return { ok: false, error: 'not-a-number' };
-  const centimetres = Number(trimmed.replace(',', '.'));
+  const centimetres = Number(trimmed.replace(',', '.').replace('\u2212', '-'));
   if (centimetres < PRINT_SIZE_MIN_CM || centimetres > PRINT_SIZE_MAX_CM) {
     return { ok: false, error: 'out-of-range' };
   }

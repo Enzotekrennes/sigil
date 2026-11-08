@@ -24,11 +24,14 @@ describe('parsePrintSize', () => {
     expect(parsePrintSize(text)).toEqual({ ok: true, centimetres });
   });
 
-  it.each(['0', '0,9', '25,1', '30', '100'])('refuses "%s", out of the 1–25 cm range', (text) => {
-    expect(parsePrintSize(text)).toEqual({ ok: false, error: 'out-of-range' });
-  });
+  it.each(['0', '0,9', '25,1', '30', '100', '-3', '-0,5', '\u22123', '-0'])(
+    'refuses "%s", out of the 1–25 cm range, negatives and zero included',
+    (text) => {
+      expect(parsePrintSize(text)).toEqual({ ok: false, error: 'out-of-range' });
+    },
+  );
 
-  it.each(['', ' ', 'abc', '-3', '6,5,2', '6 cm', '1e1', ',5'])(
+  it.each(['', ' ', 'abc', '-', '--3', '+3', '6,5,2', '6 cm', '1e1', ',5'])(
     'refuses "%s", not a number of centimetres',
     (text) => {
       expect(parsePrintSize(text)).toEqual({ ok: false, error: 'not-a-number' });
