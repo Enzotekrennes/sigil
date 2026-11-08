@@ -8,6 +8,7 @@
 import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
+import { STRINGS_EN } from '../../app/strings.en.ts';
 import { STRINGS_FR } from '../../app/strings.fr.ts';
 import { polylinePathData } from '../sigil/index.ts';
 import type {
@@ -131,7 +132,7 @@ describe('SpareExplanation', () => {
     const rows = Array.from(container.querySelectorAll('.spare-removal__row'), (row) =>
       row.textContent.trim(),
     );
-    expect(rows).toEqual(['DoublonsS E', 'VoyellesE U I A', 'RetenuesJ S C L M']);
+    expect(rows).toEqual(['Doublons :S E', 'Voyelles :E U I A', 'Retenues :J S C L M']);
   });
 
   it('keeps the intention letters out of page translation, but not the "none" word (S8)', () => {
@@ -154,6 +155,19 @@ describe('SpareExplanation', () => {
     for (const letter of [...tileLetters, ...hookedLetters]) {
       expect(letter).toHaveAttribute('translate', 'no');
     }
+  });
+
+  it('writes the colon of the removal labels the English way, with no space before it', () => {
+    const { container } = render(
+      <SpareExplanation sigil={spare(JE_SUIS_CALME)} strings={STRINGS_EN.explain.spare} />,
+    );
+
+    const labels = Array.from(
+      container.querySelectorAll('.spare-removal dt'),
+      (label) => label.textContent,
+    );
+    expect(labels).toEqual(['Duplicates:', 'Vowels:', 'Kept:']);
+    expect(container.textContent).not.toMatch(/\s:/);
   });
 
   it('marks the removed letters lines as not to translate when they list letters (S8)', () => {
@@ -355,7 +369,7 @@ describe('SpareExplanation', () => {
   it('drops the vowel line when the vowels are kept', () => {
     render(<SpareExplanation sigil={spare(JE_SUIS_CALME, true)} strings={STRINGS} />);
 
-    expect(screen.queryByText('Voyelles')).not.toBeInTheDocument();
+    expect(screen.queryByText(/^Voyelles/)).not.toBeInTheDocument();
     expect(screen.getByText('J E S U I C A L M')).toBeInTheDocument();
     expect(screen.getByText(/Les voyelles sont gardées/)).toBeInTheDocument();
   });

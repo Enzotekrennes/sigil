@@ -669,7 +669,7 @@ describe('App', () => {
 
     const panel = explanationPanel();
     expect(panel.getByText('T R A N Q U I L E')).toBeInTheDocument();
-    expect(panel.queryByText('Voyelles')).not.toBeInTheDocument();
+    expect(panel.queryByText(/^Voyelles/)).not.toBeInTheDocument();
     expect(spareStrokes()).not.toEqual(withoutVowels);
     expect(
       screen.getByText('Sigil de Spare tracé : 9 lettres retenues, variante 1.'),

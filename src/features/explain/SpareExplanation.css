@@ -61,10 +61,6 @@
   color: var(--color-text-muted);
 }
 
-.spare-removal__row dt::after {
-  content: "\a0:"; /* French spacing: no-break space before the colon */
-}
-
 .spare-removal__row dd {
   margin: 0;
   letter-spacing: var(--letter-spacing-label);

@@ -54,6 +54,31 @@ test.describe('with an English browser', () => {
     await expect(page.getByRole('heading', { name: 'How it’s made' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Conversion rule' })).toBeVisible();
   });
+
+  test('writes the colons of the Spare panel the English way, with no space before them', async ({
+    page,
+  }) => {
+    await page.goto('./');
+
+    await page.getByText('Spare', { exact: true }).click();
+    await page.getByLabel('Intention').fill('Strength');
+    await page.getByRole('button', { name: 'Trace', exact: true }).click();
+
+    // The colon must be text of the label: no generated content (`::after` is "none") adds a space.
+    const labels = await page
+      .locator('.spare-removal dt')
+      .evaluateAll((terms) =>
+        terms.map(
+          (term) =>
+            `${(term as HTMLElement).innerText}${getComputedStyle(term, '::after').content}`,
+        ),
+      );
+    expect(labels).toEqual(['Duplicates:none', 'Vowels:none', 'Kept:none']);
+    const panel = page.locator('details', {
+      has: page.getByRole('heading', { name: 'How it’s made' }),
+    });
+    expect(await panel.innerText()).not.toMatch(/\s:/);
+  });
 });
 
 test.describe('with a French browser', () => {

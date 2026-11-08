@@ -76,11 +76,15 @@ export interface SpareExplanationStrings {
   readonly stripLabel: (count: number) => string;
   /** Screen-reader status of one letter of the strip: kept, or removed and why. */
   readonly letterStatus: (reason: SpareRemovedLetter['reason'] | null) => string;
-  /** Label of the line listing the duplicates removed. */
+  /**
+   * Label of the line listing the duplicates removed, with its colon written
+   * the way the language writes it ("Doublons :" with a no-break space in
+   * French, "Duplicates:" in English); the panel adds no punctuation.
+   */
   readonly duplicatesLabel: string;
-  /** Label of the line listing the vowels removed. */
+  /** Label of the line listing the vowels removed, colon included as for `duplicatesLabel`. */
   readonly vowelsLabel: string;
-  /** Label of the line listing the letters retained. */
+  /** Label of the line listing the letters retained, colon included as for `duplicatesLabel`. */
   readonly keptLabel: string;
   /** Said on a line that lists no letter. */
   readonly noneRemoved: string;

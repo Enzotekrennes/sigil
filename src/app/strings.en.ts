@@ -132,9 +132,9 @@ const SPARE_EXPLANATION: SpareExplanationStrings = {
     if (reason === 'vowel') return ', removed: vowel';
     return ', kept';
   },
-  duplicatesLabel: 'Duplicates',
-  vowelsLabel: 'Vowels',
-  keptLabel: 'Kept',
+  duplicatesLabel: 'Duplicates:',
+  vowelsLabel: 'Vowels:',
+  keptLabel: 'Kept:',
   noneRemoved: 'none',
 
   skeletonsTitle: 'Angular skeletons',

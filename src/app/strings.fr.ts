@@ -134,9 +134,9 @@ const SPARE_EXPLANATION: SpareExplanationStrings = {
     if (reason === 'vowel') return ', retirée : voyelle';
     return ', gardée';
   },
-  duplicatesLabel: 'Doublons',
-  vowelsLabel: 'Voyelles',
-  keptLabel: 'Retenues',
+  duplicatesLabel: `Doublons${NBSP}:`,
+  vowelsLabel: `Voyelles${NBSP}:`,
+  keptLabel: `Retenues${NBSP}:`,
   noneRemoved: 'aucune',
 
   skeletonsTitle: 'Squelettes anguleux',
