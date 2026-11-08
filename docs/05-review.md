@@ -46,7 +46,11 @@ Périmètre : tout le dépôt versionné hors `docs/` au commit a444eaf — `src
 - R2, R3, R4 (tokens, grille), R7, R9, R11 : 34a6b64 (T22), empreinte de rendu identique avant/après.
 - Reportés en « Plus tard » (roadmap) : fusion des specs e2e (R5), S7, R6, R8, R12, S4 (domaine dédié).
 
+## Évolution après review (décision d'Enzo)
+- Un seul mot (D18), Spare en rune liée (D19–D21) : T23, T24, T25 ; planche validée par Enzo ; F2 revalidé (passage n° 4) ; correctif des contacts 0ca5e81.
+
 ## Vérifié au pilotage
+- Sur 0ca5e81 : lint, format:check, typecheck ; 989/989 unitaires ; 5/5 script ; build ; e2e 283/283.
 - Après correctifs (34a6b64) : lint, format:check, typecheck verts ; 878/878 tests unitaires ; 5/5 tests du script ; build (28 entrées précachées) ; e2e 269/269.
 - `npm audit --omit=dev` : 0 vulnérabilité (2026-11-08).
 

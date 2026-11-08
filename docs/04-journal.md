@@ -267,3 +267,7 @@
 - Preuves : 6 scénarios OK ; 108 sigils (36 mots × 3 variantes) mesurés : traits droits uniquement, hampe continue à x≈50 sur ≥ 70 % de la hauteur, traits tous reliés, plus hauts que larges, aucune hachure ; planche conforme à celle validée par Enzo ; e2e complet 282/282.
 - Bug mineur : B1 jambe du R décollée de 0,4 unité (« Victory » v2), visible en trait fin → dev.
 - Specs : scénario 4 de `f2-acceptance` réécrit sur la structure de la rune ; `f5-acceptance:643` teste le sigil trop large avec un chemin kamea (Lune, « Paix »), plus un test Spare accepté à 25 cm.
+
+## 2026-11-08 — Correctif contacts des lettres (B1 du test F2) et vérification complète
+- 0ca5e81 : points de contact partagés dans les squelettes (`jointedStrokes`), fusion limitée aux traits confondus (0,5), sommets de contact conservés, correction des hachures sans ouvrir de contact ; 4 610 contacts vérifiés, aucun ouvert ; planche inchangée.
+- Vérification complète sur 0ca5e81 : lint, format:check, typecheck verts ; 989/989 tests unitaires ; 5/5 tests du script ; build (28 entrées précachées) ; e2e 283/283 ; aucune trace d'outil hors `docs/` ni dans les messages de commit.
