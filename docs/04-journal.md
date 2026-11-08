@@ -232,3 +232,9 @@
 - Vérifications : lint, typecheck, 882/882 tests ; `test:scripts` 5/5 avec mutation ; e2e 269/269 trois fois avec 4 workers ; build sous `npm ci --ignore-scripts`.
 - Écarts : version Workbox 7.4.1 maintenue (le marqueur 7.4.0 vient d'un fichier non mis à jour du paquet 7.4.1).
 - Points ouverts : `format:check` rouge sur 3 fichiers `src/` (à reformater avec T22) ; navigateur Chromium non mis en cache en CI ; README à compléter (phase 6).
+
+## 2026-11-08 — T22 Nettoyage interne (review)
+- Rôle : dev
+- Fait : texte du panneau Spare aligné sur D13 et champs/fonctions morts retirés (R2) ; commentaires périmés corrigés, tests de non-contact kamea à la vraie borne 2,4 (R3) ; tokens morts retirés, grille kamea partagée (`kamea/grid.ts`) (R4) ; `markGeometry.ts` (R7) ; code sans usage retiré, `dialogStub` dans `src/test/` (R9) ; noms unifiés (R11).
+- Vérifications : empreinte de rendu identique (35 kamea + 60 Spare, 3 épaisseurs, SVG/PDF) ; suite complète revérifiée : lint, format:check, typecheck, 878/878, 5/5 scripts, build, e2e 269/269.
+- Points ouverts : métadonnées Hershey gardées dans le bundle (~2,5 kB) pour le test d'idempotence.

@@ -39,7 +39,15 @@ Périmètre : tout le dépôt versionné hors `docs/` au commit a444eaf — `src
 ## Hors code
 - Informations personnelles retirées de `docs/` avant publication.
 
+## Correctifs appliqués
+- R1 + S3 : 5ec499e (GO à la relecture) ; R13 : a8d869f.
+- S1, S8, S9, B2, R4 (PDF) : 9959a1b (T20).
+- S2, S5, S6, S10, R5 (attentes fixes), R4 (anti-dérive, durées), R10 (scripts) : a8d869f (T21).
+- R2, R3, R4 (tokens, grille), R7, R9, R11 : 34a6b64 (T22), empreinte de rendu identique avant/après.
+- Reportés en « Plus tard » (roadmap) : fusion des specs e2e (R5), S7, R6, R8, R12, S4 (domaine dédié).
+
 ## Vérifié au pilotage
+- Après correctifs (34a6b64) : lint, format:check, typecheck verts ; 878/878 tests unitaires ; 5/5 tests du script ; build (28 entrées précachées) ; e2e 269/269.
 - `npm audit --omit=dev` : 0 vulnérabilité (2026-11-08).
 
 ## Non vérifié
