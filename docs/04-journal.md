@@ -255,3 +255,9 @@
 - Vérifications : eslint + vitest spare/sigil 412/412 ; 50 mots × 3 variantes sans hachure, encre ≤ 6,05 ; 77–96 ms à CPU ×4 pour 12 lettres (premier tracé à froid 170–190 ms).
 - Planche validée par Enzo (2026-11-08). Limites : mots de 5 lettres retenues et plus moins proches des références (mât fin).
 - Suite : T25 (panneau, 18 erreurs de types et 14 tests à réaligner), puis retest F2.
+
+## 2026-11-08 — T25 Panneau Spare (rune liée)
+- Rôle : design
+- Fait : panneau en 5 étapes (lettres retirées, squelettes anguleux, accroche sur la hampe avec dessin de la rune, choix de la variante, simplification), vocabulaire de l'ancienne composition retiré (test), `translate="no"` sur les lettres.
+- Vérifications : lint, format:check, typecheck, 955/955 (revérifié après les commits 0ac69bb et 1b56798) ; e2e 280/281 (échec `f5-acceptance:643`, qui supposait un Spare plus large que haut) ; 32 captures FR/EN, clair/sombre.
+- Suites : espace avant « : » en anglais (en cours) ; specs F2 sc. 4 et F5:643 à réécrire par le test (F2 passage n° 4 en cours).
