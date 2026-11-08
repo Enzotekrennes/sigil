@@ -643,26 +643,47 @@ test('a 25 cm sigil printed with the widest stroke still measures 25 cm and fits
 test('a sigil too wide for the sheet is refused with a clear message, and its maximum size prints', async ({
   page,
 }, testInfo) => {
+  // A Spare bind rune is taller than wide: the wide case is a kamea path
+  // (the Moon square draws "Paix" about three times wider than tall).
   await page.goto('./');
-  await trace(page, { method: 'spare' });
+  await trace(page, { planet: 'Lune', intention: 'Paix' });
   const dialog = await openExport(page);
   const size = dialog.getByRole('textbox', { name: 'Taille réelle (cm)' });
   const button = dialog.getByRole('button', { name: 'Télécharger' });
 
   await size.fill('25');
-  await expect(
-    dialog.getByText('Trop grand pour une page A4 : ce sigil tient au plus sur 19 cm.'),
-  ).toBeVisible();
+  const message = dialog.getByText(/^Trop grand pour une page A4 : ce sigil tient au plus sur /);
+  await expect(message).toBeVisible();
   await expect(size).toHaveAttribute('aria-invalid', 'true');
   await expect(button).toBeDisabled();
+  const announced = /sur (\d+(?:,\d+)?)\s?cm\./.exec((await message.textContent()) ?? '');
+  const maxCm = Number((announced?.[1] ?? '').replace(',', '.'));
+  expect(maxCm).toBeGreaterThan(0);
+  expect(maxCm * 10).toBeLessThanOrEqual(AREA_WIDTH_MM);
 
   // The maximum announced really prints, within the printable width.
-  await size.fill('19');
+  await size.fill(announced?.[1] ?? '');
   await expect(size).toHaveAttribute('aria-invalid', 'false');
   const { path } = await download(page, testInfo);
   const ink = inkMm(sigilAndRuler(await readPdf(await readFile(path))).sigil);
   expect(ink.largest).toBeLessThanOrEqual(AREA_WIDTH_MM + 0.05);
-  expect(Math.abs(ink.largest - 190)).toBeLessThanOrEqual(SIZE_TOLERANCE_MM);
+  expect(Math.abs(ink.largest - maxCm * 10)).toBeLessThanOrEqual(SIZE_TOLERANCE_MM);
+});
+
+test('a tall Spare sigil is accepted at 25 cm: its height fits on the sheet', async ({
+  page,
+}, testInfo) => {
+  await page.goto('./');
+  await trace(page, { method: 'spare' });
+  const dialog = await openExport(page);
+  const size = dialog.getByRole('textbox', { name: 'Taille réelle (cm)' });
+
+  await size.fill('25');
+  await expect(size).toHaveAttribute('aria-invalid', 'false');
+  await expect(dialog.getByText(/Trop grand pour une page A4/)).toHaveCount(0);
+  const { path } = await download(page, testInfo);
+  const ink = inkMm(sigilAndRuler(await readPdf(await readFile(path))).sigil);
+  expect(Math.abs(ink.largest - 250)).toBeLessThanOrEqual(SIZE_TOLERANCE_MM);
 });
 
 test('the PDF carries the printing instruction in French and in English', async ({

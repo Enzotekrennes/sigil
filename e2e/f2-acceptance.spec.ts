@@ -1,13 +1,13 @@
 /**
  * Acceptance scenarios of feature F2 (Spare sigil), played on the production
  * build: reduction shown in the panel, determinism across reloads, variants,
- * frame and centre of gravity measured on the rendered path data, the
+ * the bind-rune structure (D19, D20) measured on the rendered path data, the
  * "only vowels" message, the vowels option resetting the variant, the
  * single-word rule (D18), privacy of the intention, CSP, 375 px layout and
  * keyboard use.
  *
- * The "no letter readable on its own" criterion is a visual judgement and is
- * not asserted here: it is recorded in the tester report.
+ * How close the runes are to the board approved by the owner is a visual
+ * judgement and is not asserted here: it is recorded in the tester report.
  */
 import { expect, test, type Page } from '@playwright/test';
 
@@ -17,11 +17,30 @@ import { expect, test, type Page } from '@playwright/test';
  */
 const CALM = 'Tranquillité';
 
-/** Side of the sigil square in frame units (viewBox 0 0 100 100). */
-const FRAME_SIDE = 100;
+/** Abscissa of the central shaft of a bind rune, in frame units (D19). */
+const SHAFT_X = 50;
 
-/** Maximum distance between centre of gravity and frame centre, as a share of the side (F2). */
-const MAX_GRAVITY_OFFSET = 0.1;
+/** How far from `SHAFT_X` a vertical segment may sit and still belong to the shaft. */
+const SHAFT_X_TOLERANCE = 0.6;
+
+/** Share of the drawing height the continuous shaft must span ("the greater part of the height"). */
+const MIN_SHAFT_SHARE = 0.7;
+
+/**
+ * Largest gap between two strokes still counted as touching, in frame units:
+ * half the default stroke width (1.2), so the strokes visibly meet on screen.
+ */
+const CONTACT_DISTANCE = 0.6;
+
+/** Two segments closer than this angle, in degrees, are parallel (hatching, D21). */
+const PARALLEL_ANGLE_DEGREES = 6;
+
+/** Gap range, in frame units, between two parallel segments that reads as hatching. */
+const HATCH_GAP_MIN = 0.5;
+const HATCH_GAP_MAX = 5;
+
+/** Overlap, in frame units, from which two close parallel segments count as hatching. */
+const HATCH_MIN_OVERLAP = 3;
 
 /** Drawing area of the frame: 10 units of margin on each side (`frame.ts`). */
 const DRAWING_MIN = 10;
@@ -29,6 +48,52 @@ const DRAWING_MAX = 90;
 
 /** Rounding tolerance when comparing coordinates printed with three decimals. */
 const EPSILON = 0.01;
+
+/**
+ * Words played by the bind-rune scenario, French and English, short and long,
+ * with accents. At least 30 are required (scenario 4).
+ */
+const RUNE_WORDS: readonly string[] = [
+  'Tranquillité',
+  'Calme',
+  'Amour',
+  'Force',
+  'Chance',
+  'Courage',
+  'Protection',
+  'Sérénité',
+  'Liberté',
+  'Strength',
+  'Luck',
+  'Home',
+  'Grace',
+  'Energy',
+  'Patience',
+  'Lumière',
+  'Voyage',
+  'Paix',
+  'Joie',
+  'Espoir',
+  'Sagesse',
+  'Harmonie',
+  'Équilibre',
+  'Confiance',
+  'Gratitude',
+  'Résilience',
+  'Peace',
+  'Love',
+  'Wisdom',
+  'Focus',
+  'Balance',
+  'Healing',
+  'Victory',
+  'Détermination',
+  'Clarity',
+  'Désinstitutionnalisation',
+];
+
+/** Number of variants measured for each word of `RUNE_WORDS`. */
+const RUNE_VARIANTS = 3;
 
 test.use({ reducedMotion: 'reduce' });
 
@@ -91,51 +156,193 @@ async function strokePaths(page: Page): Promise<string[]> {
     .evaluateAll((nodes) => nodes.map((node) => node.getAttribute('d') ?? ''));
 }
 
-/** Geometry of a rendered sigil, in frame units. */
-interface Geometry {
-  readonly centreX: number;
-  readonly centreY: number;
-  readonly minX: number;
-  readonly minY: number;
-  readonly maxX: number;
-  readonly maxY: number;
+/** A point of the frame. */
+type Point = readonly [number, number];
+
+/** A straight stroke between two points. */
+interface Segment {
+  readonly from: Point;
+  readonly to: Point;
 }
 
 /**
- * Centre of gravity (weighted by stroke length) and bounding box computed from
- * the `d` attributes of the rendered paths (absolute `M`/`L` polylines).
+ * Splits the `d` attributes of a rendered sigil into straight segments.
  *
- * @param page - Page showing a Spare sigil.
- * @returns Centre of gravity and extremes of the drawing.
+ * @param paths - `d` attributes, absolute `M`/`L` polylines only.
+ * @returns Every segment, plus the commands that are neither `M` nor `L`.
  */
-async function measureSigil(page: Page): Promise<Geometry> {
-  let total = 0;
-  let sumX = 0;
-  let sumY = 0;
-  let minX = Infinity;
-  let minY = Infinity;
-  let maxX = -Infinity;
-  let maxY = -Infinity;
-  for (const d of await strokePaths(page)) {
-    // Only absolute move and line commands are expected from the Spare renderer.
-    expect(d.replace(/[ML\d.\s-]/g, '')).toBe('');
+function toSegments(paths: readonly string[]): { segments: Segment[]; foreign: string[] } {
+  const segments: Segment[] = [];
+  const foreign: string[] = [];
+  for (const d of paths) {
+    foreign.push(...(d.match(/[A-Za-z]/g) ?? []).filter((command) => !'ML'.includes(command)));
     const points = [...d.matchAll(/(-?\d+(?:\.\d+)?)[ ,](-?\d+(?:\.\d+)?)/g)].map(
       (match) => [Number(match[1]), Number(match[2])] as const,
     );
-    points.forEach(([x, y], index) => {
-      minX = Math.min(minX, x);
-      maxX = Math.max(maxX, x);
-      minY = Math.min(minY, y);
-      maxY = Math.max(maxY, y);
-      const previous = points[index - 1];
-      if (previous === undefined) return;
-      const length = Math.hypot(x - previous[0], y - previous[1]);
-      total += length;
-      sumX += (length * (x + previous[0])) / 2;
-      sumY += (length * (y + previous[1])) / 2;
+    points.forEach((to, index) => {
+      const from = points[index - 1];
+      if (from !== undefined) segments.push({ from, to });
     });
   }
-  return { centreX: sumX / total, centreY: sumY / total, minX, minY, maxX, maxY };
+  return { segments, foreign };
+}
+
+/**
+ * Distance from a point to a segment.
+ *
+ * @param point - The point.
+ * @param segment - The segment.
+ * @returns The shortest distance, in frame units.
+ */
+function distanceToSegment(point: Point, segment: Segment): number {
+  const { from, to } = segment;
+  const dx = to[0] - from[0];
+  const dy = to[1] - from[1];
+  const squared = dx * dx + dy * dy;
+  const t =
+    squared === 0
+      ? 0
+      : Math.max(0, Math.min(1, ((point[0] - from[0]) * dx + (point[1] - from[1]) * dy) / squared));
+  return Math.hypot(point[0] - (from[0] + t * dx), point[1] - (from[1] + t * dy));
+}
+
+/**
+ * Whether two segments cross each other.
+ *
+ * @param a - First segment.
+ * @param b - Second segment.
+ * @returns `true` when they share an interior point.
+ */
+function cross(a: Segment, b: Segment): boolean {
+  const side = (p: Point, q: Point, r: Point): number =>
+    Math.sign((q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]));
+  return (
+    side(a.from, a.to, b.from) * side(a.from, a.to, b.to) < 0 &&
+    side(b.from, b.to, a.from) * side(b.from, b.to, a.to) < 0
+  );
+}
+
+/**
+ * Shortest distance between two segments.
+ *
+ * @param a - First segment.
+ * @param b - Second segment.
+ * @returns 0 when they cross, otherwise the smallest endpoint-to-segment distance.
+ */
+function segmentDistance(a: Segment, b: Segment): number {
+  if (cross(a, b)) return 0;
+  return Math.min(
+    distanceToSegment(a.from, b),
+    distanceToSegment(a.to, b),
+    distanceToSegment(b.from, a),
+    distanceToSegment(b.to, a),
+  );
+}
+
+/**
+ * Whether two segments form a hatching: nearly parallel, a little apart and
+ * overlapping along their length.
+ *
+ * @param a - First segment.
+ * @param b - Second segment.
+ * @returns `true` for a pair that reads as parallel hatch strokes.
+ */
+function isHatching(a: Segment, b: Segment): boolean {
+  const ax = a.to[0] - a.from[0];
+  const ay = a.to[1] - a.from[1];
+  const bx = b.to[0] - b.from[0];
+  const by = b.to[1] - b.from[1];
+  const lengthA = Math.hypot(ax, ay);
+  const lengthB = Math.hypot(bx, by);
+  if (lengthA === 0 || lengthB === 0) return false;
+  const sine = Math.abs(ax * by - ay * bx) / (lengthA * lengthB);
+  const cosine = Math.abs(ax * bx + ay * by) / (lengthA * lengthB);
+  if (Math.atan2(sine, cosine) > (PARALLEL_ANGLE_DEGREES * Math.PI) / 180) return false;
+  // Overlap along the direction of `a`, gap measured at the middle of the overlap.
+  const ux = ax / lengthA;
+  const uy = ay / lengthA;
+  const along = (p: Point): number => (p[0] - a.from[0]) * ux + (p[1] - a.from[1]) * uy;
+  const start = Math.max(0, Math.min(along(b.from), along(b.to)));
+  const end = Math.min(lengthA, Math.max(along(b.from), along(b.to)));
+  if (end - start < HATCH_MIN_OVERLAP) return false;
+  const middle = (start + end) / 2;
+  const onA: Point = [a.from[0] + ux * middle, a.from[1] + uy * middle];
+  const gap = Math.abs((onA[0] - b.from[0]) * -uy + (onA[1] - b.from[1]) * ux);
+  return gap >= HATCH_GAP_MIN && gap <= HATCH_GAP_MAX;
+}
+
+/**
+ * Checks the rendered path data of one sigil against the bind-rune criteria
+ * of scenario 4 (D19, D20, D21).
+ *
+ * @param paths - `d` attributes of the sigil, in tracing order.
+ * @returns One message per broken criterion; empty when the sigil is a bind rune.
+ */
+function runeViolations(paths: readonly string[]): string[] {
+  const { segments, foreign } = toSegments(paths);
+  if (foreign.length > 0) return [`curved or relative commands: ${foreign.join('')}`];
+  if (segments.length === 0) return ['no stroke'];
+  const violations: string[] = [];
+  const xs = segments.flatMap(({ from, to }) => [from[0], to[0]]);
+  const ys = segments.flatMap(({ from, to }) => [from[1], to[1]]);
+  const [minX, maxX] = [Math.min(...xs), Math.max(...xs)];
+  const [minY, maxY] = [Math.min(...ys), Math.max(...ys)];
+  const height = maxY - minY;
+
+  if (!(height > maxX - minX)) {
+    violations.push(`not taller than wide: ${(maxX - minX).toFixed(1)} x ${height.toFixed(1)}`);
+  }
+  if (minX < DRAWING_MIN - EPSILON || minY < DRAWING_MIN - EPSILON) {
+    violations.push('outside the drawing area (low side)');
+  }
+  if (maxX > DRAWING_MAX + EPSILON || maxY > DRAWING_MAX + EPSILON) {
+    violations.push('outside the drawing area (high side)');
+  }
+
+  // Continuous vertical shaft: merge the vertical segments lying on x = SHAFT_X.
+  const spans = segments
+    .filter(
+      ({ from, to }) =>
+        Math.abs(from[0] - to[0]) < EPSILON && Math.abs(from[0] - SHAFT_X) <= SHAFT_X_TOLERANCE,
+    )
+    .map(({ from, to }) => [Math.min(from[1], to[1]), Math.max(from[1], to[1])] as const)
+    .sort((a, b) => a[0] - b[0]);
+  let longest = 0;
+  let runStart = 0;
+  let runEnd = -Infinity;
+  for (const [start, end] of spans) {
+    if (start > runEnd + CONTACT_DISTANCE) runStart = start;
+    runEnd = Math.max(runEnd, end);
+    longest = Math.max(longest, runEnd - runStart);
+  }
+  if (longest < MIN_SHAFT_SHARE * height) {
+    violations.push(`no continuous shaft: ${longest.toFixed(1)} of ${height.toFixed(1)}`);
+  }
+
+  // Every stroke is joined to the others through contacts, the shaft included.
+  const parent = segments.map((_, index) => index);
+  const find = (index: number): number => {
+    let root = index;
+    while (parent[root] !== root) root = parent[root] ?? root;
+    return root;
+  };
+  segments.forEach((a, i) => {
+    segments.slice(i + 1).forEach((b, offset) => {
+      if (segmentDistance(a, b) <= CONTACT_DISTANCE) parent[find(i)] = find(i + 1 + offset);
+    });
+  });
+  const groups = new Set(segments.map((_, index) => find(index))).size;
+  if (groups > 1) violations.push(`${String(groups)} groups of strokes not joined together`);
+
+  // No hatching.
+  let hatches = 0;
+  segments.forEach((a, i) => {
+    segments.slice(i + 1).forEach((b) => {
+      if (isHatching(a, b)) hatches += 1;
+    });
+  });
+  if (hatches > 0) violations.push(`${String(hatches)} pairs of parallel strokes forming a hatch`);
+  return violations;
 }
 
 test('scenario 1: shows the removed letters and the kept letters T R N Q L', async ({ page }) => {
@@ -193,42 +400,30 @@ test('scenario 3: "Autre variante" gives a different sigil each time, and varian
   expect(await playVariants()).toEqual(firstRun);
 });
 
-test('scenario 4: sigils fit the frame and their centre of gravity is within 10 % of the centre', async ({
+test('scenario 4: every sigil is a bind rune: continuous shaft, joined straight strokes, taller than wide, no hatching', async ({
   page,
 }) => {
-  const cases: readonly (readonly [string, number])[] = [
-    [CALM, 5],
-    ['Trouver', 2],
-    ['Strong', 5],
-    ['Clarity', 1],
-    ['Paix', 1],
-    ['Yeux', 1],
-    // The longest word allowed, 24 letters (D18).
-    ['Désinstitutionnalisation', 1],
-  ];
+  test.setTimeout(180_000);
+  expect(RUNE_WORDS.length).toBeGreaterThanOrEqual(30);
+  const broken: string[] = [];
   let measured = 0;
   await page.goto('./');
-  for (const [intention, variantCount] of cases) {
-    await traceSpare(page, intention);
-    for (let variant = 1; variant <= variantCount; variant += 1) {
+  for (const word of RUNE_WORDS) {
+    await traceSpare(page, word);
+    for (let variant = 1; variant <= RUNE_VARIANTS; variant += 1) {
       if (variant > 1) await nextVariant(page, variant);
-      const geometry = await measureSigil(page);
-      const offset =
-        Math.hypot(geometry.centreX - FRAME_SIDE / 2, geometry.centreY - FRAME_SIDE / 2) /
-        FRAME_SIDE;
-      expect(offset, `${intention.slice(0, 20)} v${String(variant)}`).toBeLessThan(
-        MAX_GRAVITY_OFFSET,
-      );
-      for (const value of [geometry.minX, geometry.minY]) {
-        expect(value).toBeGreaterThanOrEqual(DRAWING_MIN - EPSILON);
-      }
-      for (const value of [geometry.maxX, geometry.maxY]) {
-        expect(value).toBeLessThanOrEqual(DRAWING_MAX + EPSILON);
+      await expect(
+        page.getByRole('img', { name: `Sigil de Spare, variante ${String(variant)}` }),
+      ).toBeVisible();
+      const violations = runeViolations(await strokePaths(page));
+      if (violations.length > 0) {
+        broken.push(`${word} v${String(variant)}: ${violations.join('; ')}`);
       }
       measured += 1;
     }
   }
-  expect(measured).toBeGreaterThanOrEqual(10);
+  expect(measured).toBeGreaterThanOrEqual(90);
+  expect(broken).toEqual([]);
 });
 
 test('scenario 5: an intention with no consonant left proposes to keep the vowels', async ({
