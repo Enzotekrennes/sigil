@@ -39,10 +39,38 @@ describe('checkSingleWord', () => {
   it('treats tabs, line breaks and no-break spaces inside the text as word separators', () => {
     expect(checkSingleWord('calme\tserein')).toEqual({ ok: false, error: 'MULTIPLE_WORDS' });
     expect(checkSingleWord('calme\nserein')).toEqual({ ok: false, error: 'MULTIPLE_WORDS' });
-    expect(checkSingleWord(`Calme${NO_BREAK_SPACE}!`)).toEqual({
+    expect(checkSingleWord(`calme${NO_BREAK_SPACE}serein`)).toEqual({
       ok: false,
       error: 'MULTIPLE_WORDS',
     });
+  });
+
+  it('accepts French typography: a space before final punctuation, guillemets', () => {
+    expect(checkSingleWord('Calme !')).toEqual({ ok: true });
+    expect(checkSingleWord('Calme ?')).toEqual({ ok: true });
+    expect(checkSingleWord(`Calme${NO_BREAK_SPACE}!`)).toEqual({ ok: true });
+    expect(checkSingleWord(`«${NO_BREAK_SPACE}Calme${NO_BREAK_SPACE}»`)).toEqual({ ok: true });
+    expect(checkSingleWord('« Calme » !')).toEqual({ ok: true });
+  });
+
+  it('accepts a word next to digits or symbols, which hold no Latin letter', () => {
+    // « 2026 » is not a word: the normalisation then reports its digits as ignored.
+    expect(checkSingleWord('Calme 2026')).toEqual({ ok: true });
+    expect(checkSingleWord('Calme 😀 €')).toEqual({ ok: true });
+    expect(checkSingleWord('мир Calme')).toEqual({ ok: true });
+  });
+
+  it('accepts punctuation without whitespace between letters as one word', () => {
+    expect(checkSingleWord('je.suis.calme')).toEqual({ ok: true });
+  });
+
+  it('refuses two words even when punctuation surrounds them', () => {
+    expect(checkSingleWord('« Calme » « serein »')).toEqual({
+      ok: false,
+      error: 'MULTIPLE_WORDS',
+    });
+    expect(checkSingleWord('Calme, serein !')).toEqual({ ok: false, error: 'MULTIPLE_WORDS' });
+    expect(checkSingleWord('2026 a b')).toEqual({ ok: false, error: 'MULTIPLE_WORDS' });
   });
 
   it('refuses several words even when they are short and the letters fit the limit', () => {

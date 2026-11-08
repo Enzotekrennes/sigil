@@ -17,16 +17,17 @@ import { normalizeIntention } from './normalize.ts';
 export const MAX_INTENTION_LETTERS = 24;
 
 /**
- * Whitespace of any kind (spaces, no-break spaces, tabs, line breaks): what
- * separates two words. Apostrophes and hyphens are not in it, so
- * « aujourd'hui » and « peut-être » stay one word; `normalizeIntention`
- * then drops them silently like any punctuation.
+ * Runs of whitespace of any kind (spaces, no-break spaces, tabs, line
+ * breaks): the only candidates for a word boundary. Apostrophes, hyphens and
+ * other punctuation are not in it, so « aujourd'hui », « peut-être » and
+ * « je.suis.calme » stay one word; `normalizeIntention` then drops the
+ * punctuation silently.
  */
-const WORD_SEPARATOR = /\s/u;
+const WHITESPACE_RUN = /\s+/u;
 
 /** Business error codes of the single-word rule. */
 export type SingleWordError =
-  /** The trimmed text still contains whitespace: it is several words. */
+  /** Whitespace separates two parts that both hold Latin letters. */
   | 'MULTIPLE_WORDS'
   /** The word gives more than `MAX_INTENTION_LETTERS` letters A–Z. */
   | 'TOO_LONG';
@@ -45,23 +46,40 @@ export type SingleWordResult =
     };
 
 /**
+ * Whether a whitespace-free part of the text gives at least one letter A–Z.
+ *
+ * @param part - Text between two whitespace runs.
+ * @returns True for a word ("Calme", "été"), false for punctuation, digits,
+ *   symbols or another script only ("!", "«", "2026", "😀").
+ */
+function holdsLatinLetter(part: string): boolean {
+  return normalizeIntention(part).ok;
+}
+
+/**
  * Checks that a typed intention is a single word of at most
  * `MAX_INTENTION_LETTERS` letters, so that the sigil stays readable.
  *
- * Leading and trailing whitespace is ignored. Inside the word, any whitespace
- * (space, no-break space, tab, line break) makes it several words;
- * apostrophes (' ’) and hyphens are allowed. Letters are counted after
- * normalisation (accents stripped, ligatures expanded, non-letters dropped).
+ * Whitespace separates two words only when Latin letters stand on both sides
+ * of it: parts without any letter A–Z (punctuation, digits, symbols, other
+ * scripts) are not words. So the French typography « Calme ! », « « Calme » »
+ * and « Calme 2026 » are one word (the « 2026 », like the « ! », is then
+ * dropped by the normalisation, digits being reported as ignored), while
+ * « Je suis calme » is three. Apostrophes (' ’), hyphens and any punctuation
+ * without whitespace keep one word (« aujourd'hui », « je.suis.calme »).
+ * Letters are counted after normalisation (accents stripped, ligatures
+ * expanded, non-letters dropped).
  *
  * @param source - The intention as typed; any text.
  * @returns `{ ok: true }` for one word within the limit, including an empty
  *   or letterless text (those are `normalizeIntention`'s errors);
- *   `MULTIPLE_WORDS` as soon as whitespace separates two parts, whatever their
- *   length; otherwise `TOO_LONG` with the letter count and the limit.
- *   Never throws.
+ *   `MULTIPLE_WORDS` as soon as two whitespace-separated parts hold letters,
+ *   whatever their length; otherwise `TOO_LONG` with the letter count and the
+ *   limit. Never throws.
  */
 export function checkSingleWord(source: string): SingleWordResult {
-  if (WORD_SEPARATOR.test(source.trim())) {
+  const words = source.trim().split(WHITESPACE_RUN).filter(holdsLatinLetter);
+  if (words.length > 1) {
     return { ok: false, error: 'MULTIPLE_WORDS' };
   }
 

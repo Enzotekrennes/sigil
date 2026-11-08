@@ -50,6 +50,14 @@ describe('traceKamea', () => {
     });
   });
 
+  it('accepts a word followed by spaced punctuation or digits, as the same sigil (D18)', () => {
+    expect(traceKamea('Calme !', 'saturn')).toEqual(traceKamea('Calme', 'saturn'));
+
+    const withYear = traceKamea('Calme 2026', 'saturn');
+    expect(withYear.ok && withYear.letterCount).toBe(5);
+    expect(withYear.ok && withYear.ignored).toEqual(['2', '0', '6']);
+  });
+
   it('accepts a word with an apostrophe or a hyphen (D18)', () => {
     const result = traceKamea('aujourd’hui', 'moon');
 

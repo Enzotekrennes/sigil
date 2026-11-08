@@ -87,9 +87,12 @@ function toLatinLetters(grapheme: string): string {
 }
 
 /**
- * Normalises a typed intention into Latin letters A–Z, so that the same words
- * produce the same sigil whatever their accents, case or punctuation
- * (« Je suis calme » and « je suis calme ! » give the same letters).
+ * Normalises a typed intention into Latin letters A–Z, so that the same word
+ * produces the same sigil whatever its accents, case or punctuation
+ * (« Sérénité » and « serenite ! » give the same letters).
+ *
+ * Accepts any number of words: the single-word rule (decision D18) is
+ * `checkSingleWord`'s, which the caller runs as well.
  *
  * Accents are stripped (É → E), œ/æ become OE/AE and ß becomes SS. Whitespace
  * and punctuation are dropped silently; any other non-letter is dropped and
