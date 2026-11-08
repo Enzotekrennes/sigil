@@ -271,3 +271,8 @@
 ## 2026-11-08 — Correctif contacts des lettres (B1 du test F2) et vérification complète
 - 0ca5e81 : points de contact partagés dans les squelettes (`jointedStrokes`), fusion limitée aux traits confondus (0,5), sommets de contact conservés, correction des hachures sans ouvrir de contact ; 4 610 contacts vérifiés, aucun ouvert ; planche inchangée.
 - Vérification complète sur 0ca5e81 : lint, format:check, typecheck verts ; 989/989 tests unitaires ; 5/5 tests du script ; build (28 entrées précachées) ; e2e 283/283 ; aucune trace d'outil hors `docs/` ni dans les messages de commit.
+
+## 2026-11-08 — Livraison : documentation et vérification finale
+- Site de documentation EN/FR dans `site/` (Starlight, 14 pages par langue + référence d'API générée), publié par le workflow sous `/sigil/docs/` ; le service worker de l'app laisse passer ces pages.
+- TSDoc public complété (en-têtes de modules, propriétés, types exportés) ; visuels du README générés (`npm run readme:assets`) ; README réécrit ; passation rédigée.
+- Vérification finale : lint, format:check, typecheck verts ; 989/989 tests unitaires ; 16/16 tests des scripts ; build de l'app (28 entrées précachées) ; build du site (403 pages, aucun lien cassé) ; e2e 284/284.
