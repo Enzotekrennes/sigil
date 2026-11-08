@@ -146,6 +146,13 @@ describe('simplifyStrokes', () => {
     expect(strokes).toEqual([[p(10, 10), p(30, 10), p(30, 40)]]);
   });
 
+  it('keeps a middle point of a straight run where another stroke starts or ends', () => {
+    // The leg of an R starting inside the edge of its bowl.
+    const edge = [p(10, 10), p(20, 15), p(30, 20)];
+    const leg = [p(20, 15), p(25, 40)];
+    expect(simplifyStrokes([edge, leg]).strokes).toEqual([edge, leg]);
+  });
+
   it('keeps the drawing order of strokes untouched by merging', () => {
     const input = [
       [p(10, 80), p(30, 60), p(10, 40)],

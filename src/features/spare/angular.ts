@@ -67,13 +67,79 @@ export const STRAIGHTEN_ANGLE = 8;
 /** Height of a capital in the glyph frame (cap top at −21, baseline at 0). */
 const CAP_HEIGHT = 21;
 
+/**
+ * Fewest points of a stroke redrawn as a curve. Hershey draws curves with
+ * many short segments; a stroke of three points is a corner already made of
+ * straight segments (the fork of Y), kept as it is so its joint stays put.
+ */
+export const MIN_CURVE_POINTS = 4;
+
 /** Distance under which two points of a glyph count as the same, in Hershey units. */
 const SAME_POINT = 1e-6;
+
+/**
+ * Adds, to every segment, the ends of other strokes that rest inside it, as
+ * vertices (see `AngularGlyph.jointedStrokes`).
+ *
+ * @param strokes - Polylines of one glyph.
+ * @returns New polylines, same count and order, drawing the same lines.
+ */
+export function withJunctions(strokes: readonly (readonly Point[])[]): Point[][] {
+  const ends = strokes.flatMap((stroke, index) => {
+    const first = stroke[0];
+    const last = stroke[stroke.length - 1];
+    return [first, last].flatMap((point) => (point === undefined ? [] : [{ point, index }]));
+  });
+  return strokes.map((stroke, strokeIndex) => {
+    const result: Point[] = [];
+    stroke.forEach((end, pointIndex) => {
+      const start = stroke[pointIndex - 1];
+      if (start !== undefined) {
+        const inside = ends
+          .filter(
+            ({ point, index }) =>
+              index !== strokeIndex &&
+              !samePoint(point, start) &&
+              !samePoint(point, end) &&
+              chordDistance(point, start, end) < SAME_POINT,
+          )
+          .map(({ point }) => point)
+          .sort((a, b) => distanceBetween(a, start) - distanceBetween(b, start));
+        for (const point of inside) {
+          const last = result[result.length - 1];
+          if (last === undefined || !samePoint(last, point))
+            result.push({ x: point.x, y: point.y });
+        }
+      }
+      result.push({ x: end.x, y: end.y });
+    });
+    return result;
+  });
+}
+
+/**
+ * Distance between two points.
+ *
+ * @param a - First point.
+ * @param b - Second point.
+ * @returns The distance in glyph units.
+ */
+function distanceBetween(a: Point, b: Point): number {
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
 
 /** A letter redrawn with straight segments, in the glyph frame. */
 export interface AngularGlyph {
   /** Polylines in drawing order; every segment is straight and of positive length. */
   readonly strokes: readonly (readonly Point[])[];
+  /**
+   * The same polylines, with every point where the end of one stroke rests
+   * inside a segment of another (the leg of R on its bowl, the arms of E on
+   * its stem) added to that segment as a vertex. Drawn the same, but each
+   * joint is then a point both strokes share, which every later step (scaling,
+   * rounding, merging, hatch correction) moves as one, so joints never open.
+   */
+  readonly jointedStrokes: readonly (readonly Point[])[];
   /** Tight bounding box of every point. */
   readonly bounds: Box;
 }
@@ -115,7 +181,7 @@ export function angularStrokes(
 ): Point[][] {
   const box = boundsOf(strokes.flat());
   const redrawn = closeBowls(strokes).map((stroke) => {
-    if (stroke.length <= 2) return stroke.map(({ x, y }) => ({ x, y }));
+    if (stroke.length < MIN_CURVE_POINTS) return stroke.map(({ x, y }) => ({ x, y }));
     let vertices: Vertex[];
     if (isClosed(stroke)) vertices = diamondOf(stroke);
     else if (isBowl(stroke)) vertices = triangleOf(stroke);
@@ -145,7 +211,11 @@ export function getAngularGlyph(letter: CapitalLetter): AngularGlyph {
     getGlyph(letter).strokes,
     CURVE_TOLERANCE_OVERRIDES[letter] ?? CURVE_TOLERANCE_RATIO,
   );
-  const glyph = { strokes, bounds: boundsOf(strokes.flat()) };
+  const glyph = {
+    strokes,
+    jointedStrokes: withJunctions(strokes),
+    bounds: boundsOf(strokes.flat()),
+  };
   angularGlyphs.set(letter, glyph);
   return glyph;
 }

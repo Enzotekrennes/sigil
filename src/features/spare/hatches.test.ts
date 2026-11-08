@@ -80,6 +80,22 @@ describe('findHatches', () => {
 });
 
 describe('correctHatches', () => {
+  it('leaves in place an end resting inside another stroke, so the joint holds', () => {
+    const stem = [
+      { x: 50, y: 10 },
+      { x: 50, y: 90 },
+    ];
+    // An arm leaving the stem, and a bar 2 units below it, longer than the arm.
+    const arm = [
+      { x: 50, y: 40 },
+      { x: 62, y: 40 },
+    ];
+    const corrected = correctHatches([stem, arm, bar(42, 45, 75)]);
+
+    expect(hatchCount(corrected)).toBe(0);
+    expect(corrected.flat()).toContainEqual({ x: 50, y: 40 });
+  });
+
   it('returns the same strokes when there is no hatch', () => {
     const strokes = [bar(40), bar(60)];
     expect(correctHatches(strokes)).toBe(strokes);

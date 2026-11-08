@@ -33,11 +33,13 @@ export const STRAIGHT_TOLERANCE = 1e-3;
 
 /**
  * Distance under which two long straight segments lying along the same line
- * are merged, in frame units: 1.25 default stroke widths. Parallel bars and
- * stems that close leave a gap thinner than the stroke itself and read as one
- * blurred, doubled line rather than two; merging them sharpens the seal.
+ * are merged, in frame units: the point tolerance, so that only strokes
+ * drawn over each other (confounded) are merged. Merging nearly collinear
+ * strokes further apart moved the joint of one letter onto the end of
+ * another (a leg of R left 0.4 off its bowl); parallel strokes 0.5–5 apart
+ * are hatches, kept out by the rune score and `correctHatches` instead.
  */
-export const STRAIGHT_MERGE_TOLERANCE = 1.5;
+export const STRAIGHT_MERGE_TOLERANCE = POINT_MERGE_TOLERANCE;
 
 /**
  * Shortest segment the wider `STRAIGHT_MERGE_TOLERANCE` applies to, in frame
@@ -102,7 +104,15 @@ export function simplifyStrokes(strokes: readonly (readonly Point[])[]): Simplif
     }
   }
 
-  const polylines = chainSegments(kept).map(removeStraightPoints);
+  const chains = chainSegments(kept);
+  const joints = new Set(
+    chains.flatMap((chain) =>
+      [chain[0], chain[chain.length - 1]].flatMap((point) =>
+        point === undefined ? [] : [pointKey(point)],
+      ),
+    ),
+  );
+  const polylines = chains.map((chain) => removeStraightPoints(chain, joints));
   const segmentCountAfter = polylines.reduce((count, line) => count + line.length - 1, 0);
   return { strokes: polylines, segmentCountBefore, segmentCountAfter };
 }
@@ -299,9 +309,12 @@ function chainSegments(segments: readonly KeptSegment[]): Point[][] {
  * next point, between them.
  *
  * @param polyline - Points of one polyline, at least two, no consecutive repeats.
+ * @param joints - Keys (see `pointKey`) of the points where another polyline
+ *   starts or ends: kept even on a straight run, so that the stroke meeting
+ *   there still shares a point with this one.
  * @returns The polyline with the same shape and fewer points.
  */
-function removeStraightPoints(polyline: readonly Point[]): Point[] {
+function removeStraightPoints(polyline: readonly Point[], joints: ReadonlySet<string>): Point[] {
   const first = polyline[0];
   if (first === undefined) return [];
   const result: Point[] = [first];
@@ -310,7 +323,8 @@ function removeStraightPoints(polyline: readonly Point[]): Point[] {
     const next = polyline[index + 1];
     const last = result[result.length - 1];
     if (point === undefined || last === undefined) continue;
-    if (next !== undefined && liesBetween(point, last, next)) continue;
+    const isJoint = joints.has(pointKey(point));
+    if (next !== undefined && !isJoint && liesBetween(point, last, next)) continue;
     result.push(point);
   }
   return result;
@@ -327,4 +341,14 @@ function removeStraightPoints(polyline: readonly Point[]): Point[] {
 function liesBetween(point: Point, from: Point, to: Point): boolean {
   const forward = (point.x - from.x) * (to.x - point.x) + (point.y - from.y) * (to.y - point.y);
   return forward > 0 && lineDistance(point, { start: from, end: to }) <= STRAIGHT_TOLERANCE;
+}
+
+/**
+ * Key of a point's position, so that equal points of different polylines match.
+ *
+ * @param point - Any point.
+ * @returns Its coordinates as text.
+ */
+function pointKey(point: Point): string {
+  return `${String(point.x)},${String(point.y)}`;
 }

@@ -19,6 +19,7 @@ import { findHatches } from './hatches.ts';
 import { buildSpareSigil, candidateCountFor, generateSpareCandidates, spareSeed } from './index.ts';
 import type { SpareError, SpareOptions } from './index.ts';
 import { INK_CEILING, STEM_X } from './runeScore.ts';
+import { POINT_MERGE_TOLERANCE } from './simplify.ts';
 
 /** Default settings: vowels removed, first variant. */
 const DEFAULT_OPTIONS: SpareOptions = { keepVowels: false, variant: 0 };
@@ -189,6 +190,115 @@ function inkLength(strokes: readonly (readonly Point[])[]): number {
   return strokeSegments(strokes).reduce((sum, segment) => sum + segmentLength(segment), 0);
 }
 
+/** Distance under which a stroke end counts as resting on another stroke. */
+const JOINT_DISTANCE = 1e-6;
+
+/** The 26 letters, each drawn alone. */
+const ALPHABET: readonly string[] = [
+  'A',
+  'B',
+  'C',
+  'D',
+  'E',
+  'F',
+  'G',
+  'H',
+  'I',
+  'J',
+  'K',
+  'L',
+  'M',
+  'N',
+  'O',
+  'P',
+  'Q',
+  'R',
+  'S',
+  'T',
+  'U',
+  'V',
+  'W',
+  'X',
+  'Y',
+  'Z',
+];
+
+/**
+ * Distance from a point to a polyline.
+ *
+ * @param point - Point measured.
+ * @param polyline - Polyline.
+ * @returns The smallest distance to one of its segments; infinite without segment.
+ */
+function distanceToPolyline(point: Point, polyline: readonly Point[]): number {
+  let best = Number.POSITIVE_INFINITY;
+  for (const { start, end } of strokeSegments([polyline])) {
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const squared = dx * dx + dy * dy;
+    const t =
+      squared === 0
+        ? 0
+        : Math.max(0, Math.min(1, ((point.x - start.x) * dx + (point.y - start.y) * dy) / squared));
+    best = Math.min(best, Math.hypot(point.x - start.x - t * dx, point.y - start.y - t * dy));
+  }
+  return best;
+}
+
+/**
+ * Joints of the letters as placed on the stem, before merging: ends of a
+ * stroke resting on another stroke of the same letter (a doubled letter's
+ * two copies counted apart, since each copy overlaps the other's stem).
+ *
+ * @param sigil - A Spare sigil.
+ * @returns The joint points, with their letter for messages.
+ */
+function placedJoints(sigil: Sigil): { letter: string; end: Point }[] {
+  return stepOf(sigil, 'spare-stem-attachments').letters.flatMap((letter) => {
+    const half = letter.strokes.length / 2;
+    const copies = letter.doubled
+      ? [letter.strokes.slice(0, half), letter.strokes.slice(half)]
+      : [letter.strokes];
+    return copies.flatMap((strokes) =>
+      strokes.flatMap((stroke, index) =>
+        [stroke[0], stroke[stroke.length - 1]].flatMap((end) =>
+          end !== undefined &&
+          strokes.some(
+            (other, otherIndex) =>
+              otherIndex !== index && distanceToPolyline(end, other) < JOINT_DISTANCE,
+          )
+            ? [{ letter: letter.letter, end }]
+            : [],
+        ),
+      ),
+    );
+  });
+}
+
+/**
+ * Whether a joint of a placed letter still holds in the sigil: at the joint,
+ * or where merging moved it (at most `POINT_MERGE_TOLERANCE` away), strokes
+ * of two different polylines meet within `JOINT_DISTANCE`.
+ *
+ * @param sigil - The finished sigil.
+ * @param end - The joint before merging.
+ * @returns True when the joint is still closed.
+ */
+function jointHolds(sigil: Sigil, end: Point): boolean {
+  const meets = (point: Point): boolean =>
+    sigil.strokes.filter((stroke) => distanceToPolyline(point, stroke) < JOINT_DISTANCE).length >=
+    2;
+  return (
+    meets(end) ||
+    sigil.strokes
+      .flat()
+      .some(
+        (point) =>
+          Math.hypot(point.x - end.x, point.y - end.y) <= POINT_MERGE_TOLERANCE && meets(point),
+      )
+  );
+}
+
 describe('buildSpareSigil', () => {
   it('gives the same sigil for the same word and settings, seeded by D6', () => {
     const first = sigilOf('Calme');
@@ -283,6 +393,56 @@ describe('buildSpareSigil', () => {
         );
       }
     }
+  });
+
+  it('keeps every joint of the 26 letters closed in their sigil, on 3 variants', () => {
+    for (const letter of ALPHABET) {
+      for (const variant of [0, 1, 2]) {
+        const result = buildSpareSigil([letter], { keepVowels: true, variant });
+        if (!result.ok) throw new Error(`Unexpected Spare error ${result.error.code}`);
+        for (const joint of placedJoints(result.data)) {
+          expect(jointHolds(result.data, joint.end), `${letter} v${String(variant)}`).toBe(true);
+        }
+      }
+    }
+  });
+
+  it(
+    `keeps every joint of every letter closed on ${String(WORDS.length)} words × 3 variants`,
+    { timeout: 60_000 },
+    () => {
+      for (const word of WORDS) {
+        for (const variant of [0, 1, 2]) {
+          const sigil = sigilOf(word, { keepVowels: false, variant });
+          for (const joint of placedJoints(sigil)) {
+            expect(
+              jointHolds(sigil, joint.end),
+              `${word} v${String(variant)} ${joint.letter} (${String(joint.end.x)}, ${String(joint.end.y)})`,
+            ).toBe(true);
+          }
+        }
+      }
+    },
+  );
+
+  it('starts the leg of R on its bowl in « Victory », variant 2 (F2 regression)', () => {
+    const sigil = sigilOf('Victory', { keepVowels: false, variant: 1 });
+    const r = stepOf(sigil, 'spare-stem-attachments').letters.find(
+      (letter) => letter.letter === 'R',
+    );
+    const [, bowl = [], leg = []] = r?.strokes ?? [];
+    const legStart = leg[0];
+    if (legStart === undefined) throw new Error('Missing leg of R');
+
+    expect(bowl).toContainEqual(legStart);
+    expect(
+      sigil.strokes.some(
+        (stroke) =>
+          stroke.length > 2 &&
+          stroke.some((point) => point.x === legStart.x && point.y === legStart.y),
+      ),
+    ).toBe(true);
+    expect(jointHolds(sigil, legStart)).toBe(true);
   });
 
   it('has no marks and the 0–100 frame', () => {

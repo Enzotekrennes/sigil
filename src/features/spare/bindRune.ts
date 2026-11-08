@@ -389,7 +389,8 @@ function isOneSided(draft: Draft): boolean {
  * @returns Its strokes in rune units, followed by its double's when doubled.
  */
 function placeLetter(draft: Draft, top: number): Point[][] {
-  const { strokes } = getAngularGlyph(draft.letter);
+  // Jointed strokes: each joint is a shared point, so it survives every later step.
+  const strokes = getAngularGlyph(draft.letter).jointedStrokes;
   const unit = draft.scale / CAP_HEIGHT;
   const flip = draft.mirrored ? -1 : 1;
   const placed = strokes.map((stroke) =>

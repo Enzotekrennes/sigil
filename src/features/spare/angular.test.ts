@@ -77,6 +77,48 @@ function halfCircle(): Point[] {
   });
 }
 
+/**
+ * Distance from a point to a polyline.
+ *
+ * @param point - Point measured.
+ * @param polyline - Polyline of at least two points.
+ * @returns The smallest distance to one of its segments.
+ */
+function distanceToPolyline(point: Point, polyline: readonly Point[]): number {
+  let best = Number.POSITIVE_INFINITY;
+  for (let index = 1; index < polyline.length; index += 1) {
+    const start = polyline[index - 1];
+    const end = polyline[index];
+    if (start === undefined || end === undefined) continue;
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    const t = Math.max(
+      0,
+      Math.min(1, ((point.x - start.x) * dx + (point.y - start.y) * dy) / (dx * dx + dy * dy)),
+    );
+    best = Math.min(best, Math.hypot(point.x - start.x - t * dx, point.y - start.y - t * dy));
+  }
+  return best;
+}
+
+/**
+ * The joints of a letter: ends of strokes resting on another stroke.
+ *
+ * @param strokes - Polylines of one letter.
+ * @returns Each end with the index of a stroke it rests on.
+ */
+function jointsOf(strokes: readonly (readonly Point[])[]): { end: Point; touched: number }[] {
+  return strokes.flatMap((stroke, index) =>
+    [stroke[0], stroke[stroke.length - 1]].flatMap((end) => {
+      if (end === undefined) return [];
+      const touched = strokes.findIndex(
+        (other, otherIndex) => otherIndex !== index && distanceToPolyline(end, other) < 1e-6,
+      );
+      return touched === -1 ? [] : [{ end, touched }];
+    }),
+  );
+}
+
 describe('getAngularGlyph', () => {
   it.each(ALPHABET)('redraws every curve of %s with 2 to 4 straight segments', (letter) => {
     const hershey = getGlyph(letter).strokes;
@@ -198,6 +240,36 @@ describe('getAngularGlyph', () => {
       );
       expect(hasVertical).toBe(true);
     }
+  });
+});
+
+describe('jointedStrokes', () => {
+  it.each(ALPHABET)(
+    'makes every joint of %s a point both strokes share, drawing the same lines',
+    (letter) => {
+      const { strokes, jointedStrokes } = getAngularGlyph(letter);
+      expect(jointedStrokes).toHaveLength(strokes.length);
+      for (const joint of jointsOf(strokes)) {
+        expect(jointedStrokes[joint.touched]).toContainEqual(joint.end);
+      }
+      jointedStrokes.forEach((stroke, index) => {
+        for (const point of stroke) {
+          expect(distanceToPolyline(point, strokes[index] ?? [])).toBeLessThan(1e-9);
+        }
+      });
+    },
+  );
+
+  it('adds the start of the leg of R to the edge of its bowl, and the arms of E to its stem', () => {
+    expect(jointsOf(getAngularGlyph('R').strokes).length).toBeGreaterThan(0);
+    expect(getAngularGlyph('R').jointedStrokes[1]).toHaveLength(4);
+    expect(getAngularGlyph('E').jointedStrokes[0]).toHaveLength(3);
+  });
+
+  it('keeps the fork of Y where both arms meet', () => {
+    const [left = [], right = []] = getAngularGlyph('Y').strokes;
+    expect(left).toEqual(getGlyph('Y').strokes[0]);
+    expect(left).toContainEqual(right[right.length - 1]);
   });
 });
 

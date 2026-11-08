@@ -44,6 +44,9 @@ export const HATCH_PARALLEL_ANGLE = 6;
  */
 export const MAX_CORRECTION_ROUNDS = 4;
 
+/** Distance under which a point rests on a segment of another polyline, in frame units. */
+const JOINT_DISTANCE = 1e-6;
+
 /**
  * Finds the hatches of a drawing: pairs of segments within
  * `HATCH_PARALLEL_ANGLE` of each other, `MIN_HATCH_GAP`–`MAX_HATCH_GAP`
@@ -97,42 +100,78 @@ function isHatch(a: Segment, b: Segment, cosineLimit: number): boolean {
 }
 
 /**
- * Removes the hatches of merged strokes: for each hatch, both ends of the
- * shorter segment move to their nearest points on the longer one (and every
- * stroke point at the same place moves with them, so joints hold), then the
- * strokes are merged again, which draws the now overlapping segments once.
+ * Removes the hatches of merged strokes: for each hatch, the ends of the
+ * shorter segment move to their nearest points on the longer one, and every
+ * stroke point at the same place moves with them, so strokes sharing a point
+ * stay joined. An end resting inside a segment of another polyline (an arm
+ * on the stem) is a joint nothing would move with: it stays put. The strokes
+ * are then merged again, which draws the now overlapping segments once.
  * Repeated up to `MAX_CORRECTION_ROUNDS` times while hatches remain.
  *
  * @param strokes - Merged polylines in the 0–100 frame.
  * @returns The corrected polylines, each of at least two points; the same
  *   polylines (not a copy) when there was no hatch. Every moved point lands
- *   on an existing segment, so the drawing never grows beyond its convex hull.
+ *   on an existing segment, so the drawing never grows beyond its convex
+ *   hull. A hatch whose shorter segment has both ends resting inside other
+ *   strokes is left as it is.
  */
 export function correctHatches(
   strokes: readonly (readonly Point[])[],
 ): readonly (readonly Point[])[] {
   let current = strokes;
   for (let round = 0; round < MAX_CORRECTION_ROUNDS; round += 1) {
-    const segments = strokeSegments(current).filter((segment) => segmentLength(segment) > 0);
+    const owned = current.flatMap((stroke, owner) =>
+      strokeSegments([stroke])
+        .filter((segment) => segmentLength(segment) > 0)
+        .map((segment) => ({ segment, owner })),
+    );
+    const segments = owned.map(({ segment }) => segment);
     const hatches = findHatches(segments);
     if (hatches.length === 0) return current;
+    // A joint rests inside a segment of another polyline without being one of
+    // its points: moving it would open the joint, as nothing there moves with it.
+    const isJoint = (point: Point, owner: number): boolean =>
+      owned.some(
+        (other) =>
+          other.owner !== owner &&
+          pointKey(point) !== pointKey(other.segment.start) &&
+          pointKey(point) !== pointKey(other.segment.end) &&
+          distanceToSegment(point, other.segment) < JOINT_DISTANCE,
+      );
     const moves = new Map<string, Point>();
     for (const [i, j] of hatches) {
-      const a = segments[i];
-      const b = segments[j];
+      const a = owned[i];
+      const b = owned[j];
       if (a === undefined || b === undefined) continue;
-      const [longer, shorter] = segmentLength(a) >= segmentLength(b) ? [a, b] : [b, a];
-      for (const point of [shorter.start, shorter.end]) {
+      const [longer, shorter] =
+        segmentLength(a.segment) >= segmentLength(b.segment) ? [a, b] : [b, a];
+      const free = [shorter.segment.start, shorter.segment.end].filter(
+        (point) => !isJoint(point, shorter.owner),
+      );
+      for (const point of free) {
         const key = pointKey(point);
-        if (!moves.has(key)) moves.set(key, nearestOnSegment(point, longer));
+        if (!moves.has(key)) moves.set(key, nearestOnSegment(point, longer.segment));
       }
     }
+    if (moves.size === 0) return current;
     const moved = current.map((stroke) =>
       stroke.map((point) => moves.get(pointKey(point)) ?? point),
     );
     current = simplifyStrokes(moved).strokes.filter((stroke) => stroke.length >= 2);
   }
   return current;
+}
+
+/**
+ * Distance from a point to a segment.
+ *
+ * @param point - Point measured.
+ * @param segment - Segment of positive length.
+ * @returns The distance in frame units.
+ */
+function distanceToSegment(point: Point, segment: Segment): number {
+  const nearest = nearestOnSegment(point, segment);
+  return Math.hypot(point.x - nearest.x, point.y - nearest.y);
 }
 
 /**
