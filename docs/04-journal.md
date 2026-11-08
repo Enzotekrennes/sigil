@@ -225,3 +225,10 @@
 - Fait : note « un sigil kamea peut se relire » dans le dialogue d'export (S1) ; `translate="no"` sur l'intention et les lettres affichées (S8) ; note de confidentialité en pied de page (S9) ; table ToUnicode WinAnsi dans le PDF (B2) ; extrémités et limite d'onglet du PDF via `lineEndsFor` (R4) ; actions du dialogue épinglées sous 640 px.
 - Vérifications : 876/876 tests, typecheck, build verts (revérifié) ; e2e f4, f5, f6, stencil, export, privacy-note 146/146 ; contrastes AA chiffrés.
 - Points ouverts : B2 non reproduit avec PyMuPDF 1.28 et pdftotext (table ajoutée par précaution).
+
+## 2026-11-08 — T21 Correctifs review CI, scripts et e2e
+- Rôle : dev
+- Fait : `contents: read` global, `pages`/`id-token` au seul job deploy, `persist-credentials: false` (S2) ; actions figées par SHA (checkout v7.0.1, setup-node v7.1.0, configure-pages v6.0.0, upload-pages-artifact v5.0.0, deploy-pages v5.0.1), `npm ci --ignore-scripts`, Dependabot (S5) ; `format:check`, tests du script et e2e F7/confidentialité/hors ligne en CI avant l'upload (S6, R10) ; empreinte SHA-256 de `rowmans.jhf` vérifiée (S10) ; `waitForTimeout` remplacés par des attentes explicites (7 restants, commentés, qui prouvent une absence) (R5) ; anti-dérive des couleurs étendu à `vite.config.ts`, durées importées (R4) ; OFL publiées et précachées, version Workbox lue depuis `workbox-build` (R13).
+- Vérifications : lint, typecheck, 882/882 tests ; `test:scripts` 5/5 avec mutation ; e2e 269/269 trois fois avec 4 workers ; build sous `npm ci --ignore-scripts`.
+- Écarts : version Workbox 7.4.1 maintenue (le marqueur 7.4.0 vient d'un fichier non mis à jour du paquet 7.4.1).
+- Points ouverts : `format:check` rouge sur 3 fichiers `src/` (à reformater avec T22) ; navigateur Chromium non mis en cache en CI ; README à compléter (phase 6).
