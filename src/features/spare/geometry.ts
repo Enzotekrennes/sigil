@@ -1,7 +1,7 @@
 /**
- * Plane geometry shared by the Spare scoring and simplification: rounding of
- * frame coordinates, segments of polylines, distances and lengths, and the
- * centre of gravity of a drawing.
+ * Plane geometry shared by the Spare scoring, hatch search and
+ * simplification: rounding of frame coordinates, segments of polylines,
+ * distances and lengths.
  *
  * Pure functions on points of the 0–100 frame (y downwards). Knows nothing of
  * letters, candidates or scores.
@@ -14,9 +14,6 @@ import type { Point } from '../sigil/types.ts';
  * margin exactly on it.
  */
 const COORDINATE_DECIMALS = 4;
-
-/** Length below which a vector counts as null, far under any visible distance. */
-const EPSILON = 1e-9;
 
 /** A straight piece of a polyline, from `start` to `end`. */
 export interface Segment {
@@ -72,25 +69,4 @@ export function distance(a: Point, b: Point): number {
  */
 export function segmentLength(segment: Segment): number {
   return distance(segment.start, segment.end);
-}
-
-/**
- * Centre of gravity of a line drawing: the mean of segment midpoints weighted
- * by segment length, as if the ink were spread evenly along the strokes.
- *
- * @param segments - Segments of the drawing.
- * @returns The centre of gravity, or `undefined` when the total length is null.
- */
-export function centreOfGravity(segments: readonly Segment[]): Point | undefined {
-  let total = 0;
-  let x = 0;
-  let y = 0;
-  for (const segment of segments) {
-    const length = segmentLength(segment);
-    total += length;
-    x += length * ((segment.start.x + segment.end.x) / 2);
-    y += length * ((segment.start.y + segment.end.y) / 2);
-  }
-  if (total < EPSILON) return undefined;
-  return { x: x / total, y: y / total };
 }

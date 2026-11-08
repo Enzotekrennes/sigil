@@ -185,56 +185,124 @@ export interface SpareLetterReductionStep {
   readonly kept: readonly string[];
 }
 
-/** How one letter was transformed and where it lands, before the strokes are merged. */
-export interface SpareLetterPlacement {
+/** One retained letter, before and after its curves are redrawn with straight segments (D20). */
+export interface SpareAngularSkeleton {
   /** The letter, A–Z. */
   readonly letter: string;
-  /** True when the letter is flipped left to right, applied before the turn. */
-  readonly mirrored: boolean;
-  /** Clockwise quarter turn on screen, in degrees, applied after the mirror. */
-  readonly rotation: 0 | 90 | 180 | 270;
   /**
-   * Size relative to the other letters (1 = largest possible), 0.7–1
-   * (`MIN_LETTER_SCALE` of the Spare placement).
-   */
-  readonly scale: number;
-  /** Index in `letters` of the letter whose vertical stem this one shares, or `null`. */
-  readonly sharedStemWith: number | null;
-  /**
-   * The upright, untransformed skeleton, centred in the 0–100 frame with its
-   * larger side spanning the drawing area: what the letter looks like alone.
+   * The Hershey skeleton, upright and untransformed, centred in the 0–100
+   * frame with its cap height spanning the drawing area.
    */
   readonly glyph: readonly (readonly Point[])[];
+  /** The angular skeleton, under the same fitting as `glyph`, so both can be drawn over each other. */
+  readonly angular: readonly (readonly Point[])[];
+  /** Number of straight segments of the angular skeleton. */
+  readonly segmentCount: number;
+}
+
+/** Spare step: each retained letter redrawn with straight segments, in reduction order. */
+export interface SpareAngularSkeletonsStep {
+  readonly kind: 'spare-angular-skeletons';
+  readonly letters: readonly SpareAngularSkeleton[];
+}
+
+/**
+ * How a letter is hooked onto the stem of the bind rune: `stem`, one of its
+ * vertical strokes lies on the stem; `centre`, it is centred on the stem,
+ * which crosses it; `tip`, its single outermost corner touches the stem.
+ */
+export type SpareAttachment = 'stem' | 'centre' | 'tip';
+
+/** One letter hooked onto the stem, in the sigil's frame, before the strokes are merged. */
+export interface SpareStemAttachment {
+  /** The letter, A–Z. */
+  readonly letter: string;
+  readonly attachment: SpareAttachment;
+  /** True when the letter is flipped left to right around the stem. */
+  readonly mirrored: boolean;
+  /** True when the letter is drawn twice, once on each side of the stem, mirror images of each other. */
+  readonly doubled: boolean;
+  /** Side of the stem the letter occupies, its double included. */
+  readonly side: 'left' | 'right' | 'both';
+  /** y of the letter's highest point on the stem, in the 0–100 frame. */
+  readonly top: number;
+  /** y of the letter's lowest point on the stem, in the 0–100 frame. */
+  readonly bottom: number;
   /**
-   * The letter's strokes once transformed and placed, in the sigil's 0–100
-   * frame (same position as in the final sigil), before merging: drawing every
-   * letter's `strokes` on top of each other shows the superimposition.
+   * The letter's strokes (and its double's) as placed, in the sigil's 0–100
+   * frame, before merging: drawing them with the stem shows the rune before
+   * shared strokes are drawn once.
    */
   readonly strokes: readonly (readonly Point[])[];
 }
 
-/** Spare step: each retained letter, its skeleton and its transforms, in input order. */
-export interface SpareLetterPlacementsStep {
-  readonly kind: 'spare-letter-placements';
-  readonly letters: readonly SpareLetterPlacement[];
+/** Spare step: the stem and every letter hooked onto it. */
+export interface SpareStemAttachmentsStep {
+  readonly kind: 'spare-stem-attachments';
+  /** Ends of the vertical stem, top first, on the vertical through the frame centre. */
+  readonly stem: { readonly top: Point; readonly bottom: Point };
+  /** Letters from the top of the stem to the bottom, the order the variant hangs them in. */
+  readonly order: readonly string[];
+  /** Each retained letter's attachment, in reduction order (same order as `kept`). */
+  readonly letters: readonly SpareStemAttachment[];
 }
 
-/** Spare step: which candidate composition was chosen, and why. */
+/**
+ * Measures of a bind rune, on its merged strokes in the 0–100 frame, and the
+ * penalty they add up to (see the weights in the Spare score).
+ */
+export interface SpareRuneScore {
+  /** Pairs of parallel strokes 0.5–5 units apart side by side ("hatches"); the chosen rune should have 0. */
+  readonly hatches: number;
+  /** Total stroke length divided by the drawing area's side (80 units). */
+  readonly ink: number;
+  /** Height divided by width of the rune's bounding box. */
+  readonly aspectRatio: number;
+  /** Share of the ink, 0–1, whose mirror image across the stem lies on a stroke. */
+  readonly symmetry: number;
+  /** |left ink − right ink| / total ink, 0–1: 0 when both sides of the stem carry as much. */
+  readonly imbalance: number;
+  /** Crossings between strokes away from the stem. */
+  readonly crossings: number;
+  /**
+   * Overlap of the letters' bounding boxes on a common side of the stem,
+   * summed over pairs of letters as a share of the smaller box: 0 when no
+   * two letters are drawn over each other.
+   */
+  readonly crowding: number;
+  /** Mean height of the letters on the stem, in frame units. */
+  readonly letterHeight: number;
+  /** Weighted sum of the measures; the lowest penalty wins. */
+  readonly penalty: number;
+}
+
+/** Layout of a Spare bind rune, fixed by the variant (see `SpareCandidateChoiceStep.style`). */
+export type SpareRuneStyle = 'symmetric' | 'paired' | 'mixed';
+
+/** Spare step: which candidate rune was chosen, and its measures. */
 export interface SpareCandidateChoiceStep {
   readonly kind: 'spare-candidate-choice';
-  /** Number of compositions drawn from the seed and scored. */
-  readonly candidateCount: number;
+  /** Variant number, 0 for the first sigil; it fixes the order of the letters, the style and the draws. */
+  readonly variant: number;
   /**
-   * Zero-based index of the chosen composition, in draw order: the one with
-   * the lowest penalty (decision D13).
+   * Layout the variant asks of every candidate: `symmetric`, each one-sided
+   * letter doubled by its mirror image; `paired`, no doubling, one-sided
+   * letters share levels on either side of the stem; `mixed`, either, drawn
+   * letter by letter.
    */
+  readonly style: SpareRuneStyle;
+  /** Number of runes drawn from the seed and scored. */
+  readonly candidateCount: number;
+  /** Zero-based index of the chosen rune, in draw order: the one with the lowest penalty. */
   readonly chosenIndex: number;
+  /** Measures of the chosen rune. */
+  readonly score: SpareRuneScore;
 }
 
-/** Spare step: the superimposed strokes merged and simplified into the sigil. */
+/** Spare step: the stem and the hooked letters merged into the sigil, shared strokes drawn once. */
 export interface SpareSimplificationStep {
   readonly kind: 'spare-simplification';
-  /** Segments of the superimposed letters before merging. */
+  /** Segments of the stem and the placed letters before merging. */
   readonly segmentCountBefore: number;
   /** Segments of the final sigil, once overlaps and duplicates are drawn once. */
   readonly segmentCountAfter: number;
@@ -246,7 +314,8 @@ export type ExplanationStep =
   | KameaLetterTableStep
   | KameaSquarePathStep
   | SpareLetterReductionStep
-  | SpareLetterPlacementsStep
+  | SpareAngularSkeletonsStep
+  | SpareStemAttachmentsStep
   | SpareCandidateChoiceStep
   | SpareSimplificationStep;
 

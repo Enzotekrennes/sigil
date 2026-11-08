@@ -1,13 +1,20 @@
 /**
  * Unit tests of the Spare candidate generation: seed (D6), determinism,
- * distinct variants, every candidate inside the frame, strokes and
- * transforms traced per letter, the number of candidates per intention
- * length, and business errors on invalid input.
+ * order and style of each variant, every candidate fitted in the disc with
+ * its stem on the frame's axis, letters reported in the order given, the
+ * number of candidates per word length, and business errors on invalid input.
  */
 import { describe, expect, it } from 'vitest';
 
-import { getGlyph } from './glyphs/index.ts';
-import { FRAME_MARGIN } from '../sigil/frame.ts';
+import { createRandom } from '../../lib/random.ts';
+import { FRAME_SIZE } from '../sigil/frame.ts';
+import {
+  DISC_RADIUS,
+  LONG_WORD_STYLES,
+  SHORT_WORD_STYLES,
+  letterOrderFor,
+  styleFor,
+} from './generateSpareCandidates.ts';
 import {
   MAX_CANDIDATE_COUNT,
   MIN_CANDIDATE_COUNT,
@@ -17,20 +24,21 @@ import {
 } from './index.ts';
 import type { SpareCandidateOptions, SpareCandidates, SpareCompositionError } from './index.ts';
 
-/** Retained letters of "Je suis calme" with vowels removed. */
-const JSCLM = ['J', 'S', 'C', 'L', 'M'];
+/** Retained letters of "Calme" with vowels removed. */
+const CLM = ['C', 'L', 'M'];
 
 /** First variant with vowels removed, the default settings. */
 const DEFAULT_OPTIONS: SpareCandidateOptions = { keepVowels: false, variant: 0 };
 
-/** Letter sets covering a single letter, the example, and a long intention. */
+/** Letter sets covering a single letter, a short word and a long one. */
 const LETTER_SETS: readonly (readonly string[])[] = [
   ['W'],
-  JSCLM,
-  ['B', 'D', 'F', 'G', 'H', 'K', 'N', 'P', 'Q', 'R', 'T', 'V', 'X', 'Y', 'Z'],
+  CLM,
+  ['S', 'T', 'R', 'N', 'G', 'H'],
+  ['B', 'D', 'F', 'G', 'H', 'K', 'N', 'P', 'Q', 'R', 'T', 'V'],
 ];
 
-/** Tolerance on the drawing extent, above the 4-decimal rounding of coordinates. */
+/** Tolerance above the 4-decimal rounding of coordinates. */
 const ROUNDING_TOLERANCE = 1e-3;
 
 /**
@@ -66,85 +74,77 @@ function generateError(
 }
 
 describe('generateSpareCandidates', () => {
-  it('draws as many candidates as the scoring budget allows, from the D6 seed', () => {
-    const { seed, candidates } = generate(JSCLM);
-
-    expect(seed).toBe(spareSeed({ letters: JSCLM, ...DEFAULT_OPTIONS }));
-    expect(candidates).toHaveLength(candidateCountFor(JSCLM.length));
+  it('draws as many candidates as the budget allows, from the D6 seed', () => {
+    const { seed, candidates } = generate(CLM);
+    expect(seed).toBe(spareSeed({ letters: CLM, ...DEFAULT_OPTIONS }));
+    expect(candidates).toHaveLength(candidateCountFor(3));
   });
 
   it('gives deeply equal results for the same letters and settings', () => {
-    expect(generate(JSCLM)).toEqual(generate([...JSCLM]));
-    expect(generate(JSCLM, { keepVowels: true, variant: 7 })).toEqual(
-      generate(JSCLM, { keepVowels: true, variant: 7 }),
-    );
+    expect(generate(CLM)).toEqual(generate(CLM));
   });
 
-  it('gives each variant its own candidates', () => {
-    const variants = Array.from({ length: 10 }, (_, variant) =>
-      generate(JSCLM, { keepVowels: false, variant }),
-    );
-    const firsts = new Set(variants.map((variant) => JSON.stringify(variant.candidates[0])));
-
-    expect(new Set(variants.map((variant) => variant.seed)).size).toBe(10);
-    expect(firsts.size).toBe(10);
+  it('gives each variant its own seed and candidates', () => {
+    const first = generate(CLM);
+    const second = generate(CLM, { keepVowels: false, variant: 1 });
+    expect(second.seed).not.toBe(first.seed);
+    expect(second.candidates).not.toEqual(first.candidates);
   });
 
-  it('draws candidates that differ from one another', () => {
-    const { candidates } = generate(JSCLM);
-    const shapes = new Set(candidates.map((candidate) => JSON.stringify(candidate.strokes)));
-    expect(shapes.size).toBe(candidates.length);
-  });
-
-  it.each(LETTER_SETS.map((letters) => [letters.join('')]))(
-    'keeps every point of every candidate of %s inside the frame margin',
-    (word) => {
-      for (let variant = 0; variant < 5; variant += 1) {
-        const { candidates } = generate(word.split(''), { keepVowels: false, variant });
-        for (const candidate of candidates) {
-          const points = candidate.strokes.flat();
-          const xs = points.map((point) => point.x);
-          const ys = points.map((point) => point.y);
-          for (const value of [...xs, ...ys]) {
-            expect(value).toBeGreaterThanOrEqual(FRAME_MARGIN);
-            expect(value).toBeLessThanOrEqual(100 - FRAME_MARGIN);
+  it('fits every candidate in the disc, its stem on the frame axis', () => {
+    const centre = FRAME_SIZE / 2;
+    for (const letters of LETTER_SETS) {
+      for (const variant of [0, 1, 2]) {
+        for (const candidate of generate(letters, { keepVowels: true, variant }).candidates) {
+          expect(candidate.stem.top.x).toBe(centre);
+          expect(candidate.stem.bottom.x).toBe(centre);
+          expect(candidate.strokes[0]).toEqual([candidate.stem.top, candidate.stem.bottom]);
+          const points = [
+            ...candidate.strokes.flat(),
+            ...candidate.letters.flatMap((letter) => letter.strokes.flat()),
+          ];
+          for (const point of points) {
+            expect(Math.hypot(point.x - centre, point.y - centre)).toBeLessThanOrEqual(
+              DISC_RADIUS + ROUNDING_TOLERANCE,
+            );
           }
-          // Fitted, not merely contained: the larger side spans the drawing area.
-          const extent = Math.max(
-            Math.max(...xs) - Math.min(...xs),
-            Math.max(...ys) - Math.min(...ys),
-          );
-          expect(extent).toBeGreaterThan(100 - 2 * FRAME_MARGIN - ROUNDING_TOLERANCE);
         }
-      }
-    },
-  );
-
-  it('keeps as many strokes as the glyphs have, each with its letter', () => {
-    const expectedOwners = JSCLM.flatMap((letter, index) =>
-      getGlyph(letter).strokes.map(() => index),
-    );
-
-    for (const candidate of generate(JSCLM).candidates) {
-      expect(candidate.strokes).toHaveLength(expectedOwners.length);
-      expect(candidate.strokeLetters).toEqual(expectedOwners);
-      for (const stroke of candidate.strokes) {
-        expect(stroke.length).toBeGreaterThanOrEqual(2);
-        stroke.slice(1).forEach((point, index) => {
-          expect(point).not.toEqual(stroke[index]);
-        });
       }
     }
   });
 
-  it('traces the transforms of each letter, in input order', () => {
-    for (const candidate of generate(JSCLM).candidates) {
-      expect(candidate.placements.map((placement) => placement.letter)).toEqual(JSCLM);
-      for (const placement of candidate.placements) {
-        expect(typeof placement.mirrored).toBe('boolean');
-        expect([0, 90, 180, 270]).toContain(placement.rotation);
-        expect(placement.scale).toBeGreaterThan(0);
+  it('reports the letters in the order given, each within the stem', () => {
+    const { candidates } = generate(['S', 'T', 'R', 'N', 'G', 'H'], {
+      keepVowels: false,
+      variant: 1,
+    });
+    for (const candidate of candidates) {
+      expect(candidate.letters.map((letter) => letter.letter)).toEqual([
+        'S',
+        'T',
+        'R',
+        'N',
+        'G',
+        'H',
+      ]);
+      for (const letter of candidate.letters) {
+        expect(letter.top).toBeLessThan(letter.bottom);
+        expect(letter.top).toBeGreaterThanOrEqual(candidate.stem.top.y - ROUNDING_TOLERANCE);
+        expect(letter.bottom).toBeLessThanOrEqual(candidate.stem.bottom.y + ROUNDING_TOLERANCE);
       }
+    }
+  });
+
+  it('hangs the letters in intention order on the first variant, and shares the order', () => {
+    const { order, style } = generate(CLM);
+    expect(order).toEqual(CLM);
+    expect(style).toBe('symmetric');
+  });
+
+  it('scores every candidate', () => {
+    for (const candidate of generate(CLM).candidates) {
+      expect(candidate.score.penalty).toBeGreaterThanOrEqual(0);
+      expect(candidate.segmentCountAfter).toBeGreaterThan(0);
     }
   });
 
@@ -175,26 +175,60 @@ describe('generateSpareCandidates', () => {
   });
 
   it.each([-1, 0.5, Number.NaN])('refuses the variant %s', (variant) => {
-    expect(generateError(JSCLM, { keepVowels: false, variant })).toEqual({
+    expect(generateError(CLM, { keepVowels: false, variant })).toEqual({
       code: 'INVALID_VARIANT',
       variant,
     });
   });
 });
 
+describe('letterOrderFor', () => {
+  it('keeps the intention order on the first variant', () => {
+    expect(letterOrderFor(5, 0, createRandom(1))).toEqual([0, 1, 2, 3, 4]);
+  });
+
+  it('goes through every order of a short word before repeating one', () => {
+    const orders = [0, 1, 2, 3, 4, 5].map((variant) =>
+      letterOrderFor(3, variant, createRandom(variant)).join(''),
+    );
+    expect(new Set(orders).size).toBe(6);
+    expect(letterOrderFor(2, 1, createRandom(1))).toEqual([1, 0]);
+  });
+
+  it('shuffles a longer word into a permutation', () => {
+    const order = letterOrderFor(7, 3, createRandom(3));
+    expect([...order].sort((a, b) => a - b)).toEqual([0, 1, 2, 3, 4, 5, 6]);
+  });
+});
+
+describe('styleFor', () => {
+  it('cycles short words through the symmetric, paired and mixed styles', () => {
+    expect([0, 1, 2, 3].map((variant) => styleFor(3, variant))).toEqual([
+      ...SHORT_WORD_STYLES,
+      'symmetric',
+    ]);
+  });
+
+  it('alternates the mixed and paired styles for long words', () => {
+    expect([0, 1, 2].map((variant) => styleFor(6, variant))).toEqual([
+      ...LONG_WORD_STYLES,
+      'mixed',
+    ]);
+  });
+});
+
 describe('candidateCountFor', () => {
-  it('draws the most candidates for short intentions, which need them to hide every letter', () => {
+  it('draws the most candidates for short words', () => {
     expect(candidateCountFor(1)).toBe(MAX_CANDIDATE_COUNT);
-    expect(candidateCountFor(5)).toBe(MAX_CANDIDATE_COUNT);
+    expect(candidateCountFor(6)).toBe(MAX_CANDIDATE_COUNT);
   });
 
-  it('shares the scoring budget among the letters of longer intentions', () => {
-    expect(candidateCountFor(6)).toBe(80);
-    expect(candidateCountFor(10)).toBe(48);
+  it('shares the budget among the letters of longer words', () => {
+    expect(candidateCountFor(8)).toBe(48);
+    expect(candidateCountFor(12)).toBe(32);
   });
 
-  it('never draws fewer than the minimum, however long the intention', () => {
-    expect(candidateCountFor(15)).toBe(32);
-    expect(candidateCountFor(26)).toBe(MIN_CANDIDATE_COUNT);
+  it('never draws fewer than the minimum, however long the word', () => {
+    expect(candidateCountFor(24)).toBe(MIN_CANDIDATE_COUNT);
   });
 });

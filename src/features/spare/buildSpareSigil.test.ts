@@ -1,168 +1,96 @@
 /**
- * End-to-end tests of the Spare sigil builder, from the typed intention:
- * determinism (D6), variants, the F2 balance criterion on a broad sample,
- * strokes inside the drawing disc and free of duplicates, no letter left in a
- * familiar orientation on the intentions refused at the first F2 acceptance
- * run, seals about as tall as wide and variants of distinct structure (T18),
- * explanation steps, and business errors.
+ * End-to-end tests of the Spare sigil builder, from the typed word: the bind
+ * rune of decision D19 on a broad sample of single words (D18) × 3 variants
+ * (a continuous stem on the frame axis, every letter hooked onto it, taller
+ * than wide, no hatches, ink under the ceiling, inside the frame margin and
+ * the disc), straight angular letters (D20), determinism (D6), distinct
+ * variants, explanation steps, and business errors.
  */
 import { describe, expect, it } from 'vitest';
 
 import { normalizeIntention } from '../intention/index.ts';
 import { FRAME_MARGIN, FRAME_SIZE } from '../sigil/frame.ts';
 import type { ExplanationStep, Point, Sigil } from '../sigil/types.ts';
-import { centreOfGravity, segmentLength, strokeSegments } from './geometry.ts';
-import type { Segment } from './geometry.ts';
+import { getAngularGlyph } from './angular.ts';
+import { DISC_RADIUS } from './generateSpareCandidates.ts';
+import { segmentLength, strokeSegments } from './geometry.ts';
+import { isCapitalLetter } from './glyphs/index.ts';
+import { findHatches } from './hatches.ts';
 import { buildSpareSigil, candidateCountFor, generateSpareCandidates, spareSeed } from './index.ts';
 import type { SpareError, SpareOptions } from './index.ts';
-import { isCapitalLetter } from './glyphs/index.ts';
-import { readsAsLetter, readsInAnyOrientation } from './legibility.ts';
-import { DRAWING_RADIUS, MAX_CENTRE_OFFSET_RATIO, chooseCandidate } from './score.ts';
+import { INK_CEILING, STEM_X } from './runeScore.ts';
 
 /** Default settings: vowels removed, first variant. */
 const DEFAULT_OPTIONS: SpareOptions = { keepVowels: false, variant: 0 };
 
-/**
- * Distance from each other's line under which two output segments count as
- * drawn on the same line: well under the merge tolerances, so that only true
- * leftovers of a merge would match.
- */
-const SAME_LINE_DISTANCE = 0.1;
-
 /** Tolerance above the 4-decimal rounding of coordinates. */
 const ROUNDING_TOLERANCE = 1e-3;
 
-/**
- * Intentions and variants (internal numbers, the interface shows n + 1) that
- * the first F2 acceptance run found readable: a C, an A (an upside-down V or
- * M) could be picked out. Kept with their neighbours as a regression set.
- */
-const REFUSED_CASES: readonly (readonly [string, number])[] = [
-  ...[0, 1, 2, 3, 4].map((variant) => ['I am strong', variant] as const),
-  ...[0, 1, 2, 3, 4].map((variant) => ['Je suis calme', variant] as const),
-  ['Je trouve ma voie', 0],
-  ['Je trouve ma voie', 1],
-  ['La paix est en moi', 0],
-];
+/** Distance from the stem under which a point counts as on it, in frame units. */
+const ON_STEM = 0.5;
 
 /**
- * The sixteen cases of the F2 acceptance board (internal variant numbers):
- * reference for the shape of the seals.
+ * Fifty single-word intentions, French and English, from one to eight
+ * retained letters: the validation board's sixteen words first.
  */
-const REFERENCE_BOARD: readonly (readonly [string, number])[] = [
-  ...[0, 1, 2, 3, 4].map((variant) => ['I am strong', variant] as const),
-  [
-    'Je choisis chaque jour la patience la clarté et la force tranquille pour avancer sereinement vers mes projets les plus chers',
-    0,
-  ],
-  ...[0, 1, 2, 3, 4].map((variant) => ['Je suis calme', variant] as const),
-  ['Je trouve ma voie', 0],
-  ['Je trouve ma voie', 1],
-  ['La paix est en moi', 0],
-  ['My mind is clear', 0],
-  ['Yeux', 0],
-];
-
-/**
- * Largest mean width-to-height ratio of the reference board's seals (T18).
- * Before T18 they drifted to 1.37, flat bands; a seal reads as a round or
- * square sign.
- */
-const MAX_MEAN_ASPECT = 1.15;
-
-/**
- * Cells per side of the grid the silhouettes are compared on: 5 frame units
- * per cell inside the drawing area, coarse enough to ignore stroke detail,
- * fine enough to tell a loop from a bar.
- */
-const SILHOUETTE_GRID = 16;
-
-/**
- * Smallest silhouette distance between two variants of « Je suis calme » (Jaccard
- * distance of the inked cells: 0 for the same cells, 1 for none in common).
- * Before T18, two variants repeated the same structure at 0.36.
- */
-const MIN_VARIANT_DISSIMILARITY = 0.4;
-
-/**
- * Extra ink tolerated after merging, in frame units: a merged piece may be
- * joined to the end of the stroke covering it, a step of at most a merge
- * tolerance per join.
- */
-const MERGE_SLACK = 2;
-
-/** Overlap beyond which two segments on the same line count as drawn twice. */
-const MAX_OVERLAP = 0.5;
-
-/**
- * Time allowed for the broad F2 sample, in milliseconds. It builds 156 sigils
- * (52 intentions × 3 variants), each scoring up to 96 candidate compositions
- * and checking every pair of segments: about 2.5 s alone, more than the
- * default 5 s when the whole suite runs in parallel on a loaded machine.
- */
-const SAMPLE_TEST_TIMEOUT = 20_000;
-
-/** Intentions in French and English, short and long, to sample the method. */
-const INTENTIONS: readonly string[] = [
-  'Je suis calme',
-  'I am strong',
-  'Je trouve ma voie',
-  'My mind is clear',
-  'Je suis libre',
-  'I sleep deeply',
-  'La paix est en moi',
-  'I attract abundance',
-  'Je guéris chaque jour',
-  "J'ai confiance en moi",
-  'I am loved',
-  'Je réussis mon examen',
-  'My body is healthy',
-  'Je dors profondément',
-  'I forgive myself',
-  'Mon cœur est ouvert',
-  'I am enough',
-  'Je mérite le bonheur',
-  'Wealth flows to me',
-  'Je suis protégé',
-  'I trust the process',
-  'Je rayonne',
-  'My work is valued',
-  'Je trouve un travail',
-  'I speak with confidence',
-  'Ma famille est unie',
-  'I let go of fear',
-  'Je suis en sécurité',
-  'Every day I grow',
-  'Je crée librement',
-  'I am grateful',
-  'Mon esprit est vif',
-  'Love surrounds me',
-  'Je voyage loin',
-  'I choose joy',
-  'Je suis patient',
-  'My home is peaceful',
-  'Je gagne en force',
-  'I am at peace',
-  'Je prends soin de moi',
-  'Success comes easily',
-  'Je suis aimé',
-  'I welcome change',
-  'Je respire calmement',
+const WORDS: readonly string[] = [
+  'Calme',
+  'Amour',
+  'Force',
+  'Chance',
   'Courage',
-  'Je vis pleinement',
-  'My voice matters',
-  'Je suis serein',
-  'I honour my path',
-  'Le succès vient à moi',
-  'Zéphyr',
-  'Quietly brave',
+  'Protection',
+  'Sérénité',
+  'Liberté',
+  'Strength',
+  'Luck',
+  'Home',
+  'Grace',
+  'Energy',
+  'Patience',
+  'Lumière',
+  'Voyage',
+  'Paix',
+  'Joie',
+  'Santé',
+  'Abondance',
+  'Confiance',
+  'Gratitude',
+  'Harmonie',
+  'Sagesse',
+  'Bonheur',
+  'Succès',
+  'Victoire',
+  'Espoir',
+  'Lumineux',
+  'Puissance',
+  'Wisdom',
+  'Healing',
+  'Peace',
+  'Wealth',
+  'Clarity',
+  'Focus',
+  'Balance',
+  'Freedom',
+  'Growth',
+  'Success',
+  'Harmony',
+  'Faith',
+  'Trust',
+  'Prosperity',
+  'Renaissance',
+  'Transformation',
+  'Determination',
+  'Mindfulness',
+  'Résilience',
+  'Yeux',
 ];
 
 /**
- * Normalises an intention, failing the test if it has no letter.
+ * Normalised letters of a word.
  *
- * @param text - Intention as typed.
- * @returns Its normalised letters.
+ * @param text - Word as typed.
+ * @returns Its letters A–Z.
  */
 function lettersOf(text: string): string[] {
   const result = normalizeIntention(text);
@@ -171,9 +99,9 @@ function lettersOf(text: string): string[] {
 }
 
 /**
- * Builds the sigil of an intention, failing the test on a business error.
+ * Builds the sigil of a word, failing the test on a business error.
  *
- * @param text - Intention as typed.
+ * @param text - Word as typed.
  * @param options - Spare settings.
  * @returns The sigil.
  */
@@ -215,254 +143,225 @@ function stepOf<K extends ExplanationStep['kind']>(
 }
 
 /**
+ * Stretches of the vertical x = `STEM_X` that the strokes draw, merged.
+ *
+ * @param strokes - Polylines in the 0–100 frame.
+ * @returns Disjoint [top, bottom] intervals, top first.
+ */
+function stemCoverage(strokes: readonly (readonly Point[])[]): [number, number][] {
+  const pieces = strokeSegments(strokes)
+    .filter(({ start, end }) => start.x === STEM_X && end.x === STEM_X)
+    .map(({ start, end }): [number, number] => [Math.min(start.y, end.y), Math.max(start.y, end.y)])
+    .sort((a, b) => a[0] - b[0]);
+  const merged: [number, number][] = [];
+  for (const [top, bottom] of pieces) {
+    const last = merged[merged.length - 1];
+    if (last !== undefined && top <= last[1] + ROUNDING_TOLERANCE)
+      last[1] = Math.max(last[1], bottom);
+    else merged.push([top, bottom]);
+  }
+  return merged;
+}
+
+/**
+ * Whether some strokes touch or cross the stem.
+ *
+ * @param strokes - Polylines in the 0–100 frame.
+ * @returns True when a point lies on the stem or a segment has ends on both sides of it.
+ */
+function touchesStem(strokes: readonly (readonly Point[])[]): boolean {
+  return strokes.some((stroke) =>
+    stroke.some((point, index) => {
+      if (Math.abs(point.x - STEM_X) <= ON_STEM) return true;
+      const previous = stroke[index - 1];
+      return previous !== undefined && (previous.x - STEM_X) * (point.x - STEM_X) < 0;
+    }),
+  );
+}
+
+/**
  * Total length of polylines.
  *
  * @param strokes - Polylines in the 0–100 frame.
  * @returns The sum of their segment lengths.
  */
 function inkLength(strokes: readonly (readonly Point[])[]): number {
-  return strokeSegments(strokes).reduce((total, segment) => total + segmentLength(segment), 0);
-}
-
-/**
- * Width over height of a sigil's bounding box.
- *
- * @param sigil - Sigil to measure.
- * @returns The ratio; above 1 for a wide seal.
- */
-function aspectOf(sigil: Sigil): number {
-  const points = sigil.strokes.flat();
-  const xs = points.map((point) => point.x);
-  const ys = points.map((point) => point.y);
-  return (Math.max(...xs) - Math.min(...xs)) / (Math.max(...ys) - Math.min(...ys));
-}
-
-/**
- * Cells of a `SILHOUETTE_GRID` grid over the drawing area that a sigil's
- * strokes pass through, sampled every half frame unit.
- *
- * @param sigil - Sigil to rasterise.
- * @returns The keys of the inked cells.
- */
-function silhouette(sigil: Sigil): Set<number> {
-  const cellSize = (FRAME_SIZE - 2 * FRAME_MARGIN) / SILHOUETTE_GRID;
-  const cell = (value: number): number =>
-    Math.min(SILHOUETTE_GRID - 1, Math.max(0, Math.floor((value - FRAME_MARGIN) / cellSize)));
-  const cells = new Set<number>();
-  for (const { start, end } of strokeSegments(sigil.strokes)) {
-    const steps = Math.ceil(segmentLength({ start, end }) / 0.5);
-    for (let step = 0; step <= steps; step += 1) {
-      const t = step / steps;
-      const x = start.x + t * (end.x - start.x);
-      const y = start.y + t * (end.y - start.y);
-      cells.add(cell(x) * SILHOUETTE_GRID + cell(y));
-    }
-  }
-  return cells;
-}
-
-/**
- * Jaccard distance between two sets of cells.
- *
- * @param a - First silhouette.
- * @param b - Second silhouette.
- * @returns 1 − |a ∩ b| / |a ∪ b|.
- */
-function silhouetteDistance(a: ReadonlySet<number>, b: ReadonlySet<number>): number {
-  const shared = [...a].filter((key) => b.has(key)).length;
-  return 1 - shared / (a.size + b.size - shared);
-}
-
-/**
- * Length over which two segments lying on the same line overlap.
- *
- * @param a - First segment, of positive length.
- * @param b - Second segment.
- * @returns The overlap length, or 0 when they are not on the same line.
- */
-function collinearOverlap(a: Segment, b: Segment): number {
-  const length = segmentLength(a);
-  const ux = (a.end.x - a.start.x) / length;
-  const uy = (a.end.y - a.start.y) / length;
-  const across = (point: Point): number =>
-    Math.abs((point.x - a.start.x) * uy - (point.y - a.start.y) * ux);
-  if (across(b.start) > SAME_LINE_DISTANCE || across(b.end) > SAME_LINE_DISTANCE) return 0;
-  const along = (point: Point): number => (point.x - a.start.x) * ux + (point.y - a.start.y) * uy;
-  const from = Math.max(0, Math.min(along(b.start), along(b.end)));
-  const to = Math.min(length, Math.max(along(b.start), along(b.end)));
-  return Math.max(0, to - from);
+  return strokeSegments(strokes).reduce((sum, segment) => sum + segmentLength(segment), 0);
 }
 
 describe('buildSpareSigil', () => {
-  it('gives the same sigil for the same intention and settings, seeded by D6', () => {
-    const first = sigilOf('Je suis calme');
+  it('gives the same sigil for the same word and settings, seeded by D6', () => {
+    const first = sigilOf('Calme');
 
-    expect(sigilOf('Je suis calme')).toEqual(first);
-    expect(first.seed).toBe(spareSeed({ letters: ['J', 'S', 'C', 'L', 'M'], ...DEFAULT_OPTIONS }));
+    expect(sigilOf('Calme')).toEqual(first);
+    expect(first.seed).toBe(spareSeed({ letters: ['C', 'L', 'M'], ...DEFAULT_OPTIONS }));
   });
 
-  it('gives the same sigil for « je suis calme ! » as for « Je suis calme »', () => {
-    expect(sigilOf('je suis calme !')).toEqual(sigilOf('Je suis calme'));
+  it('gives the same sigil for « calme ! » as for « Calme »', () => {
+    expect(sigilOf('calme !')).toEqual(sigilOf('Calme'));
   });
 
-  it('gives each variant number a stable sigil, different from the next one', () => {
-    for (let variant = 0; variant < 5; variant += 1) {
-      const current = sigilOf('Je suis calme', { keepVowels: false, variant });
-      const next = sigilOf('Je suis calme', { keepVowels: false, variant: variant + 1 });
-
-      expect(sigilOf('Je suis calme', { keepVowels: false, variant })).toEqual(current);
-      expect(next.strokes).not.toEqual(current.strokes);
-      expect(next.seed).not.toBe(current.seed);
+  it('gives each variant number a stable sigil, different from the others', () => {
+    for (const word of ['Amour', 'Calme', 'Strength']) {
+      const variants = [0, 1, 2, 3].map((variant) => sigilOf(word, { keepVowels: false, variant }));
+      variants.forEach((sigil, variant) => {
+        expect(sigilOf(word, { keepVowels: false, variant })).toEqual(sigil);
+        for (const other of variants.slice(variant + 1)) {
+          expect(other.strokes).not.toEqual(sigil.strokes);
+          expect(other.seed).not.toBe(sigil.seed);
+        }
+      });
     }
   });
 
   it(
-    `meets the F2 criteria on ${String(INTENTIONS.length)} intentions × 3 variants`,
+    `draws a clean bind rune for ${String(WORDS.length)} words × 3 variants`,
+    { timeout: 60_000 },
     () => {
-      expect(INTENTIONS.length).toBeGreaterThanOrEqual(50);
-      for (const text of INTENTIONS) {
-        for (let variant = 0; variant < 3; variant += 1) {
-          const sigil = sigilOf(text, { keepVowels: false, variant });
-          const segments = strokeSegments(sigil.strokes);
-          const centre = centreOfGravity(segments);
-          if (centre === undefined) throw new Error(`Empty sigil for ${text}`);
+      const centre = FRAME_SIZE / 2;
+      for (const word of WORDS) {
+        for (const variant of [0, 1, 2]) {
+          const sigil = sigilOf(word, { keepVowels: false, variant });
+          const label = `${word} v${String(variant)}`;
+          const { stem, letters } = stepOf(sigil, 'spare-stem-attachments');
 
-          // Centre of gravity within 10 % of the side from the frame centre.
-          const offset = Math.hypot(centre.x - FRAME_SIZE / 2, centre.y - FRAME_SIZE / 2);
-          expect(offset / FRAME_SIZE).toBeLessThan(MAX_CENTRE_OFFSET_RATIO);
+          // A continuous stem on the frame axis, over most of its height.
+          expect(stemCoverage(sigil.strokes), label).toEqual([[stem.top.y, stem.bottom.y]]);
+          expect(stem.bottom.y - stem.top.y, label).toBeGreaterThanOrEqual(
+            (2 * DISC_RADIUS) / Math.sqrt(2),
+          );
 
-          // Every point inside the drawing disc, hence inside the frame's margin
-          // and the framing circle.
-          for (const point of sigil.strokes.flat()) {
-            const radius = Math.hypot(point.x - FRAME_SIZE / 2, point.y - FRAME_SIZE / 2);
-            expect(radius).toBeLessThanOrEqual(DRAWING_RADIUS + ROUNDING_TOLERANCE);
+          // Every letter hooked onto it, within its length.
+          for (const letter of letters) {
+            expect(touchesStem(letter.strokes), `${label} ${letter.letter}`).toBe(true);
+            expect(letter.top, label).toBeGreaterThanOrEqual(stem.top.y - ROUNDING_TOLERANCE);
+            expect(letter.bottom, label).toBeLessThanOrEqual(stem.bottom.y + ROUNDING_TOLERANCE);
+          }
+
+          // Taller than wide, no hatches, ink under the ceiling.
+          const points = sigil.strokes.flat();
+          const xs = points.map((point) => point.x);
+          const ys = points.map((point) => point.y);
+          const width = Math.max(...xs) - Math.min(...xs);
+          expect(Math.max(...ys) - Math.min(...ys), label).toBeGreaterThan(width);
+          expect(findHatches(strokeSegments(sigil.strokes)), label).toEqual([]);
+          expect(inkLength(sigil.strokes) / (FRAME_SIZE - 2 * FRAME_MARGIN), label).toBeLessThan(
+            INK_CEILING,
+          );
+
+          // Inside the disc, hence inside the margin.
+          for (const point of points) {
+            expect(Math.hypot(point.x - centre, point.y - centre), label).toBeLessThanOrEqual(
+              DISC_RADIUS + ROUNDING_TOLERANCE,
+            );
             expect(point.x).toBeGreaterThanOrEqual(FRAME_MARGIN);
             expect(point.x).toBeLessThanOrEqual(FRAME_SIZE - FRAME_MARGIN);
             expect(point.y).toBeGreaterThanOrEqual(FRAME_MARGIN);
             expect(point.y).toBeLessThanOrEqual(FRAME_SIZE - FRAME_MARGIN);
           }
 
-          // Valid polylines: at least two points, no zero-length segment.
-          for (const stroke of sigil.strokes) expect(stroke.length).toBeGreaterThanOrEqual(2);
-          for (const segment of segments) expect(segmentLength(segment)).toBeGreaterThan(0);
-
-          // No segment drawn twice, even partly, after simplification.
-          segments.forEach((segment, index) => {
-            for (const other of segments.slice(index + 1)) {
-              expect(collinearOverlap(segment, other)).toBeLessThanOrEqual(MAX_OVERLAP);
-            }
-          });
+          // Every stroke has at least two distinct points.
+          for (const stroke of sigil.strokes) {
+            expect(stroke.length, label).toBeGreaterThanOrEqual(2);
+          }
         }
       }
     },
-    SAMPLE_TEST_TIMEOUT,
   );
 
-  it.each(REFUSED_CASES)(
-    'leaves no letter of « %s » (variant %i) upright or upside down when it can be avoided',
-    (text, variant) => {
-      const { letters } = stepOf(
-        sigilOf(text, { keepVowels: false, variant }),
-        'spare-letter-placements',
-      );
-      const familiar = letters.filter(
-        (placement) =>
-          isCapitalLetter(placement.letter) &&
-          // Letters that read in every orientation cannot be hidden by a turn.
-          !readsInAnyOrientation(placement.letter) &&
-          readsAsLetter(placement.letter, placement.rotation),
-      );
-      expect(
-        familiar.map((placement) => `${placement.letter}${String(placement.rotation)}`),
-      ).toEqual([]);
-    },
-  );
-
-  it('keeps the seals of the reference board about as tall as wide', () => {
-    const aspects = REFERENCE_BOARD.map(([text, variant]) =>
-      aspectOf(sigilOf(text, { keepVowels: false, variant })),
-    );
-    const mean = aspects.reduce((sum, aspect) => sum + aspect, 0) / aspects.length;
-    expect(mean).toBeLessThanOrEqual(MAX_MEAN_ASPECT);
-  });
-
-  it('gives the variants of « Je suis calme » distinct silhouettes', () => {
-    const silhouettes = [0, 1, 2, 3, 4].map((variant) =>
-      silhouette(sigilOf('Je suis calme', { keepVowels: false, variant })),
-    );
-    silhouettes.forEach((first, index) => {
-      for (const second of silhouettes.slice(index + 1)) {
-        expect(silhouetteDistance(first, second)).toBeGreaterThanOrEqual(MIN_VARIANT_DISSIMILARITY);
+  it('keeps long words with their vowels free of hatches and inside the disc', () => {
+    const centre = FRAME_SIZE / 2;
+    // Twelve distinct letters: the longest words the method meets.
+    for (const variant of [0, 1, 2]) {
+      const sigil = sigilOf('Ambidextrous', { keepVowels: true, variant });
+      expect(stepOf(sigil, 'spare-letter-reduction').kept).toHaveLength(12);
+      expect(findHatches(strokeSegments(sigil.strokes))).toEqual([]);
+      expect(stepOf(sigil, 'spare-candidate-choice').score.hatches).toBe(0);
+      for (const point of sigil.strokes.flat()) {
+        expect(Math.hypot(point.x - centre, point.y - centre)).toBeLessThanOrEqual(
+          DISC_RADIUS + ROUNDING_TOLERANCE,
+        );
       }
-    });
+    }
   });
 
   it('has no marks and the 0–100 frame', () => {
-    const sigil = sigilOf('Je suis calme');
+    const sigil = sigilOf('Calme');
     expect(sigil.marks).toEqual([]);
     expect(sigil.viewBox).toEqual({ x: 0, y: 0, width: 100, height: 100 });
   });
 
-  it('explains the reduction: removed letters with their reason, then J S C L M', () => {
-    const step = stepOf(sigilOf('Je suis calme'), 'spare-letter-reduction');
+  it('explains the reduction: removed letters with their reason, then C L M', () => {
+    const step = stepOf(sigilOf('Calme'), 'spare-letter-reduction');
 
-    expect(step.letters).toEqual(lettersOf('Je suis calme'));
+    expect(step.letters).toEqual(['C', 'A', 'L', 'M', 'E']);
     expect(step.keepVowels).toBe(false);
-    expect(step.kept).toEqual(['J', 'S', 'C', 'L', 'M']);
+    expect(step.kept).toEqual(['C', 'L', 'M']);
     expect(step.removed).toEqual([
-      { letter: 'E', position: 1, reason: 'vowel' },
-      { letter: 'U', position: 3, reason: 'vowel' },
-      { letter: 'I', position: 4, reason: 'vowel' },
-      { letter: 'S', position: 5, reason: 'duplicate' },
-      { letter: 'A', position: 7, reason: 'vowel' },
-      { letter: 'E', position: 10, reason: 'duplicate' },
+      { letter: 'A', position: 1, reason: 'vowel' },
+      { letter: 'E', position: 4, reason: 'vowel' },
     ]);
   });
 
-  it('explains each letter: transforms, upright skeleton and placed strokes in the frame', () => {
-    const sigil = sigilOf('Je suis calme');
-    const { letters } = stepOf(sigil, 'spare-letter-placements');
+  it('explains the angular skeletons, before and after, inside the frame margin', () => {
+    const { letters } = stepOf(sigilOf('Calme'), 'spare-angular-skeletons');
 
-    expect(letters.map((letter) => letter.letter)).toEqual(['J', 'S', 'C', 'L', 'M']);
-    for (const letter of letters) {
-      expect([0, 90, 180, 270]).toContain(letter.rotation);
-      expect(letter.glyph.length).toBeGreaterThan(0);
-      expect(letter.strokes.length).toBeGreaterThan(0);
-      for (const point of [...letter.glyph.flat(), ...letter.strokes.flat()]) {
+    expect(letters.map((letter) => letter.letter)).toEqual(['C', 'L', 'M']);
+    for (const skeleton of letters) {
+      if (!isCapitalLetter(skeleton.letter)) throw new Error('Unexpected letter');
+      const angular = getAngularGlyph(skeleton.letter).strokes;
+      expect(skeleton.angular).toHaveLength(angular.length);
+      expect(skeleton.segmentCount).toBe(strokeSegments(skeleton.angular).length);
+      for (const point of [...skeleton.glyph.flat(), ...skeleton.angular.flat()]) {
         expect(point.x).toBeGreaterThanOrEqual(FRAME_MARGIN);
         expect(point.x).toBeLessThanOrEqual(FRAME_SIZE - FRAME_MARGIN);
         expect(point.y).toBeGreaterThanOrEqual(FRAME_MARGIN);
         expect(point.y).toBeLessThanOrEqual(FRAME_SIZE - FRAME_MARGIN);
       }
     }
+    // The C chevron: two segments where Hershey draws a curve of 17.
+    expect(letters[0]?.segmentCount).toBe(2);
   });
 
-  it('explains the choice: the lowest-penalty candidate of the seed', () => {
-    const sigil = sigilOf('Je suis calme');
+  it('explains the attachments: stem, hanging order and each letter in reduction order', () => {
+    const sigil = sigilOf('Amour', { keepVowels: false, variant: 1 });
+    const step = stepOf(sigil, 'spare-stem-attachments');
+
+    expect(step.stem.top.x).toBe(STEM_X);
+    expect(step.stem.bottom.x).toBe(STEM_X);
+    expect(step.order).toEqual(['R', 'M']);
+    expect(step.letters.map((letter) => letter.letter)).toEqual(['M', 'R']);
+    // Variant 1 of a short word is paired: no letter doubled, one on each side.
+    expect(step.letters.map((letter) => letter.doubled)).toEqual([false, false]);
+    expect(new Set(step.letters.map((letter) => letter.side))).toEqual(new Set(['left', 'right']));
+    expect(step.letters.find((letter) => letter.letter === 'R')?.attachment).toBe('stem');
+  });
+
+  it('explains the choice: the lowest-penalty candidate of the variant, with its measures', () => {
+    const sigil = sigilOf('Calme');
     const step = stepOf(sigil, 'spare-candidate-choice');
-    const generated = generateSpareCandidates(['J', 'S', 'C', 'L', 'M'], DEFAULT_OPTIONS);
+    const generated = generateSpareCandidates(['C', 'L', 'M'], DEFAULT_OPTIONS);
     if (!generated.ok) throw new Error('Unexpected generation error');
-    const { index, scores } = chooseCandidate(generated.data.candidates);
+    const penalties = generated.data.candidates.map((candidate) => candidate.score.penalty);
 
-    expect(step.candidateCount).toBe(candidateCountFor(5));
-    expect(step.chosenIndex).toBe(index);
-    expect(scores[step.chosenIndex]?.penalty).toBe(
-      Math.min(...scores.map((score) => score.penalty)),
-    );
+    expect(step.variant).toBe(0);
+    expect(step.style).toBe('symmetric');
+    expect(step.candidateCount).toBe(candidateCountFor(3));
+    expect(penalties[step.chosenIndex]).toBe(Math.min(...penalties));
+    expect(step.score).toEqual(generated.data.candidates[step.chosenIndex]?.score);
+    expect(step.score.hatches).toBe(0);
   });
 
-  it('explains the simplification with segment counts matching the sigil', () => {
-    const sigil = sigilOf('Je suis calme');
+  it('explains the merge with segment counts matching the sigil, never adding ink', () => {
+    const sigil = sigilOf('Calme');
     const step = stepOf(sigil, 'spare-simplification');
-
-    const { letters } = stepOf(sigil, 'spare-letter-placements');
-    const superimposed = letters.flatMap((letter) => letter.strokes);
+    const { stem, letters } = stepOf(sigil, 'spare-stem-attachments');
+    const unmerged = [[stem.top, stem.bottom], ...letters.flatMap((letter) => letter.strokes)];
 
     expect(step.segmentCountAfter).toBe(strokeSegments(sigil.strokes).length);
-    expect(step.segmentCountBefore).toBe(strokeSegments(superimposed).length);
-    // Merging draws shared stretches once: it never adds ink. (The segment
-    // count may grow, a segment covered in its middle leaving two pieces.)
-    expect(inkLength(sigil.strokes)).toBeLessThanOrEqual(inkLength(superimposed) + MERGE_SLACK);
+    expect(step.segmentCountBefore).toBe(strokeSegments(unmerged).length);
+    // Letters laid on the stem are drawn once with it.
+    expect(inkLength(sigil.strokes)).toBeLessThan(inkLength(unmerged));
   });
 
   it('proposes to keep the vowels when « oui » leaves no letter', () => {

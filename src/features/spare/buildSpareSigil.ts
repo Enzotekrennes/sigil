@@ -1,11 +1,12 @@
 /**
- * Builds a sigil with Austin Osman Spare's method: the normalised letters are
- * reduced (duplicates, vowels by default; decision D4), their single-stroke
- * skeletons superimposed in several seeded compositions (D6, D7), the
- * composition with the lowest penalty kept (D13: centred, close to a square,
- * filling the drawing area, each letter dissolved into the others), its
- * strokes merged and simplified, and the result recentred on its centre of
- * gravity, inside a disc that the framing circle surrounds. Also produces the explanation steps.
+ * Builds a sigil with Austin Osman Spare's method, composed as a bind rune:
+ * the normalised letters are reduced (duplicates, vowels by default;
+ * decision D4), each retained letter is redrawn with straight segments
+ * (D20) and hooked onto a vertical stem (D19), several seeded runes are drawn
+ * (D6) and the one with the lowest penalty kept (no hatches, ink under the
+ * ceiling, taller than wide, symmetric and balanced), its shared strokes
+ * drawn once and any hatch left on a very long word corrected (see
+ * `correctHatches`). Also produces the explanation steps.
  *
  * Exposes `buildSpareSigil` with its options, result and error types. Pure and
  * deterministic. Does not normalise the typed text: letters arrive from
@@ -13,14 +14,15 @@
  */
 import { reduceForSpare } from '../intention/index.ts';
 import { DRAWING_SIZE, FRAME_MARGIN, FRAME_SIZE } from '../sigil/frame.ts';
-import type { ExplanationStep, Point, Sigil, SpareLetterPlacement } from '../sigil/types.ts';
+import type { ExplanationStep, Point, Sigil, SpareAngularSkeleton } from '../sigil/types.ts';
+import { getAngularGlyph } from './angular.ts';
 import { generateSpareCandidates } from './generateSpareCandidates.ts';
-import type { SpareCandidate, SpareCompositionError } from './generateSpareCandidates.ts';
+import type { SpareCompositionError } from './generateSpareCandidates.ts';
 import { roundCoordinate } from './geometry.ts';
 import { getGlyph, isCapitalLetter } from './glyphs/index.ts';
-import { applyRecentring, chooseCandidate, recentringFor } from './score.ts';
-import type { Recentring } from './score.ts';
-import { simplifyStrokes } from './simplify.ts';
+import type { CapitalLetter } from './glyphs/index.ts';
+import { correctHatches } from './hatches.ts';
+import { chooseRune, scoreRune } from './runeScore.ts';
 
 /** Settings of a Spare sigil. */
 export interface SpareOptions {
@@ -63,10 +65,10 @@ const SPARE_MARKS: Sigil['marks'] = [];
  *   letter per item, in order, repetitions included.
  * @param options - Vowel setting and variant number.
  * @returns `{ ok: true, data }` with the sigil in the 0–100 frame (no marks,
- *   `seed` set, centre of gravity on the frame centre, every point within 40 of
- *   it, hence inside the margin), or `{ ok: false, error }` with `INVALID_LETTER`,
- *   `NO_LETTER_LEFT` or `INVALID_VARIANT`. Never throws. The same arguments
- *   always give deeply equal results.
+ *   `seed` set, a vertical stem on x = 50, every point within 40 of the frame
+ *   centre, hence inside the margin), or `{ ok: false, error }` with
+ *   `INVALID_LETTER`, `NO_LETTER_LEFT` or `INVALID_VARIANT`. Never throws.
+ *   The same arguments always give deeply equal results.
  */
 export function buildSpareSigil(letters: readonly string[], options: SpareOptions): SpareResult {
   for (const [index, letter] of letters.entries()) {
@@ -75,7 +77,7 @@ export function buildSpareSigil(letters: readonly string[], options: SpareOption
     }
   }
 
-  const { keepVowels } = options;
+  const { keepVowels, variant } = options;
   const reduction = reduceForSpare(letters, { keepVowels });
   if (!reduction.ok) {
     return {
@@ -86,20 +88,17 @@ export function buildSpareSigil(letters: readonly string[], options: SpareOption
 
   const generated = generateSpareCandidates(reduction.kept, options);
   if (!generated.ok) return generated;
-  const { seed, candidates } = generated.data;
+  const { seed, order, style, candidates } = generated.data;
 
-  const { index } = chooseCandidate(candidates);
-  const chosen = candidates[index];
-  // `chooseCandidate` returns an index of the list it was given; the guard is for the compiler.
+  const chosenIndex = chooseRune(candidates.map((candidate) => candidate.score));
+  const chosen = candidates[chosenIndex];
+  // `chooseRune` returns an index of the list it was given; the guard is for the compiler.
   if (chosen === undefined) throw new Error('Chosen candidate missing.');
-
-  const simplified = simplifyStrokes(chosen.strokes);
-  // The unmerged letters are part of the envelope, so the panel's
-  // superimposed letters fit in the frame as well as the sigil.
-  const recentring = recentringFor(simplified.strokes, chosen.strokes.flat());
-  const strokes = applyRecentring(simplified.strokes, recentring).filter(
-    (stroke) => stroke.length >= 2,
-  );
+  // The score keeps hatches out of nearly every rune; the long words whose
+  // letters are too small for any candidate to avoid them are corrected here.
+  const strokes = correctHatches(chosen.strokes);
+  const score =
+    strokes === chosen.strokes ? chosen.score : scoreRune(strokes, chosen.letters, style);
 
   const steps: ExplanationStep[] = [
     {
@@ -109,16 +108,28 @@ export function buildSpareSigil(letters: readonly string[], options: SpareOption
       removed: reduction.removed,
       kept: reduction.kept,
     },
-    { kind: 'spare-letter-placements', letters: describePlacements(chosen, recentring) },
+    {
+      kind: 'spare-angular-skeletons',
+      letters: reduction.kept.filter(isCapitalLetter).map(describeSkeleton),
+    },
+    {
+      kind: 'spare-stem-attachments',
+      stem: chosen.stem,
+      order: [...order],
+      letters: chosen.letters,
+    },
     {
       kind: 'spare-candidate-choice',
+      variant,
+      style,
       candidateCount: candidates.length,
-      chosenIndex: index,
+      chosenIndex,
+      score,
     },
     {
       kind: 'spare-simplification',
-      segmentCountBefore: simplified.segmentCountBefore,
-      segmentCountAfter: simplified.segmentCountAfter,
+      segmentCountBefore: chosen.segmentCountBefore,
+      segmentCountAfter: strokes.reduce((count, stroke) => count + stroke.length - 1, 0),
     },
   ];
 
@@ -135,45 +146,29 @@ export function buildSpareSigil(letters: readonly string[], options: SpareOption
 }
 
 /**
- * Describes each letter of the chosen composition for the explanation panel.
- *
- * @param candidate - Chosen composition.
- * @param recentring - Move applied to the final sigil, applied to the letters too.
- * @returns One entry per retained letter, in input order.
- */
-function describePlacements(
-  candidate: SpareCandidate,
-  recentring: Recentring,
-): SpareLetterPlacement[] {
-  return candidate.placements.map((placement, letterIndex) => ({
-    letter: placement.letter,
-    mirrored: placement.mirrored,
-    rotation: placement.rotation,
-    scale: placement.scale,
-    sharedStemWith: placement.sharedStemWith,
-    glyph: uprightGlyph(placement.letter),
-    strokes: applyRecentring(
-      candidate.strokes.filter((_, stroke) => candidate.strokeLetters[stroke] === letterIndex),
-      recentring,
-    ),
-  }));
-}
-
-/**
- * Fits a letter's untransformed skeleton into the drawing area, centred.
+ * Describes a letter's Hershey and angular skeletons for the explanation
+ * panel, both upright and fitted the same way into the drawing area.
  *
  * @param letter - Upper-case letter A–Z.
- * @returns Its strokes in the 0–100 frame, larger side spanning the drawing area.
+ * @returns The two skeletons, the Hershey glyph's larger side spanning the drawing area,
+ *   centred on their common bounding box, and the angular segment count.
  */
-function uprightGlyph(letter: string): Point[][] {
-  const { strokes, bounds } = getGlyph(letter);
+function describeSkeleton(letter: CapitalLetter): SpareAngularSkeleton {
+  const glyph = getGlyph(letter);
+  const angular = getAngularGlyph(letter);
+  const { bounds } = glyph;
   const factor = DRAWING_SIZE / Math.max(bounds.width, bounds.height);
   const left = FRAME_MARGIN + (DRAWING_SIZE - bounds.width * factor) / 2;
   const top = FRAME_MARGIN + (DRAWING_SIZE - bounds.height * factor) / 2;
-  return strokes.map((stroke) =>
+  const fit = (stroke: readonly Point[]): Point[] =>
     stroke.map((point) => ({
       x: roundCoordinate(left + (point.x - bounds.x) * factor),
       y: roundCoordinate(top + (point.y - bounds.y) * factor),
-    })),
-  );
+    }));
+  return {
+    letter,
+    glyph: glyph.strokes.map(fit),
+    angular: angular.strokes.map(fit),
+    segmentCount: angular.strokes.reduce((count, stroke) => count + stroke.length - 1, 0),
+  };
 }

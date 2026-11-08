@@ -1,31 +1,24 @@
 /**
  * Unit tests of the plane geometry shared by the Spare scoring and
- * simplification: the length-weighted centre of gravity and the rounding of
- * frame coordinates.
+ * simplification: segments of polylines, lengths and the rounding of frame
+ * coordinates.
  */
 import { describe, expect, it } from 'vitest';
 
-import { centreOfGravity, roundCoordinate, strokeSegments } from './geometry.ts';
+import { roundCoordinate, segmentLength, strokeSegments } from './geometry.ts';
 
-describe('centreOfGravity', () => {
-  it('weights each segment by its length', () => {
-    // A long horizontal segment and a short vertical one: the long one dominates.
+describe('strokeSegments', () => {
+  it('splits each polyline into its segments, stroke after stroke', () => {
     const segments = strokeSegments([
       [
         { x: 0, y: 0 },
-        { x: 30, y: 0 },
+        { x: 3, y: 4 },
+        { x: 3, y: 10 },
       ],
-      [
-        { x: 0, y: 0 },
-        { x: 0, y: 10 },
-      ],
+      [{ x: 1, y: 1 }],
     ]);
-    // (30 × (15, 0) + 10 × (0, 5)) / 40.
-    expect(centreOfGravity(segments)).toEqual({ x: 11.25, y: 1.25 });
-  });
-
-  it('is undefined for a drawing without length', () => {
-    expect(centreOfGravity([])).toBeUndefined();
+    expect(segments).toHaveLength(2);
+    expect(segments.map(segmentLength)).toEqual([5, 6]);
   });
 });
 

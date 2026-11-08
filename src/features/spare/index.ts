@@ -2,8 +2,10 @@
  * Public API of the Spare method: the sigil builder, plus the seed derivation
  * and candidate generation it relies on.
  *
- * Other features import from this file only. Scoring and simplification
- * (`score.ts`, `simplify.ts`) are internal steps of `buildSpareSigil`.
+ * Other features import from this file only. The angular skeletons, the
+ * bind-rune composition, the score and the merging (`angular.ts`,
+ * `bindRune.ts`, `runeScore.ts`, `simplify.ts`) are internal steps of
+ * `buildSpareSigil`.
  */
 export { buildSpareSigil } from './buildSpareSigil.ts';
 export type { SpareError, SpareOptions, SpareResult } from './buildSpareSigil.ts';
@@ -15,11 +17,11 @@ export {
 } from './generateSpareCandidates.ts';
 export type {
   SpareCandidate,
+  SpareCandidateLetter,
   SpareCandidateOptions,
   SpareCandidates,
   SpareCandidatesResult,
   SpareCompositionError,
 } from './generateSpareCandidates.ts';
-export type { LetterPlacement, QuarterTurn } from './placement.ts';
 export { spareSeed } from './seed.ts';
 export type { SpareSeedInput } from './seed.ts';

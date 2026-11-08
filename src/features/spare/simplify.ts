@@ -1,6 +1,6 @@
 /**
- * Merging and simplification of the strokes of a Spare composition, once the
- * letters are superimposed: points that nearly coincide become one, a segment
+ * Merging and simplification of the strokes of a Spare rune, once the stem
+ * and the letters are placed: points that nearly coincide become one, a segment
  * drawn again over (or right beside) an earlier one is drawn only once, and
  * straight runs lose their useless middle points.
  *
@@ -63,7 +63,7 @@ interface KeptSegment extends Segment {
 }
 
 /**
- * Merges and simplifies superimposed strokes, in four passes:
+ * Merges and simplifies placed strokes, in four passes:
  * 1. points closer than `POINT_MERGE_TOLERANCE` to an earlier point are
  *    replaced by it (first one wins, so the result is deterministic);
  * 2. each segment, in drawing order, loses the parts already drawn by an
@@ -121,7 +121,11 @@ function snapPoints(strokes: readonly (readonly Point[])[]): Point[][] {
     const snapped: Point[] = [];
     for (const point of stroke) {
       let representative = representatives.find(
-        (candidate) => distance(candidate, point) <= POINT_MERGE_TOLERANCE,
+        (candidate) =>
+          // The axis test skips the square root for the many points far apart.
+          Math.abs(candidate.x - point.x) <= POINT_MERGE_TOLERANCE &&
+          Math.abs(candidate.y - point.y) <= POINT_MERGE_TOLERANCE &&
+          distance(candidate, point) <= POINT_MERGE_TOLERANCE,
       );
       if (representative === undefined) {
         representative = point;
