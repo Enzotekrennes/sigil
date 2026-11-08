@@ -160,3 +160,10 @@
 - Bug mineur renvoyé à T13 : B1 focus perdu après export PNG au clavier (`disabled` pendant la rastérisation).
 - Tests e2e : `e2e/f4-acceptance.spec.ts` (42 tests) — commit différé : à adapter au dialogue d'export de T13 et au sélecteur de langue.
 - Non testé : éditeur vectoriel réel (aucun installé), autres navigateurs.
+
+## 2026-11-08 — T13 Pochoir, PDF taille réelle, dialogue d'export
+- Rôle : dev
+- Fait : mode pochoir (noir pur, épaisseur en mm), PDF A4 vectoriel (pdf-lib 1.17.1, chargé à la demande, métadonnées neutralisées), règle 1 cm et consigne d'impression FR/EN, dialogue « Exporter » accessible (focus piégé, Échap), état chargement de `Button`, bug F4 du focus corrigé (`aria-disabled`).
+- Vérifications : lint, typecheck, 814/814 tests, build (22 entrées précachées) verts (revérifié) ; e2e 77/77 hors f3/f4 ; PDF 6 cm relu : encre 60 mm ± 0,5, trait 0,6 mm ; pdf-lib sans eval ni worker, export PDF hors ligne OK.
+- Écarts au plan : décision D16 ; design.md mis à jour.
+- Points ouverts : spec F4 à adapter au dialogue ; token `--color-backdrop` ; SVG pochoir sans dimensions physiques ; morceau pdf-lib nommé `es-*.js`.

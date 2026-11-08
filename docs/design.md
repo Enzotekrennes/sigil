@@ -184,3 +184,4 @@ Tous ont repos, survol, focus visible (anneau 2 px `--color-focus`, décalage 2 
 ## Ajouts du build
 - Tracé animé plafonné à 2,7 s (`--duration-trace-max`), traits et levers de plume réduits dans la même proportion au-delà ; sigil complet en ≤ 3 s hors cercle d'encadrement.
 - Épaisseur du trait de 0,4 à 2,4 dans le repère 0–100 (token 4–24 dans le repère 1000) ; fin ≤ 1,4, moyen 1,6–1,8, épais 2,0–2,4.
+- Export : dialogue unique (SVG / PNG 1024–4096 / PDF) ; interrupteur pochoir dans le panneau Style ; PDF : plage 1–25 cm (et non 2–30), défaut 8 cm, épaisseur 0,3–1,2 mm.

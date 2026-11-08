@@ -34,6 +34,7 @@ Statut : validé le 2026-11-07
 | D13 | Spare : score = équilibre (1) + remplissage (1) + lisibilité par lettre (4 × déficit de recouvrement, orientations lisibles pénalisées) + rétrécissement (20) ; décalage ±0,1, échelle 0,7–1, 24 à 96 candidats (budget 480 lettres-candidats) ; recentrage sur le centre de gravité puis ajustement dans un disque de rayon 40 ; aucune marque ; critère « aucune lettre lisible » non applicable à 1–2 lettres | Termes isolement / lettre droite (refusés au test F2 n° 1), cadrage carré | La méthode de Spare n'a pas de sens de lecture ; ce sont les traits qui longent une lettre, pas ceux qui la croisent, qui la dissolvent |
 | D14 | Variantes affichées à partir de 1 ; kamea méthode par défaut ; changer planète ou option ne retrace pas (bouton Tracer) | Numérotation à 0, Spare par défaut, retracé automatique | Plus lisible pour le public ; évite une animation relancée à chaque clic |
 | D15 | Marques kamea : suivent l'épaisseur jusqu'à un plafond relatif à la case (boucle ≤ 45 %, cercle de départ ≤ 30 %, trait d'arrivée ≤ 60 %) ; boucle finale à côté du dernier segment avec un écart = épaisseur (≤ 1,2) ; épaisseur max du curseur ramenée à 2,4 | Recul porté par le point d'attache, marques non plafonnées, épaisseur jusqu'à 4 | À 4, les marques ne tiennent plus dans les cases de la Lune et le sigil devient illisible |
+| D16 | PDF : toujours en pochoir ; taille = plus grande dimension de l'encre, trait compris ; plage 1–25 cm, défaut 8 cm, limitée à 19 cm en largeur par l'A4 portrait ; métadonnées réduites à « Sigil » + date ; pdf-lib chargé à la demande ; dialogue « Exporter » unique (SVG / PNG 1024–4096 / PDF) | Taille du tracé central, plage 2–30 cm (design.md) | Ce qu'un tatoueur mesure à la règle ; contrainte physique de l'A4 |
 
 ## Architecture
 ### Flux
@@ -109,7 +110,7 @@ Voir `docs/design.md` et `src/styles/tokens.css`. Page de grimoire : beaucoup de
 
 ### F5 — Mode pochoir et PDF à taille réelle (Important)
 - Étant donné le mode pochoir, quand il est activé, alors le sigil est en noir pur, trait unique, sans cercle décoratif ni fond.
-- Étant donné une taille de 6 cm, quand j'exporte le PDF, alors le sigil mesure 6 cm (± 0,5 mm) sur une page A4, avec une règle de contrôle de 1 cm.
+- Étant donné une taille de 6 cm, quand j'exporte le PDF, alors la plus grande dimension de l'encre (trait compris) mesure 6 cm (± 0,5 mm) sur une page A4, avec une règle de contrôle de 1 cm.
 - Étant donné une taille hors plage (< 1 cm ou > 25 cm), quand je saisis la valeur, alors un message indique la plage et l'export est bloqué.
 - Étant donné le mode pochoir, quand je règle l'épaisseur, alors elle est exprimée en mm (0,6 par défaut, plage 0,3 à 1,2) et respectée dans le PDF.
 - Test : [ ] VALIDÉ
@@ -142,7 +143,7 @@ Voir `docs/design.md` et `src/styles/tokens.css`. Page de grimoire : beaucoup de
 | T10 | F2 | Intégration Spare dans l'écran : option voyelles, « autre variante », panneau étapes Spare | design | T7, T9 | `app/`, `features/explain/` | Scénarios F2 joués à la main, captures || [x] |
 | T11 | F3 | Panneau réglages de style et bouton rejouer | design | T7 | `features/sigil/`, `components/ui/` | Scénarios F3 joués à la main, captures || [x] |
 | T12 | F4 | Exports SVG et PNG, boutons, nom de fichier neutre ; couleurs du thème écrites en littéral (pas de `var()`) | dev | T4, T7 | `features/export/` | Tests : SVG valide, PNG 2048 px, aucune trace de l'intention || [x] |
-| T13 | F5 | Mode pochoir et PDF A4 à taille réelle avec règle de contrôle ; dialogue « Exporter » de design.md (format SVG/PNG/PDF, résolution PNG 1024/2048/4096) remplaçant les deux boutons ; état chargement visuel de `Button` | dev | T12 | `features/export/`, `features/sigil/` | Test : dimensions du chemin dans le PDF = taille demandée ± 0,5 mm ; plage refusée | [ ] |
+| T13 | F5 | Mode pochoir et PDF A4 à taille réelle avec règle de contrôle ; dialogue « Exporter » de design.md (format SVG/PNG/PDF, résolution PNG 1024/2048/4096) remplaçant les deux boutons ; état chargement visuel de `Button` | dev | T12 | `features/export/`, `features/sigil/` | Test : dimensions du chemin dans le PDF = taille demandée ± 0,5 mm ; plage refusée || [x] |
 | T14 | F6 | i18n FR/EN (dictionnaire typé, détection, persistance) sur toutes les chaînes | dev | T10, T11 | `features/i18n/`, chaînes de l'UI | Test : aucune chaîne en dur hors dictionnaires ; bascule et persistance || [x] |
 | T15 | F6 | Sélecteur de thème encre / or, finition des deux thèmes | design | T14 | `styles/`, `app/` | Captures des deux thèmes aux 3 largeurs, contrastes AA chiffrés | [ ] |
 | T16 | F1 | Boucles kamea proportionnées à la taille des cases (lisibles du 3×3 au 9×9), pas de boucles superposées sur une même case, pas de collision boucle / trait d'arrivée | dev | T7 | `features/kamea/` | Tests sur les 7 carrés + capture Lune « Belle allée » lisible || [x] |
