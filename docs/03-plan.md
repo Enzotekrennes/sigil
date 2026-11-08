@@ -114,7 +114,7 @@ Voir `docs/design.md` et `src/styles/tokens.css`. Page de grimoire : beaucoup de
 - Étant donné une taille de 6 cm, quand j'exporte le PDF, alors la plus grande dimension de l'encre (trait compris) mesure 6 cm (± 0,5 mm) sur une page A4, avec une règle de contrôle de 1 cm.
 - Étant donné une taille hors plage (< 1 cm ou > 25 cm), quand je saisis la valeur, alors un message indique la plage et l'export est bloqué.
 - Étant donné le mode pochoir, quand je règle l'épaisseur, alors elle est exprimée en mm (0,6 par défaut, plage 0,3 à 1,2) et respectée dans le PDF.
-- Test : [ ] VALIDÉ
+- Test : [x] VALIDÉ (2026-11-08)
 
 ### F6 — Thèmes et interface FR/EN (Important)
 - Étant donné le premier chargement avec un navigateur en anglais, quand la page s'ouvre, alors l'interface est en anglais ; sinon en français.

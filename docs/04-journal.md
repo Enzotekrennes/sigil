@@ -177,3 +177,10 @@
 - Vérifications : lint, typecheck, 841/841 tests verts (revérifié) ; build ; e2e 123/123 (f4 exclu) ; 42 captures (7 écrans × 3 largeurs × 2 thèmes) ; contrastes AA mesurés dans le navigateur, 0 échec ; pochoir noir sur blanc en thème or.
 - Écarts au plan : trois états au lieu de ☾/☀ (D17, design.md mis à jour).
 - Points ouverts : f4-acceptance non rejoué avec le nouvel arrêt clavier de l'en-tête (à couvrir au test F6/F7).
+
+## 2026-11-08 — F5 Pochoir et PDF : test
+- Verdict : VALIDÉ (passage n° 1, commit bfd7017 en worktree)
+- Preuves : pochoir noir pur sans cercle ni fond (kamea, Spare, deux thèmes) ; PDF relu avec PyMuPDF : A4 exact, règle 10,000 mm, encre 60,000 mm à 6 cm (raster 1200 dpi : 59,99–60,01), 1 / 8 / 19 / 25 cm exacts, épaisseurs 0,3–1,2 mm exactes ; métadonnées « Sigil » + dates seulement, ni outil ni intention ; consigne FR/EN ; sigil trop large refusé avec taille max ; PNG 4096 pochoir sans pixel coloré ; export PDF hors ligne ; CSP, clavier, 375 px OK ; contrôle de mutation (9/25 tests échouent).
+- Bugs : B1 valeur négative → message de format au lieu de la plage (mineur, renvoyé à dev) ; B2 texte FR du PDF non extractible avec accents (Helvetica standard sans ToUnicode, rendu correct) — observation.
+- Tests e2e : `e2e/f5-acceptance.spec.ts` (25 tests), commit après la correction de B1.
+- Non testé : impression papier et lecteurs PDF grand public.
