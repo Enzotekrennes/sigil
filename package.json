@@ -20,7 +20,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "glyphs:generate": "node --experimental-strip-types scripts/generate-hershey-glyphs.js",
-    "test:scripts": "node --experimental-strip-types --test \"scripts/**/*.test.js\""
+    "test:scripts": "node --experimental-strip-types --test \"scripts/**/*.test.js\"",
+    "readme:assets": "node --experimental-strip-types scripts/generate-readme-assets.js"
   },
   "dependencies": {
     "pdf-lib": "1.17.1",

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 100 100">
+<title>Kamea sigil of “Calme” being traced</title>
+<rect x="0" y="0" width="100" height="100" fill="#1a1814"/>
+<style>
+@media (prefers-reduced-motion:no-preference){
+.ink{animation:ink-cycle 5800ms infinite}
+@keyframes ink-cycle{0%,89.655%{opacity:1;animation-timing-function:cubic-bezier(0.2, 0, 0, 1)}100%{opacity:0}}
+.mark-start{animation:mark-start 5800ms infinite}
+@keyframes mark-start{0%{opacity:0;animation-timing-function:cubic-bezier(0.2, 0, 0, 1)}2.586%,100%{opacity:1}}
+.mark-end{animation:mark-end 5800ms infinite}
+@keyframes mark-end{0%,43.966%{opacity:0;animation-timing-function:cubic-bezier(0.2, 0, 0, 1)}46.552%,100%{opacity:1}}
+[class^="stroke-"]{visibility:hidden;stroke-dasharray:1 1;stroke-dashoffset:1}
+.stroke-0{animation:stroke-0 5800ms infinite}
+@keyframes stroke-0{0%,2.586%{visibility:hidden;stroke-dashoffset:1;animation-timing-function:cubic-bezier(0.45, 0, 0.25, 1)}43.966%,100%{visibility:visible;stroke-dashoffset:0}}
+}
+</style>
+<g class="ink" fill="none" stroke="#d2ae5c" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+<circle class="mark-start" cx="67.778" cy="76.667" r="2.4"/>
+<path class="stroke-0" d="M67.778 76.667L50 58.889L58.889 85.556L67.778 14.444L85.556 14.444" pathLength="1"/>
+<line class="mark-end" x1="85.556" y1="12.074" x2="85.556" y2="16.815"/>
+</g>
+</svg>

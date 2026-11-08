@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="544" viewBox="0 0 440 272">
+<title>Example sigils</title>
+<rect x="0" y="0" width="440" height="272" fill="#faf7f0"/>
+<style>
+text{font-family:serif;text-anchor:middle}
+.word{font-size:8px;fill:#1c1914}
+.method{font-size:5px;letter-spacing:0.08em;fill:#5b5345}
+</style>
+<g transform="translate(8 8)">
+<g class="ink" fill="none" stroke="#1c1914" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M50 10L50 90"/>
+<path d="M50 28.272L78.517 38.966L62.786 44.303L50 48.641"/>
+<path d="M62.786 44.303L78.517 71.047"/>
+<path d="M50 35.066L36.744 69.864"/>
+<path d="M23.488 35.066L36.744 69.864"/>
+<path d="M23.488 35.066L23.488 69.864"/>
+</g>
+<text x="50" y="106" class="word">Amour</text>
+<text x="50" y="115" class="method">SPARE · VARIANT 2</text>
+</g>
+<g transform="translate(116 8)">
+<g class="ink" fill="none" stroke="#1c1914" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="67.778" cy="76.667" r="2.4"/>
+<path d="M67.778 76.667L50 58.889L58.889 85.556L67.778 14.444L85.556 14.444"/>
+<line x1="85.556" y1="12.074" x2="85.556" y2="16.815"/>
+</g>
+<text x="50" y="106" class="word">Calme</text>
+<text x="50" y="115" class="method">KAMEA · MOON</text>
+</g>
+<g transform="translate(224 8)">
+<g class="ink" fill="none" stroke="#1c1914" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M50 10L50 90"/>
+<path d="M50 14.511L67.451 14.511"/>
+<path d="M50 27.484L60.739 27.484"/>
+<path d="M50 14.511L32.549 14.511"/>
+<path d="M50 27.484L39.261 27.484"/>
+<path d="M50 39.693L68.182 46.282L58.152 49.57L50 52.243"/>
+<path d="M58.152 49.57L68.182 66.049"/>
+<path d="M50 39.693L31.818 46.282L41.848 49.57L50 52.243"/>
+<path d="M41.848 49.57L31.818 66.049"/>
+<path d="M32.861 73.401L50 79.474L32.861 85.547"/>
+<path d="M67.139 73.401L50 79.474L67.139 85.547"/>
+</g>
+<text x="50" y="106" class="word">Force</text>
+<text x="50" y="115" class="method">SPARE · VARIANT 1</text>
+</g>
+<g transform="translate(332 8)">
+<g class="ink" fill="none" stroke="#1c1914" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="82" cy="18" r="2.667"/>
+<path d="M82 18L82 82L66 50L34 66L50 66L50 18L34 50"/>
+<line x1="30.184" y1="48.092" x2="37.816" y2="51.908"/>
+</g>
+<text x="50" y="106" class="word">Courage</text>
+<text x="50" y="115" class="method">KAMEA · MARS</text>
+</g>
+<g transform="translate(8 140)">
+<g class="ink" fill="none" stroke="#1c1914" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="80" cy="40" r="3"/>
+<path d="M80 40L20 60L60 80L40 60"/>
+<line x1="43.394" y1="56.606" x2="36.606" y2="63.394"/>
+</g>
+<text x="50" y="106" class="word">Luck</text>
+<text x="50" y="115" class="method">KAMEA · JUPITER</text>
+</g>
+<g transform="translate(116 140)">
+<g class="ink" fill="none" stroke="#1c1914" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M50 11.574L50 88.426"/>
+<path d="M27.209 19.71L27.209 35.989L27.209 53.896"/>
+<path d="M50 35.989L27.209 35.989"/>
+<path d="M72.791 19.71L72.791 35.989L72.791 53.896"/>
+<path d="M50 35.989L72.791 35.989"/>
+<path d="M70.52 57.404L70.52 84.336"/>
+<path d="M70.52 57.404L60.26 84.336"/>
+<path d="M50 57.404L60.26 84.336"/>
+<path d="M29.48 57.404L29.48 84.336"/>
+<path d="M29.48 57.404L39.74 84.336"/>
+<path d="M50 57.404L39.74 84.336"/>
+</g>
+<text x="50" y="106" class="word">Home</text>
+<text x="50" y="115" class="method">SPARE · VARIANT 1</text>
+</g>
+<g transform="translate(224 140)">
+<g class="ink" fill="none" stroke="#1c1914" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="35" cy="35" r="2.4"/>
+<path d="M35 35L25 25L85 45L85 15L75 85L45 15"/>
+<line x1="47.451" y1="13.95" x2="42.549" y2="16.05"/>
+</g>
+<text x="50" y="106" class="word">Voyage</text>
+<text x="50" y="115" class="method">KAMEA · MERCURY</text>
+</g>
+<g transform="translate(332 140)">
+<g class="ink" fill="none" stroke="#1c1914" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M50 10L50 90"/>
+<path d="M50 14.757L35.586 25.568L50 36.378"/>
+<path d="M50 14.757L64.414 25.568L50 36.378"/>
+<path d="M50 36.378L34.316 41.816L42.968 44.751L50 47.137"/>
+<path d="M42.968 44.751L34.316 59.46"/>
+<path d="M50 36.378L65.684 41.816L57.032 44.751L50 47.137"/>
+<path d="M57.032 44.751L65.684 59.46"/>
+<path d="M50 58.901L59.773 84.554"/>
+<path d="M69.545 58.901L59.773 84.554"/>
+<path d="M69.545 58.901L69.545 84.554"/>
+<path d="M50 58.901L40.227 84.554"/>
+<path d="M30.455 58.901L40.227 84.554"/>
+<path d="M30.455 58.901L30.455 84.554"/>
+</g>
+<text x="50" y="106" class="word">Dream</text>
+<text x="50" y="115" class="method">SPARE · VARIANT 1</text>
+</g>
+</svg>
