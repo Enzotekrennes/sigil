@@ -100,12 +100,29 @@ const CAPITAL_LETTERS: readonly CapitalLetter[] = [
 ];
 
 /** Command that regenerates the module, quoted in its header. */
-const REGENERATE_COMMAND =
-  'node --experimental-strip-types scripts/generate-hershey-glyphs.js <path to rowmans.jhf>';
+const REGENERATE_COMMAND = 'npm run glyphs:generate -- <path to rowmans.jhf>';
 
 /** Where the source file was obtained, quoted in the generated header. */
 const SOURCE_URL =
   'https://github.com/kamalmostafa/hershey-fonts/blob/master/hershey-fonts/rowmans.jhf';
+
+/**
+ * Acknowledgements required by the Hershey Fonts distribution notice, written
+ * as a legal comment: `/*!` and `@license` tell the minifier to keep it in the
+ * built bundle (with `output.comments.legal` enabled in `vite.config.ts`), so
+ * the acknowledgements travel with the font data wherever the site is served.
+ */
+const LEGAL_COMMENT: readonly string[] = [
+  '/*!',
+  ' * @license Hershey Fonts, Roman Simplex capitals A–Z.',
+  ' * The Hershey Fonts were originally created by Dr. A. V. Hershey while',
+  ' * working at the U. S. National Bureau of Standards.',
+  ' * The format of the Font data in this distribution was originally created by',
+  ' * James Hurt, Cognition, Inc., 900 Technology Park Drive, Billerica, MA 01821',
+  ' * (mit-eddie!ci-dandelion!hurt).',
+  ' * Converted from that format into numeric coordinates; see NOTICE.',
+  ' */',
+];
 
 /**
  * Splits the content of a `.jhf` file into its glyph records.
@@ -354,15 +371,12 @@ export function generateRomanSimplexModule(jhfText: string): string {
     ' * Coordinates are in the glyph frame described in `types.ts`: Hershey units,',
     ' * x from the left side bearing, y downwards from the baseline.',
     ' *',
-    ' * Acknowledgements required by the Hershey Fonts distribution notice:',
-    ' * - The Hershey Fonts were originally created by Dr. A. V. Hershey while',
-    ' *   working at the U. S. National Bureau of Standards.',
-    ' * - The format of the Font data in this distribution was originally created by',
-    ' *   James Hurt, Cognition, Inc., 900 Technology Park Drive, Billerica, MA 01821',
-    ' *   (mit-eddie!ci-dandelion!hurt).',
-    ' * Converted from that format into TypeScript coordinates; see NOTICE.',
+    ' * The acknowledgements below are a legal comment (opened with "/*" and "!"): the',
+    ' * production build keeps it next to the glyph data, as the distribution notice requires.',
     ' */',
     "import type { CapitalLetter, HersheyGlyphRecord } from './types.ts';",
+    '',
+    ...LEGAL_COMMENT,
     '',
     '/** Roman Simplex capitals by letter, with their Hershey provenance. */',
     'export const ROMAN_SIMPLEX_CAPITALS: Readonly<Record<CapitalLetter, HersheyGlyphRecord>> = {',

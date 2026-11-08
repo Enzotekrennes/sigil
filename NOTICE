@@ -3,7 +3,10 @@ Copyright (c) 2026 Enzo Abel
 Licensed under the MIT License (see LICENSE).
 
 This project includes third-party data and fonts that are not covered by the
-MIT License. Their notices follow.
+MIT License. Their notices follow. The licences of the third-party packages
+bundled into the built site (React, pdf-lib and their dependencies, Workbox
+runtime of the service worker) are collected at build time into
+THIRD-PARTY-LICENSES.txt, published next to this file.
 
 --------------------------------------------------------------------------------
 Hershey Fonts (Roman Simplex capitals A-Z)
@@ -17,7 +20,9 @@ Source:  rowmans.jhf, records 501-526, from
 Change:  converted from James Hurt's character-pair format into TypeScript
          polylines with numeric coordinates (x from the left side bearing,
          y downwards from the baseline), by
-         scripts/generate-hershey-glyphs.js. No glyph shape was altered.
+         scripts/generate-hershey-glyphs.js (npm run glyphs:generate).
+         No glyph shape was altered. The acknowledgements below are also kept
+         as a legal comment in the built JavaScript, next to the glyph data.
 
 Acknowledgements required by the distribution notice:
 

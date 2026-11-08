@@ -3,7 +3,7 @@
  * skeletons of the Spare method (plan decision D7).
  *
  * Generated file, do not edit by hand. Regenerate with:
- *   node --experimental-strip-types scripts/generate-hershey-glyphs.js <path to rowmans.jhf>
+ *   npm run glyphs:generate -- <path to rowmans.jhf>
  * Source: https://github.com/kamalmostafa/hershey-fonts/blob/master/hershey-fonts/rowmans.jhf
  * (records 501–526 identical to the 1986 Usenet distribution, mod.sources
  * volume 4, issue 42).
@@ -11,15 +11,20 @@
  * Coordinates are in the glyph frame described in `types.ts`: Hershey units,
  * x from the left side bearing, y downwards from the baseline.
  *
- * Acknowledgements required by the Hershey Fonts distribution notice:
- * - The Hershey Fonts were originally created by Dr. A. V. Hershey while
- *   working at the U. S. National Bureau of Standards.
- * - The format of the Font data in this distribution was originally created by
- *   James Hurt, Cognition, Inc., 900 Technology Park Drive, Billerica, MA 01821
- *   (mit-eddie!ci-dandelion!hurt).
- * Converted from that format into TypeScript coordinates; see NOTICE.
+ * The acknowledgements below are a legal comment (opened with "/*" and "!"): the
+ * production build keeps it next to the glyph data, as the distribution notice requires.
  */
 import type { CapitalLetter, HersheyGlyphRecord } from './types.ts';
+
+/*!
+ * @license Hershey Fonts, Roman Simplex capitals A–Z.
+ * The Hershey Fonts were originally created by Dr. A. V. Hershey while
+ * working at the U. S. National Bureau of Standards.
+ * The format of the Font data in this distribution was originally created by
+ * James Hurt, Cognition, Inc., 900 Technology Park Drive, Billerica, MA 01821
+ * (mit-eddie!ci-dandelion!hurt).
+ * Converted from that format into numeric coordinates; see NOTICE.
+ */
 
 /** Roman Simplex capitals by letter, with their Hershey provenance. */
 export const ROMAN_SIMPLEX_CAPITALS: Readonly<Record<CapitalLetter, HersheyGlyphRecord>> = {

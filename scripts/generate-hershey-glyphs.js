@@ -3,7 +3,8 @@
  * Hershey Roman Simplex font file `rowmans.jhf` (plan decision D7).
  *
  * Usage, from the project root:
- *   node --experimental-strip-types scripts/generate-hershey-glyphs.js <path to rowmans.jhf>
+ *   npm run glyphs:generate -- <path to rowmans.jhf>
+ * (equivalent to: node --experimental-strip-types scripts/generate-hershey-glyphs.js <path>)
  *
  * The font file is not versioned: download it from
  * https://raw.githubusercontent.com/kamalmostafa/hershey-fonts/master/hershey-fonts/rowmans.jhf

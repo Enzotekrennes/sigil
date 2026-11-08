@@ -133,10 +133,19 @@ describe('generateRomanSimplexModule', () => {
     expect(generateRomanSimplexModule(jhf)).toBe(generateRomanSimplexModule(jhf));
   });
 
-  it('marks the module as generated and carries the Hershey acknowledgements', () => {
+  it('marks the module as generated', () => {
     expect(generatedModuleSource).toContain('Generated file, do not edit by hand');
-    expect(generatedModuleSource).toContain('Dr. A. V. Hershey');
-    expect(generatedModuleSource).toContain('U. S. National Bureau of Standards');
-    expect(generatedModuleSource).toContain('James Hurt, Cognition, Inc.');
+  });
+
+  it('carries the Hershey acknowledgements in a legal comment the minifier keeps', () => {
+    // A legal comment opens with "/*!" and is kept by the production build;
+    // a plain "/**" block is stripped, which would ship the data unattributed.
+    const legalComment = /^\/\*![\s\S]*?\*\//m.exec(generatedModuleSource)?.[0] ?? '';
+
+    expect(legalComment).toContain('@license');
+    expect(legalComment).toContain('Dr. A. V. Hershey');
+    expect(legalComment).toContain('U. S. National Bureau of Standards');
+    expect(legalComment).toContain('James Hurt, Cognition, Inc.');
+    expect(legalComment).toContain('NOTICE');
   });
 });

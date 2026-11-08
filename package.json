@@ -17,7 +17,8 @@
     "typecheck": "tsc --build",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "glyphs:generate": "node --experimental-strip-types scripts/generate-hershey-glyphs.js"
   },
   "dependencies": {
     "pdf-lib": "1.17.1",

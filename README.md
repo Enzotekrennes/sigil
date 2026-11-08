@@ -27,6 +27,20 @@ npm run test:e2e   # end-to-end tests (Playwright) against the production build
 npm run format     # Prettier
 ```
 
+## Regenerate the Spare glyphs
+
+`src/features/spare/glyphs/hersheyRomanSimplex.ts` is generated from the Hershey Roman
+Simplex font file, which is not versioned. Download
+[`rowmans.jhf`](https://raw.githubusercontent.com/kamalmostafa/hershey-fonts/master/hershey-fonts/rowmans.jhf)
+outside the repository, then:
+
+```sh
+npm run glyphs:generate -- <path to rowmans.jhf>
+```
+
+The output is deterministic: running it twice gives the same file, and a unit test
+checks that the committed module matches its source records.
+
 ## Build
 
 ```sh
@@ -59,5 +73,18 @@ the sources of the PNG files next to them, exported at 180, 192 and 512 px.
 
 ## Licence
 
-Code under the [MIT licence](LICENSE). Fonts: EB Garamond and IBM Plex Mono, SIL Open
-Font License 1.1 (`src/assets/fonts/*/OFL.txt`).
+Code under the [MIT licence](LICENSE), with these exceptions, detailed in
+[NOTICE](NOTICE):
+
+- Fonts: EB Garamond and IBM Plex Mono, SIL Open Font License 1.1
+  (`src/assets/fonts/*/OFL.txt`).
+- Letter skeletons of the Spare method (`src/features/spare/glyphs/`): Hershey Fonts
+  data (Roman Simplex A–Z), under the usage notice of the Hershey Fonts distribution,
+  which requires its acknowledgements to travel with the data.
+- Bundled dependencies (React, pdf-lib and their dependencies, Workbox runtime): their
+  licences are collected by the build into `THIRD-PARTY-LICENSES.txt`.
+
+The built site publishes `LICENSE.txt`, `NOTICE.txt` and `THIRD-PARTY-LICENSES.txt` at
+its root (for example `https://<account>.github.io/sigil/NOTICE.txt`), precached for
+offline use, and the minified JavaScript keeps the legal comments (`/*!`, `@license`),
+including the Hershey acknowledgements.
