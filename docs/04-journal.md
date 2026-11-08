@@ -276,3 +276,7 @@
 - Site de documentation EN/FR dans `site/` (Starlight, 14 pages par langue + référence d'API générée), publié par le workflow sous `/sigil/docs/` ; le service worker de l'app laisse passer ces pages.
 - TSDoc public complété (en-têtes de modules, propriétés, types exportés) ; visuels du README générés (`npm run readme:assets`) ; README réécrit ; passation rédigée.
 - Vérification finale : lint, format:check, typecheck verts ; 989/989 tests unitaires ; 16/16 tests des scripts ; build de l'app (28 entrées précachées) ; build du site (403 pages, aucun lien cassé) ; e2e 284/284.
+
+## 2026-11-08 — Mise en ligne du dépôt
+- Dépôt privé `Enzotekrennes/sigil` créé, `main` poussé (accord d'Enzo). Liens de démo et de documentation pointés vers `enzotekrennes.github.io/sigil/`.
+- Reste à faire par Enzo : passer le dépôt en public quand le README et la démo lui conviennent, puis Settings → Pages → Source : « GitHub Actions » (Pages sur dépôt privé exige un compte payant) ; le premier déploiement réussi publiera la démo et la documentation.
