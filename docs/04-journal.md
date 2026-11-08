@@ -219,3 +219,9 @@
 - Rôle : dev ; relecture → GO.
 - Fait (5ec499e) : commentaire légal Hershey conservé dans le bundle, `LICENSE.txt`, `NOTICE.txt`, `THIRD-PARTY-LICENSES.txt` publiés et précachés, LICENSE précisée, script `glyphs:generate`.
 - Suites : OFL des polices et version Workbox (R13) confiés à T21.
+
+## 2026-11-08 — T20 Correctifs review interface et export
+- Rôle : dev
+- Fait : note « un sigil kamea peut se relire » dans le dialogue d'export (S1) ; `translate="no"` sur l'intention et les lettres affichées (S8) ; note de confidentialité en pied de page (S9) ; table ToUnicode WinAnsi dans le PDF (B2) ; extrémités et limite d'onglet du PDF via `lineEndsFor` (R4) ; actions du dialogue épinglées sous 640 px.
+- Vérifications : 876/876 tests, typecheck, build verts (revérifié) ; e2e f4, f5, f6, stencil, export, privacy-note 146/146 ; contrastes AA chiffrés.
+- Points ouverts : B2 non reproduit avec PyMuPDF 1.28 et pdftotext (table ajoutée par précaution).
