@@ -248,3 +248,10 @@
 - Fait : `checkSingleWord` (MULTIPLE_WORDS, TOO_LONG, 24 lettres max), contrôle dans `trace.ts` après « vide » et « aucune lettre latine », aide et compteur FR/EN ; toutes les données de test passées de phrases à des mots avec valeurs recalculées (ex. kamea « Calme » Saturne 3,1,3,4,5 ; Spare « Tranquillité » → T R N Q L ; boucles Lune « Allée ») ; scénarios « un seul mot » ajoutés à F1 et F2.
 - Vérifications : intention + trace 59/59 (revérifié) ; e2e 281 passés sur un build antérieur aux derniers changements de T24.
 - Suites : ponctuation finale après un blanc tolérée (« Calme ! ») — en cours ; scénarios F1/F2 du plan mis à jour.
+
+## 2026-11-08 — T24 Moteur Spare en rune liée
+- Rôle : dev
+- Fait : squelettes anguleux (Douglas-Peucker, O → losange, B D P R → triangles, S → zigzag), hampe centrale, accroche des lettres (verticale sur la hampe, centrage ou suspension), styles de variante, correction des hachures, score D21, étapes explicatives `spare-angular-skeletons` et `spare-stem-attachments` ; ancienne composition supprimée.
+- Vérifications : eslint + vitest spare/sigil 412/412 ; 50 mots × 3 variantes sans hachure, encre ≤ 6,05 ; 77–96 ms à CPU ×4 pour 12 lettres (premier tracé à froid 170–190 ms).
+- Planche validée par Enzo (2026-11-08). Limites : mots de 5 lettres retenues et plus moins proches des références (mât fin).
+- Suite : T25 (panneau, 18 erreurs de types et 14 tests à réaligner), puis retest F2.
