@@ -15,8 +15,8 @@ word you type never leaves it.
   <img src=".github/readme/examples.svg" alt="Eight example sigils, Spare and kamea, captioned with their word and method">
 </p>
 
-**[Try the demo](https://<account>.github.io/sigil/)** ·
-**[Documentation](https://<account>.github.io/sigil/docs/)** (English and French)
+**[Try the demo](https://enzotekrennes.github.io/sigil/)** ·
+**[Documentation](https://enzotekrennes.github.io/sigil/docs/)** (English and French)
 
 ## Features
 
@@ -90,7 +90,7 @@ npm run preview    # http://localhost:4321/sigil/docs/
 ## Deploy
 
 The workflow `.github/workflows/deploy.yml` publishes to GitHub Pages at
-`https://<account>.github.io/sigil/` on every push to `main`, or by hand (Actions →
+`https://enzotekrennes.github.io/sigil/` on every push to `main`, or by hand (Actions →
 Deploy to GitHub Pages → Run workflow). It runs format, lint, type-check, unit tests,
 script tests, the build, the privacy and offline end-to-end tests, builds the
 documentation into `dist/docs/`, then publishes. Actions are pinned by commit SHA,

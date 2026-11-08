@@ -10,8 +10,8 @@ together.
 ## Deploy
 
 The workflow `.github/workflows/deploy.yml` publishes the app to GitHub Pages at
-`https://<account>.github.io/sigil/`, and this documentation next to it at
-`https://<account>.github.io/sigil/docs/`:
+`https://enzotekrennes.github.io/sigil/`, and this documentation next to it at
+`https://enzotekrennes.github.io/sigil/docs/`:
 
 - on every push to `main`;
 - by hand: **Actions → Deploy to GitHub Pages → Run workflow**.

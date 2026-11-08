@@ -10,8 +10,8 @@ fichiers qui doivent changer ensemble.
 ## Déployer
 
 Le workflow `.github/workflows/deploy.yml` publie l'app sur GitHub Pages à l'adresse
-`https://<account>.github.io/sigil/`, et cette documentation à côté, à l'adresse
-`https://<account>.github.io/sigil/docs/` :
+`https://enzotekrennes.github.io/sigil/`, et cette documentation à côté, à l'adresse
+`https://enzotekrennes.github.io/sigil/docs/` :
 
 - à chaque push sur `main` ;
 - à la main : **Actions → Deploy to GitHub Pages → Run workflow**.
