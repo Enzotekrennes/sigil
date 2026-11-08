@@ -139,34 +139,49 @@ const SPARE_EXPLANATION: SpareExplanationStrings = {
   keptLabel: 'Retenues',
   noneRemoved: 'aucune',
 
-  skeletonsTitle: 'Squelettes des lettres',
+  skeletonsTitle: 'Squelettes anguleux',
   skeletonsBody:
-    'Chaque lettre retenue est réduite à un trait unique, puis retournée, tournée ou réduite avant d’être posée sur les autres.',
-  skeletonsLabel: 'Lettres retenues et transformation de chacune',
-  upright: 'droite',
-  mirrored: 'miroir',
-  turns: { 90: '¼ de tour', 180: 'demi-tour', 270: '¾ de tour' },
-  scale: (percent) => `${String(percent)}${NBSP}%`,
-  sharedStem: (letter) => `barre de ${letter}`,
-  superimposedTitle: 'Superposées, avant fusion',
-  superimposedLabel: (count) =>
-    `Les ${counted(count, 'lettre', 'lettres')} superposées avant fusion`,
+    'Chaque lettre retenue est redessinée en traits droits : chacune de ses courbes devient deux à quatre segments. En trait fin et pâle, la lettre d’origine ; en trait appuyé, son squelette.',
+  skeletonsLabel: 'Squelettes anguleux des lettres retenues',
+  segmentCount: (count) => counted(count, 'segment', 'segments'),
 
-  choiceTitle: 'Composition retenue',
+  attachmentsTitle: 'Accroche sur la hampe',
+  attachmentsBody:
+    'Un trait vertical, la hampe, traverse le sigil de haut en bas, et chaque lettre s’y accroche : sur la hampe quand son trait vertical se confond avec elle, centrée quand la hampe la traverse en son milieu, suspendue quand elle ne la touche que par une pointe.',
+  attachmentsLabel: 'Lettres accrochées, de haut en bas',
+  attachment: { stem: 'sur la hampe', centre: 'centrée', tip: 'suspendue' },
+  mirrored: 'en miroir',
+  doubled: 'doublée en symétrie',
+  side: { left: 'à gauche', right: 'à droite', both: 'des deux côtés' },
+  runeLabel: (letterCount) =>
+    letterCount === 1
+      ? 'La hampe en trait appuyé et la lettre accrochée, avant fusion'
+      : `La hampe en trait appuyé et les ${counted(letterCount, 'lettre', 'lettres')} accrochées, avant fusion`,
+  runeCaption: 'Hampe en trait appuyé',
+
+  choiceTitle: 'Choix de la variante',
+  styleBody: {
+    symmetric:
+      'Cette variante est symétrique : chaque lettre posée d’un seul côté de la hampe est doublée par son reflet de l’autre côté.',
+    paired:
+      'Cette variante est appariée : aucune lettre n’est doublée, et celles qui ne tiennent que d’un côté se font face de part et d’autre de la hampe.',
+    mixed:
+      'Cette variante est mixte : certaines lettres sont doublées par leur reflet, d’autres restent d’un seul côté de la hampe.',
+  },
   choiceBody: (number, count) =>
-    `Parmi ${String(count)} façons de poser ces lettres, toujours les mêmes pour cette intention et cette variante, la n°${NBSP}${String(number)} est la mieux composée : centrée, proche du carré, chaque lettre aussi fondue que possible dans les autres pour qu’aucune ne se lise seule.`,
+    `Parmi ${String(count)} runes tirées, toujours les mêmes pour cette intention et cette variante, la n°${NBSP}${String(number)} est retenue : sans traits parallèles collés, plus haute que large, sans excès d’encre et équilibrée de part et d’autre de la hampe.`,
 
   simplificationTitle: 'Simplification',
   simplificationBody: (before, after) => {
-    const merged = 'Là où des traits se recouvrent, la partie commune n’est tracée qu’une fois';
-    const recentred = 'Le sigil est enfin recentré sur son centre de gravité.';
+    const merged =
+      'La hampe et les lettres partagent des traits : là où ils se recouvrent, la partie commune n’est tracée qu’une fois';
     if (after < before) {
-      return `${merged} : ${counted(before, 'segment', 'segments')} deviennent ${String(after)}. ${recentred}`;
+      return `${merged}, et ${counted(before, 'segment', 'segments')} deviennent ${String(after)}.`;
     }
     if (after === before) {
-      return `${merged} ; le sigil compte toujours ${counted(before, 'segment', 'segments')}. ${recentred}`;
+      return `${merged} ; le sigil compte toujours ${counted(before, 'segment', 'segments')}.`;
     }
-    return `${merged}. Un trait recouvert en partie est coupé autour de la partie commune : on passe de ${String(before)} à ${counted(after, 'segment', 'segments')}. ${recentred}`;
+    return `${merged}. Un trait recouvert en partie est coupé autour de la partie commune : on passe de ${String(before)} à ${counted(after, 'segment', 'segments')}.`;
   },
 };
 

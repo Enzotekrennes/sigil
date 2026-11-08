@@ -137,34 +137,49 @@ const SPARE_EXPLANATION: SpareExplanationStrings = {
   keptLabel: 'Kept',
   noneRemoved: 'none',
 
-  skeletonsTitle: 'Letter skeletons',
+  skeletonsTitle: 'Angular skeletons',
   skeletonsBody:
-    'Each kept letter is reduced to a single stroke, then flipped, turned or scaled down before being laid over the others.',
-  skeletonsLabel: 'Kept letters and how each one is transformed',
-  upright: 'upright',
-  mirrored: 'mirrored',
-  turns: { 90: 'quarter turn', 180: 'half turn', 270: 'three-quarter turn' },
-  scale: (percent) => `${String(percent)}%`,
-  sharedStem: (letter) => `stem shared with ${letter}`,
-  superimposedTitle: 'Overlaid, before merging',
-  superimposedLabel: (count) =>
-    `The ${counted(count, 'letter', 'letters')} overlaid before merging`,
+    'Each kept letter is redrawn with straight strokes: each of its curves becomes two to four segments. The thin, faint line is the original letter; the bold line is its skeleton.',
+  skeletonsLabel: 'Angular skeletons of the kept letters',
+  segmentCount: (count) => counted(count, 'segment', 'segments'),
 
-  choiceTitle: 'Composition chosen',
+  attachmentsTitle: 'Hooking onto the stem',
+  attachmentsBody:
+    'A vertical line, the stem, runs through the sigil from top to bottom, and each letter hooks onto it: on the stem when its upright stroke merges with it, centred when the stem runs through its middle, hanging when it touches the stem at a single point.',
+  attachmentsLabel: 'Letters on the stem, top to bottom',
+  attachment: { stem: 'on the stem', centre: 'centred', tip: 'hanging' },
+  mirrored: 'mirrored',
+  doubled: 'doubled symmetrically',
+  side: { left: 'on the left', right: 'on the right', both: 'on both sides' },
+  runeLabel: (letterCount) =>
+    letterCount === 1
+      ? 'The stem in bold and the letter hooked onto it, before merging'
+      : `The stem in bold and the ${counted(letterCount, 'letter', 'letters')} hooked onto it, before merging`,
+  runeCaption: 'Stem in bold',
+
+  choiceTitle: 'Choosing the variant',
+  styleBody: {
+    symmetric:
+      'This variant is symmetric: every letter set on one side of the stem is doubled by its mirror image on the other side.',
+    paired:
+      'This variant is paired: no letter is doubled, and the letters that sit on one side face each other across the stem.',
+    mixed:
+      'This variant is mixed: some letters are doubled by their mirror image, others stay on one side of the stem.',
+  },
   choiceBody: (number, count) =>
-    `Of ${String(count)} possible layouts (always the same for this intention and variant), number ${String(number)} is the best composed: centred, close to a square, each letter blended into the others as far as possible so that none reads on its own.`,
+    `Of ${String(count)} runes drawn (always the same for this intention and variant), number ${String(number)} is kept: no parallel strokes side by side, taller than wide, not too much ink, and balanced on both sides of the stem.`,
 
   simplificationTitle: 'Simplification',
   simplificationBody: (before, after) => {
-    const merged = 'Where strokes overlap, the shared part is drawn only once';
-    const recentred = 'Last, the sigil is re-centred on its centre of gravity.';
+    const merged =
+      'The stem and the letters share strokes: where they overlap, the shared part is drawn only once';
     if (after < before) {
-      return `${merged}: ${counted(before, 'segment', 'segments')} become ${String(after)}. ${recentred}`;
+      return `${merged}, so ${counted(before, 'segment', 'segments')} become ${String(after)}.`;
     }
     if (after === before) {
-      return `${merged}; the sigil still has ${counted(before, 'segment', 'segments')}. ${recentred}`;
+      return `${merged}; the sigil still has ${counted(before, 'segment', 'segments')}.`;
     }
-    return `${merged}. A stroke covered only in part is cut around the shared part, so the count goes from ${String(before)} to ${counted(after, 'segment', 'segments')}. ${recentred}`;
+    return `${merged}. A stroke covered only in part is cut around the shared part, so the count goes from ${String(before)} to ${counted(after, 'segment', 'segments')}.`;
   },
 };
 

@@ -5,7 +5,13 @@
  *
  * Types only.
  */
-import type { Planet, SpareRemovedLetter } from '../sigil/types.ts';
+import type {
+  Planet,
+  SpareAttachment,
+  SpareRemovedLetter,
+  SpareRuneStyle,
+  SpareStemAttachment,
+} from '../sigil/types.ts';
 
 /** Column headings of the letter → number table. */
 export interface LetterTableHeadings {
@@ -60,9 +66,6 @@ export interface KameaExplanationStrings {
   readonly gridLabel: (planetOf: string, order: number, numbers: readonly number[]) => string;
 }
 
-/** Clockwise quarter turns a Spare letter can receive, other than none. */
-export type SpareTurn = 90 | 180 | 270;
-
 /** Every text of the Spare explanation, in the interface language. */
 export interface SpareExplanationStrings {
   /** Title of step 1, the letters removed and retained (decision D4). */
@@ -82,33 +85,46 @@ export interface SpareExplanationStrings {
   /** Said on a line that lists no letter. */
   readonly noneRemoved: string;
 
-  /** Title of step 2, the single-stroke skeletons and their transforms. */
+  /** Title of step 2, the letters redrawn with straight segments (decision D20). */
   readonly skeletonsTitle: string;
-  /** What happens to each retained letter before the merge. */
+  /**
+   * How a letter becomes angular, and how its tile reads: the original letter
+   * drawn faint, its angular skeleton drawn bold (said without colour words,
+   * the colours change with the theme).
+   */
   readonly skeletonsBody: string;
   /** Accessible name of the list of letter tiles. */
   readonly skeletonsLabel: string;
-  /** Transform text of a letter drawn as written. */
-  readonly upright: string;
-  /** Transform text of a letter flipped left to right. */
-  readonly mirrored: string;
-  /** Transform text of each clockwise turn. */
-  readonly turns: Readonly<Record<SpareTurn, string>>;
-  /** Transform text of the size, in percent of the largest possible letter. */
-  readonly scale: (percent: number) => string;
-  /** Transform text of a vertical stem shared with another letter. */
-  readonly sharedStem: (letter: string) => string;
-  /** Caption of the drawing of the letters laid on top of each other. */
-  readonly superimposedTitle: string;
-  /** Accessible name of that drawing. */
-  readonly superimposedLabel: (count: number) => string;
+  /** Segment count of one angular skeleton, under its letter. */
+  readonly segmentCount: (count: number) => string;
 
-  /** Title of step 3, the composition chosen among the candidates (decision D13). */
+  /** Title of step 3, the stem and the letters hooked onto it (decision D19). */
+  readonly attachmentsTitle: string;
+  /** The stem and the three ways a letter hooks onto it, named as in `attachment`. */
+  readonly attachmentsBody: string;
+  /** Accessible name of the list of hooked letters, given from the top of the stem down. */
+  readonly attachmentsLabel: string;
+  /** Name of each way of hooking a letter onto the stem. */
+  readonly attachment: Readonly<Record<SpareAttachment, string>>;
+  /** Said of a letter flipped left to right, when it is not doubled. */
+  readonly mirrored: string;
+  /** Said of a letter drawn twice, mirror images of each other on both sides of the stem. */
+  readonly doubled: string;
+  /** Side of the stem a single letter occupies. */
+  readonly side: Readonly<Record<SpareStemAttachment['side'], string>>;
+  /** Accessible name of the drawing of the rune before merging, the stem in bold. */
+  readonly runeLabel: (letterCount: number) => string;
+  /** Caption of that drawing, saying which line is the stem. */
+  readonly runeCaption: string;
+
+  /** Title of step 4, the variant's style and the rune chosen (decision D21). */
   readonly choiceTitle: string;
-  /** One sentence: which composition, out of how many, and why. `number` is 1-based. */
+  /** One sentence per variant style: which letters are doubled and how the sides answer each other. */
+  readonly styleBody: Readonly<Record<SpareRuneStyle, string>>;
+  /** One sentence: which rune, out of how many, and why. `number` is 1-based. */
   readonly choiceBody: (number: number, count: number) => string;
 
-  /** Title of step 4, the merge and simplification of the strokes. */
+  /** Title of step 5, the merge of the stem and the letters into one drawing. */
   readonly simplificationTitle: string;
   /**
    * The merge, with the segment counts before and after. The count can drop

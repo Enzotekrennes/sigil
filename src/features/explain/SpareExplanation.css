@@ -2,11 +2,14 @@
  * Styles of SpareExplanation.tsx and its StrokeDrawing.tsx drawings.
  *
  * The step list itself comes from ExplanationSteps.css. From a 34rem wide
- * panel (1024–1279 px layout), the skeletons step, the one with drawings,
- * moves to the second column next to the three text steps, as the kamea
- * square does. Letters and transforms are in the monospace (the
- * construction), sentences in the Garamond. Every colour, size and spacing
- * comes from tokens.css.
+ * panel (1024–1279 px layout), the five steps flow in two columns, in reading
+ * order (top to bottom, then the second column), none split across them.
+ * Letters, counts and attachments are in the monospace (the construction),
+ * sentences in the Garamond. In the drawings, the subject (an angular
+ * skeleton, the stem) is drawn bold in the sigil colour and its context (the
+ * original letter, the hooked letters) fine in the border colour, so the two
+ * differ by weight as well as by colour. Every colour, size and spacing comes
+ * from tokens.css.
  */
 
 /* Strip of the intention's letters: removed ones struck through and muted (LetterStrip in docs/design.md). */
@@ -71,13 +74,18 @@
   font-weight: var(--font-weight-medium);
 }
 
-/* One tile per retained letter: its upright skeleton, the letter, the transform applied. */
+/* Context layer of every StrokeDrawing: fine, in the border colour (3:1 or more on the sunken surface). */
+.stroke-drawing__context {
+  stroke: var(--color-border);
+}
+
+/* One tile per retained letter: its Hershey letter and angular skeleton, the letter, the segment count. */
 .glyph-tiles {
   display: grid;
   grid-template-columns: repeat(
     auto-fill,
-    minmax(6.5rem, 1fr)
-  ); /* 104 px: about 12 monospace characters of transform per line */
+    minmax(5.5rem, 1fr)
+  ); /* 88 px: "4 segments" on one line */
   gap: var(--space-2);
   margin: 0;
   padding: 0;
@@ -96,8 +104,8 @@
 }
 
 .glyph-tile__drawing {
-  width: var(--space-7);
-  height: var(--space-7);
+  width: var(--space-8);
+  height: var(--space-8);
   stroke: var(--sigil-stroke);
 }
 
@@ -108,32 +116,38 @@
   line-height: var(--line-height-tight);
 }
 
-.glyph-tile__transform {
+.glyph-tile__count {
   font-family: var(--font-mono);
   font-size: var(--font-size-12);
   line-height: var(--line-height-tight);
   color: var(--color-text-muted);
 }
 
-/* The letters laid on top of each other, at their place in the frame, before the merge. */
-.spare-superimposed {
-  display: grid;
-  gap: var(--space-2);
-  justify-items: start;
-  margin: var(--space-2) 0 0;
+/* The rune before merging, stem in bold, next to the hooked letters from top to bottom. */
+.spare-rune {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  align-items: start;
 }
 
-.spare-superimposed__drawing {
+.spare-rune__figure {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: center;
+  margin: 0;
+}
+
+.spare-rune__drawing {
   display: block;
-  width: 100%;
-  max-width: 15rem; /* 240 px: big enough to follow each letter, small next to the scene */
-  height: auto;
+  width: 10rem; /* 160 px: the stem and every hooked letter read, small next to the scene */
+  height: 10rem;
   border-radius: var(--radius-field);
   background: var(--color-surface-sunken);
   stroke: var(--sigil-stroke);
 }
 
-.spare-superimposed__caption {
+.spare-rune__caption {
   font-family: var(--font-mono);
   font-size: var(--font-size-12);
   letter-spacing: var(--letter-spacing-label);
@@ -141,14 +155,44 @@
   color: var(--color-text-muted);
 }
 
+.spare-attachments {
+  display: grid;
+  flex: 1 1 12rem; /* beside the drawing when both fit, under it otherwise */
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-label);
+  line-height: var(--line-height-body);
+}
+
+.spare-attachments__letter {
+  display: grid;
+  grid-template-columns: var(--space-5) minmax(0, 1fr);
+  gap: var(--space-2);
+  align-items: baseline;
+}
+
+.spare-attachments__name {
+  font-size: var(--font-size-16);
+  font-weight: var(--font-weight-medium);
+}
+
+.spare-attachments__detail {
+  color: var(--color-text-muted);
+}
+
 @container (min-width: 34rem) {
-  /* The tall second column would stretch every row: the last one takes the extra height. */
+  /* Columns rather than the shared grid: two steps carry drawings, and rows would stretch the others. */
   .explain-steps--spare {
-    grid-template-rows: auto auto 1fr;
+    display: block;
+    columns: 2;
+    column-gap: var(--space-6);
   }
 
-  .spare-steps__skeletons {
-    grid-column: 2;
-    grid-row: 1 / span 3;
+  .explain-steps--spare > .explain-steps__step {
+    break-inside: avoid;
+    margin-bottom: var(--space-5);
   }
 }

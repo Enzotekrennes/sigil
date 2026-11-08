@@ -60,7 +60,9 @@ test('traces "Tranquillité" with Spare, shows the reduction, and redraws each v
   await expect(page.getByText('T R N Q L', { exact: true })).toBeVisible();
   await expect(page.getByText('A U I E', { exact: true })).toBeVisible();
   await expect(
-    page.getByRole('img', { name: 'Les 5 lettres superposées avant fusion' }),
+    page.getByRole('img', {
+      name: 'La hampe en trait appuyé et les 5 lettres accrochées, avant fusion',
+    }),
   ).toBeVisible();
   const first = await strokePaths(page);
   expect(first.length).toBeGreaterThan(0);

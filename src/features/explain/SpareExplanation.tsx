@@ -1,9 +1,9 @@
 /**
- * The "how it is made" panel of a Spare sigil, in four numbered steps:
- * letters removed (duplicates, vowels) and retained, the single-stroke
- * skeletons with the transform each one received and then laid on top of
- * each other, the composition chosen among the candidates, and the merge of
- * the strokes.
+ * The "how it is made" panel of a Spare sigil, a bind rune, in five numbered
+ * steps: letters removed (duplicates, vowels) and retained; each retained
+ * letter redrawn with straight segments (D20); the stem and how each letter
+ * hooks onto it (D19); the variant's style and the rune chosen among the
+ * candidates (D21); the merge of the shared strokes.
  *
  * Exposes `SpareExplanation`. Reads everything from the sigil's explanation
  * steps (`features/spare` produces them); holds no wording, every text comes
@@ -13,14 +13,15 @@
  */
 import { VisuallyHidden } from '../../components/ui/index.ts';
 import { FRAME_MARGIN, FRAME_SIZE } from '../sigil/frame.ts';
-import type { Box, Sigil, SpareLetterPlacement } from '../sigil/types.ts';
+import type { Box, Sigil, SpareStemAttachment } from '../sigil/types.ts';
 import './ExplanationSteps.css';
 import './SpareExplanation.css';
 import {
+  attachmentsFromTop,
   lettersRemovedFor,
   readSpareSteps,
   removalByPosition,
-  scalePercent,
+  stemStroke,
 } from './spareSteps.ts';
 import type { SpareExplanationStrings } from './strings.ts';
 import { StrokeDrawing } from './StrokeDrawing.tsx';
@@ -39,8 +40,8 @@ const GLYPH_VIEW: Box = {
   height: FRAME_SIZE - 2 * (FRAME_MARGIN - GLYPH_VIEW_PADDING),
 };
 
-/** Separator between the parts of a transform description. */
-const TRANSFORM_SEPARATOR = ' · ';
+/** Separator between the parts of an attachment description. */
+const DETAIL_SEPARATOR = ' · ';
 
 /** Props of `SpareExplanation`. */
 export interface SpareExplanationProps {
@@ -51,7 +52,7 @@ export interface SpareExplanationProps {
 }
 
 /**
- * Renders the four steps as an ordered list.
+ * Renders the five steps as an ordered list.
  *
  * @returns The list of steps, or `null` when the sigil carries no Spare steps.
  */
@@ -59,11 +60,12 @@ export function SpareExplanation({ sigil, strings }: SpareExplanationProps) {
   const steps = readSpareSteps(sigil.steps);
   if (steps === undefined) return null;
 
-  const { reduction, placements, choice, simplification } = steps;
+  const { reduction, skeletons, attachments, choice, simplification } = steps;
   const removal = removalByPosition(reduction.removed);
   const duplicates = lettersRemovedFor(reduction.removed, 'duplicate');
   const vowels = lettersRemovedFor(reduction.removed, 'vowel');
-  const superimposed = placements.letters.flatMap((placement) => placement.strokes);
+  const hooked = attachmentsFromTop(attachments);
+  const hookedStrokes = attachments.letters.flatMap((attachment) => attachment.strokes);
 
   return (
     <ol className="explain-steps explain-steps--spare">
@@ -109,42 +111,62 @@ export function SpareExplanation({ sigil, strings }: SpareExplanationProps) {
         </dl>
       </li>
 
-      <li className="explain-steps__step spare-steps__skeletons">
+      <li className="explain-steps__step">
         <h3 className="explain-steps__title">{strings.skeletonsTitle}</h3>
         <p className="explain-steps__text">{strings.skeletonsBody}</p>
         <ul className="glyph-tiles" aria-label={strings.skeletonsLabel}>
-          {placements.letters.map((placement, index) => (
-            // One tile per retained letter, all different and in a fixed order.
-            <li key={index} className="glyph-tile">
+          {skeletons.letters.map((skeleton) => (
+            // Retained letters are distinct: the letter is the identity.
+            <li key={skeleton.letter} className="glyph-tile">
               <StrokeDrawing
-                strokes={placement.glyph}
+                strokes={skeleton.angular}
+                context={skeleton.glyph}
                 viewBox={GLYPH_VIEW}
                 className="glyph-tile__drawing"
               />
               <span className="glyph-tile__letter" translate="no">
-                {placement.letter}
+                {skeleton.letter}
               </span>
-              <span className="glyph-tile__transform">
-                {describeTransform(placement, placements.letters, strings)}
+              <span className="glyph-tile__count">
+                {strings.segmentCount(skeleton.segmentCount)}
               </span>
             </li>
           ))}
         </ul>
-        <figure className="spare-superimposed">
-          <StrokeDrawing
-            strokes={superimposed}
-            viewBox={sigil.viewBox}
-            className="spare-superimposed__drawing"
-            label={strings.superimposedLabel(placements.letters.length)}
-          />
-          <figcaption className="spare-superimposed__caption">
-            {strings.superimposedTitle}
-          </figcaption>
-        </figure>
+      </li>
+
+      <li className="explain-steps__step">
+        <h3 className="explain-steps__title">{strings.attachmentsTitle}</h3>
+        <p className="explain-steps__text">{strings.attachmentsBody}</p>
+        <div className="spare-rune">
+          <figure className="spare-rune__figure">
+            <StrokeDrawing
+              strokes={[stemStroke(attachments)]}
+              context={hookedStrokes}
+              viewBox={sigil.viewBox}
+              className="spare-rune__drawing"
+              label={strings.runeLabel(attachments.letters.length)}
+            />
+            <figcaption className="spare-rune__caption">{strings.runeCaption}</figcaption>
+          </figure>
+          <ol className="spare-attachments" aria-label={strings.attachmentsLabel}>
+            {hooked.map((attachment) => (
+              <li key={attachment.letter} className="spare-attachments__letter">
+                <span className="spare-attachments__name" translate="no">
+                  {attachment.letter}
+                </span>
+                <span className="spare-attachments__detail">
+                  {describeAttachment(attachment, strings)}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </div>
       </li>
 
       <li className="explain-steps__step">
         <h3 className="explain-steps__title">{strings.choiceTitle}</h3>
+        <p className="explain-steps__text">{strings.styleBody[choice.style]}</p>
         <p className="explain-steps__text">
           {strings.choiceBody(choice.chosenIndex + 1, choice.candidateCount)}
         </p>
@@ -186,30 +208,30 @@ function lettersTranslate(letters: readonly string[]): 'no' | undefined {
 }
 
 /**
- * Words what was done to one letter before the merge: mirror, turn, size and
- * shared stem, in the order they apply.
+ * Words how one letter hangs on the stem: the way it is hooked, then its
+ * mirror, its double or its side, whichever tells something.
  *
- * @param placement - The letter's placement in the chosen composition.
- * @param letters - Every placement, to name the letter whose stem is shared.
+ * A doubled letter sits on both sides as two mirror images, so neither its
+ * mirror nor its side is said; a centred letter is crossed by the stem, so
+ * its side goes without saying. A single letter whose vertical lies on the
+ * stem and which still spreads to both sides (T, Y) is symmetric about that
+ * vertical: its mirror changes nothing visible and is not said either.
+ *
+ * @param attachment - The letter's attachment in the chosen rune.
  * @param strings - Texts in the interface language.
- * @returns Parts joined by a middle dot, for instance "miroir · demi-tour · 80 %".
+ * @returns Parts joined by a middle dot, for instance "sur la hampe · en miroir · à gauche".
  */
-function describeTransform(
-  placement: SpareLetterPlacement,
-  letters: readonly SpareLetterPlacement[],
+function describeAttachment(
+  attachment: SpareStemAttachment,
   strings: SpareExplanationStrings,
 ): string {
-  const parts: string[] = [];
-  if (placement.mirrored) parts.push(strings.mirrored);
-  if (placement.rotation !== 0) parts.push(strings.turns[placement.rotation]);
-  if (parts.length === 0) parts.push(strings.upright);
-
-  const percent = scalePercent(placement.scale);
-  if (percent < 100) parts.push(strings.scale(percent));
-
-  const stemOwner =
-    placement.sharedStemWith === null ? undefined : letters[placement.sharedStemWith];
-  if (stemOwner !== undefined) parts.push(strings.sharedStem(stemOwner.letter));
-
-  return parts.join(TRANSFORM_SEPARATOR);
+  const parts = [strings.attachment[attachment.attachment]];
+  if (attachment.doubled) {
+    parts.push(strings.doubled);
+    return parts.join(DETAIL_SEPARATOR);
+  }
+  const straddlesStem = attachment.attachment === 'stem' && attachment.side === 'both';
+  if (attachment.mirrored && !straddlesStem) parts.push(strings.mirrored);
+  if (attachment.attachment !== 'centre') parts.push(strings.side[attachment.side]);
+  return parts.join(DETAIL_SEPARATOR);
 }

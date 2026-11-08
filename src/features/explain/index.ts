@@ -10,5 +10,4 @@ export type {
   KameaExplanationStrings,
   LetterTableHeadings,
   SpareExplanationStrings,
-  SpareTurn,
 } from './strings.ts';

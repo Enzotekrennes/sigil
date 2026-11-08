@@ -575,8 +575,9 @@ describe('App', () => {
     const titles = panel.getAllByRole('heading', { level: 3 }).map((title) => title.textContent);
     expect(titles).toEqual([
       'Lettres retirées',
-      'Squelettes des lettres',
-      'Composition retenue',
+      'Squelettes anguleux',
+      'Accroche sur la hampe',
+      'Choix de la variante',
       'Simplification',
     ]);
     const strip = panel.getByRole('list', { name: 'Les 12 lettres de l’intention' });
@@ -585,18 +586,28 @@ describe('App', () => {
     expect(panel.getByText('L I T')).toBeInTheDocument();
     expect(panel.getByText('A U I E')).toBeInTheDocument();
     expect(panel.getByText('T R N Q L')).toBeInTheDocument();
-    const tiles = panel.getByRole('list', {
-      name: 'Lettres retenues et transformation de chacune',
-    });
-    expect(within(tiles).getAllByRole('listitem')).toHaveLength(5);
+    const tiles = panel.getByRole('list', { name: 'Squelettes anguleux des lettres retenues' });
     expect(
-      panel.getByRole('img', { name: 'Les 5 lettres superposées avant fusion' }),
+      within(tiles)
+        .getAllByRole('listitem')
+        .map((tile) => tile.querySelector('[translate="no"]')?.textContent),
+    ).toEqual(['T', 'R', 'N', 'Q', 'L']);
+    expect(
+      panel.getByRole('img', {
+        name: 'La hampe en trait appuyé et les 5 lettres accrochées, avant fusion',
+      }),
+    ).toBeInTheDocument();
+    const hooked = panel.getByRole('list', { name: 'Lettres accrochées, de haut en bas' });
+    const hookedLetters = within(hooked)
+      .getAllByRole('listitem')
+      .map((item) => item.querySelector('[translate="no"]')?.textContent);
+    expect([...hookedLetters].sort()).toEqual(['L', 'N', 'Q', 'R', 'T']);
+    expect(
+      panel.getByText(/^Cette variante est (symétrique|appariée|mixte) :/),
     ).toBeInTheDocument();
     // T R N Q L: five retained letters, as many candidates as the Spare budget gives them.
     expect(
-      panel.getByText(
-        new RegExp(`^Parmi ${String(candidateCountFor(5))} façons de poser ces lettres`),
-      ),
+      panel.getByText(new RegExp(`^Parmi ${String(candidateCountFor(5))} runes tirées`)),
     ).toBeInTheDocument();
     expect(
       panel.getByText(/segments deviennent|compte toujours \d+ segments|on passe de \d+ à/),
