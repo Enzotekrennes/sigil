@@ -17,11 +17,15 @@
  *   the manifest meets Chromium's installability criteria, the CSP is
  *   enforced with the dialog open, and `deploy.yml` follows its security
  *   rules (minimal permissions, no secret, pinned action versions).
+ * - Licences: the site publishes and precaches its licence, NOTICE, the Open
+ *   Font Licenses of both font families and the third-party notices, the
+ *   Workbox ones at the version actually bundled.
  *
  * Files and screenshots are kept in `F7_EVIDENCE_DIR` (default
  * `test-results/f7-evidence`).
  */
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import { join, resolve } from 'node:path';
 
 import { expect, test } from '@playwright/test';
@@ -94,6 +98,39 @@ function recordRequests(context: BrowserContext): Request[] {
   const requests: Request[] = [];
   context.on('request', (request) => requests.push(request));
   return requests;
+}
+
+/**
+ * Reads the `permissions:` map that starts at the given indentation of a
+ * workflow (or of one of its jobs).
+ *
+ * @param yaml - Workflow text, or the text of one job.
+ * @param indent - Regular-expression fragment for the spaces before `permissions:`
+ *   (`''` at workflow level, `' {4}'` inside a job).
+ * @returns The `scope: access` lines, trimmed and sorted; empty when there is no such map.
+ */
+function permissionsBlock(yaml: string, indent: string): string[] {
+  const pattern = new RegExp(`^${indent}permissions:\\n((?:${indent} {2}\\S.*\\n)+)`, 'm');
+  const block = pattern.exec(yaml)?.[1] ?? '';
+  return block
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => line.trim())
+    .sort();
+}
+
+/**
+ * Extracts one job of a workflow, up to the next job or the end of the file.
+ *
+ * @param yaml - Workflow text.
+ * @param job - Job identifier under `jobs:`.
+ * @returns The job's lines, its header included.
+ * @throws {Error} When the workflow has no such job.
+ */
+function jobBlock(yaml: string, job: string): string {
+  const found = new RegExp(`^ {2}${job}:\\n(?:(?: {4}.*)?\\n)*`, 'm').exec(yaml);
+  if (found === null) throw new Error(`deploy.yml has no "${job}" job.`);
+  return found[0];
 }
 
 /**
@@ -597,7 +634,6 @@ test('S5: the CSP is enforced on the page and with the export dialog open', asyn
       () => 'allowed',
       () => 'blocked',
     );
-    await new Promise((resolveWait) => setTimeout(resolveWait, 100));
     return {
       ran: document.documentElement.dataset.probe === 'ran',
       width: getComputedStyle(styled).width,
@@ -613,12 +649,79 @@ test('S5: the CSP is enforced on the page and with the export dialog open', asyn
     outbound: 'blocked',
   });
   expect(outcome.width).not.toBe('123px');
+  // Violation events are dispatched asynchronously: wait until the probes are reported.
+  const reported = async (directive: string): Promise<boolean> =>
+    (await cspViolations(page)).some((entry) => entry.startsWith(directive));
+  await expect.poll(() => reported('script-src')).toBe(true);
+  await expect.poll(() => reported('connect-src')).toBe(true);
   const violations = await cspViolations(page);
-  expect(violations.some((entry) => entry.startsWith('script-src'))).toBe(true);
-  expect(violations.some((entry) => entry.startsWith('connect-src'))).toBe(true);
   // Only the probes above violated the policy: none came from the app itself.
   expect(violations.every((entry) => /^(script-src|style-src|connect-src)/.test(entry))).toBe(true);
   await page.screenshot({ path: join(EVIDENCE_DIR, 's5-dialog-csp.png') });
+});
+
+test('S8: the legal files are published, precached and name what is shipped', async ({
+  request,
+}) => {
+  const worker = await (await request.get(`${BASE_PATH}sw.js`)).text();
+  const precached = [...worker.matchAll(/url:"([^"]+)"/g)].map((match) => match[1] ?? '');
+  const published = {
+    'LICENSE.txt': 'LICENSE',
+    'NOTICE.txt': 'NOTICE',
+    'OFL-EB-Garamond.txt': 'src/assets/fonts/eb-garamond/OFL.txt',
+    'OFL-IBM-Plex-Mono.txt': 'src/assets/fonts/ibm-plex-mono/OFL.txt',
+  };
+  for (const [name, source] of Object.entries(published)) {
+    expect(precached, name).toContain(name);
+    const response = await request.get(`${BASE_PATH}${name}`);
+    expect(response.status(), name).toBe(200);
+    // Same text as the repository file, whatever line endings the checkout used.
+    const repository = (await readFile(resolve(source), 'utf8')).replaceAll('\r\n', '\n');
+    expect((await response.text()).replaceAll('\r\n', '\n'), name).toBe(repository);
+  }
+  expect(precached).toContain('THIRD-PARTY-LICENSES.txt');
+
+  // NOTICE and LICENSE send the reader to files that exist on the site.
+  const notice = await (await request.get(`${BASE_PATH}NOTICE.txt`)).text();
+  const license = await (await request.get(`${BASE_PATH}LICENSE.txt`)).text();
+  for (const name of ['OFL-EB-Garamond.txt', 'OFL-IBM-Plex-Mono.txt']) {
+    expect(notice, name).toContain(name);
+    expect(license.replace(/\s+/g, ' '), name).toContain(name);
+  }
+
+  // Every Workbox package of the runtime has its notice, at the version of the
+  // copy workbox-build bundles (the root node_modules could hold another one).
+  const runtimeName = /\.\/(workbox-[\da-f]+)/.exec(worker)?.[1];
+  expect(runtimeName, 'sw.js loads a Workbox runtime').toBeDefined();
+  const runtime = await (await request.get(`${BASE_PATH}${String(runtimeName)}.js`)).text();
+  const markers = new Map(
+    [...runtime.matchAll(/workbox:([a-z-]+):(\d+)\.(\d+)\.\d+/g)].map((match) => [
+      `workbox-${match[1] ?? ''}`,
+      `${match[2] ?? ''}.${match[3] ?? ''}`,
+    ]),
+  );
+  expect(markers.size).toBeGreaterThan(0);
+  const notices = await (await request.get(`${BASE_PATH}THIRD-PARTY-LICENSES.txt`)).text();
+  const listed = new Map(
+    [...notices.matchAll(/^## (workbox-[a-z-]+) - (\S+) \(/gm)].map((match) => [
+      match[1] ?? '',
+      match[2] ?? '',
+    ]),
+  );
+  expect([...listed.keys()].sort()).toEqual([...markers.keys()].sort());
+  const fromPlugin = createRequire(
+    createRequire(resolve('package.json')).resolve('vite-plugin-pwa'),
+  );
+  const workboxBuild = createRequire(fromPlugin.resolve('workbox-build'));
+  for (const [name, version] of listed) {
+    const manifest = JSON.parse(
+      await readFile(workboxBuild.resolve(`${name}/package.json`), 'utf8'),
+    ) as { version: string };
+    expect(version, name).toBe(manifest.version);
+    // The runtime marker is not always bumped on a patch release (7.4.1 still
+    // says 7.4.0): it must agree on the major and minor version.
+    expect(version.split('.').slice(0, 2).join('.'), name).toBe(markers.get(name));
+  }
 });
 
 test('S6: the service worker takes over by itself and cleans old caches', async ({ request }) => {
@@ -630,36 +733,75 @@ test('S6: the service worker takes over by itself and cleans old caches', async 
 });
 
 test('S7: deploy.yml has minimal permissions, no secret and pinned action versions', async () => {
-  const workflow = await readFile(resolve('.github/workflows/deploy.yml'), 'utf8');
+  const workflow = (await readFile(resolve('.github/workflows/deploy.yml'), 'utf8')).replaceAll(
+    '\r\n',
+    '\n',
+  );
   const packageJson = JSON.parse(await readFile(resolve('package.json'), 'utf8')) as {
     scripts: Record<string, string>;
   };
 
-  const permissions = (/^permissions:\n((?: {2}\S.*\n)+)/m.exec(workflow))?.[1] ?? '';
-  expect(
-    permissions
-      .split('\n')
-      .filter(Boolean)
-      .map((line) => line.trim())
-      .sort(),
-  ).toEqual(['contents: read', 'id-token: write', 'pages: write']);
+  // Workflow level: read the code, nothing more. The build job inherits it;
+  // only the deploy job writes Pages and asks for an OIDC token.
+  expect(permissionsBlock(workflow, '')).toEqual(['contents: read']);
+  const buildJob = jobBlock(workflow, 'build');
+  const deployJob = jobBlock(workflow, 'deploy');
+  expect(buildJob).not.toMatch(/^\s*permissions:/m);
+  expect(permissionsBlock(deployJob, ' {4}')).toEqual([
+    'contents: read',
+    'id-token: write',
+    'pages: write',
+  ]);
   expect(workflow).not.toMatch(/\bsecrets\./);
   expect(workflow).not.toContain('pull_request_target');
   expect(workflow).not.toMatch(/\bwrite-all\b|\bread-all\b/);
 
-  const uses = [...workflow.matchAll(/uses:\s*(\S+)/g)].map((match) => match[1] ?? '');
+  // The checkout does not leave the token in .git/config; install scripts never run.
+  expect(buildJob).toMatch(
+    /uses: actions\/checkout@.*\n\s+with:\n(?:\s+#.*\n)*\s+persist-credentials: false\n/,
+  );
+  expect(workflow).toContain('run: npm ci --ignore-scripts\n');
+
+  // Every action is pinned to a full commit SHA, the tag it stands for in a comment.
+  const uses = [...workflow.matchAll(/uses:\s*(.+)$/gm)].map((match) => match[1] ?? '');
   expect(uses.length).toBeGreaterThanOrEqual(5);
   for (const action of uses) {
-    expect(action, action).toMatch(/^[\w-]+\/[\w.-]+@(v\d+(\.\d+){0,2}|[0-9a-f]{40})$/);
+    expect(action, action).toMatch(/^[\w-]+\/[\w.-]+@[0-9a-f]{40} # v\d+\.\d+\.\d+$/);
   }
 
-  // The checks run before the artifact is built, with scripts that exist.
-  const order = ['npm ci', 'npm run lint', 'npm run typecheck', 'npm run test', 'npm run build'];
-  const positions = order.map((command) => workflow.indexOf(`run: ${command}`));
+  // The checks run before the artifact is built, then the privacy, CSP and
+  // offline specs play on that build before it is uploaded.
+  const order = [
+    'run: npm ci',
+    'run: npm run lint',
+    'run: npm run format:check',
+    'run: npm run typecheck',
+    'run: npm run test',
+    'run: npm run test:scripts',
+    'run: npm run build',
+    'run: npx playwright install --with-deps chromium',
+    'run: npx playwright test ',
+    'uses: actions/upload-pages-artifact@',
+  ];
+  const positions = order.map((step) => workflow.indexOf(step));
   expect(positions.every((position) => position > -1)).toBe(true);
   expect([...positions].sort((a, b) => a - b)).toEqual(positions);
-  for (const script of ['lint', 'typecheck', 'test', 'build']) {
+  const specs = /run: npx playwright test (.+)$/m.exec(workflow)?.[1]?.split(' ') ?? [];
+  expect(specs).toEqual(
+    expect.arrayContaining([
+      'e2e/f7-acceptance.spec.ts',
+      'e2e/privacy.spec.ts',
+      'e2e/offline.spec.ts',
+    ]),
+  );
+  for (const script of ['lint', 'format:check', 'typecheck', 'test', 'test:scripts', 'build']) {
     expect(packageJson.scripts[script], script).toBeDefined();
   }
   expect(workflow).toContain('path: dist');
+
+  // Dependabot proposes the updates of the pinned actions and of the npm packages.
+  const dependabot = await readFile(resolve('.github/dependabot.yml'), 'utf8');
+  for (const ecosystem of ['github-actions', 'npm']) {
+    expect(dependabot).toContain(`package-ecosystem: ${ecosystem}`);
+  }
 });

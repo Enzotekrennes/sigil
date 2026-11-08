@@ -8,7 +8,9 @@
  * stencil kept in pure black on white, and no Content Security Policy
  * violation. Also checks that the copies of the theme colours (the second
  * "gold on black" block of `tokens.css`, the `theme-color` metadata of
- * `index.html`, `THEME_BACKGROUNDS` of `theme.ts`) never drift apart.
+ * `index.html`, `THEME_BACKGROUNDS` of `theme.ts`, `PAPER_COLOR` of
+ * `vite.config.ts` and the colours of the served web app manifest) never
+ * drift apart.
  */
 import { readFile } from 'node:fs/promises';
 
@@ -396,9 +398,9 @@ test('keeps the tattoo stencil in pure black on white on the gold theme', async 
   expect(await pageBackground(page)).toBe(PAGE_BACKGROUND.dark);
 });
 
-test('keeps every copy of the theme colours identical to the tokens', async () => {
-  const [tokens, indexHtml, themeModule] = await Promise.all(
-    ['src/styles/tokens.css', 'index.html', 'src/app/theme.ts'].map((path) =>
+test('keeps every copy of the theme colours identical to the tokens', async ({ request }) => {
+  const [tokens, indexHtml, themeModule, viteConfig] = await Promise.all(
+    ['src/styles/tokens.css', 'index.html', 'src/app/theme.ts', 'vite.config.ts'].map((path) =>
       readFile(path, 'utf8'),
     ),
   );
@@ -440,4 +442,19 @@ test('keeps every copy of the theme colours identical to the tokens', async () =
   );
   expect(themeModule).toContain(`light: '${String(light)}'`);
   expect(themeModule).toContain(`dark: '${String(dark)}'`);
+
+  // The installed app opens on the paper colour: the manifest is written in
+  // vite.config.ts from PAPER_COLOR, checked both at the source and as served.
+  expect(viteConfig).toContain(`const PAPER_COLOR = '${String(light)}';`);
+  expect(viteConfig).toContain('background_color: PAPER_COLOR,');
+  expect(viteConfig).toContain('theme_color: PAPER_COLOR,');
+  const manifestResponse = await request.get('manifest.webmanifest');
+  expect(manifestResponse.ok()).toBe(true);
+  const manifest = (await manifestResponse.json()) as Record<string, unknown>;
+  expect(
+    Object.keys(manifest)
+      .filter((key) => key.endsWith('_color'))
+      .sort(),
+  ).toEqual(['background_color', 'theme_color']);
+  expect(manifest).toMatchObject({ background_color: light, theme_color: light });
 });

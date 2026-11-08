@@ -12,6 +12,8 @@
  */
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
+import { waitForAnimationsToFinish, waitForTracingTime } from './animations.ts';
+
 /** Intention of the F1 scenario, traced on Saturn by default. */
 const CALM = 'Je suis calme';
 
@@ -504,14 +506,14 @@ test.describe('scenario 1: the sigil traces itself in path order, then the marks
     const opacityOf = (locator: Locator): Promise<number> =>
       locator.evaluate((element) => Number(getComputedStyle(element).opacity));
 
-    await page.waitForTimeout(500);
+    await waitForTracingTime(page, 500);
     const early = await offsetOf();
     await shot(page, 's1-kamea-t500');
-    await page.waitForTimeout(700);
+    await waitForTracingTime(page, 1200);
     const middle = await offsetOf();
     expect(await opacityOf(endBar), 'end bar hidden while the path is being drawn').toBe(0);
     await shot(page, 's1-kamea-t1200');
-    await page.waitForTimeout(700);
+    await waitForTracingTime(page, 1900);
     const late = await offsetOf();
     await shot(page, 's1-kamea-t1900');
     expect(early).toBeGreaterThan(0);
@@ -541,7 +543,7 @@ test.describe('scenario 1: the sigil traces itself in path order, then the marks
     const speeds = strokes.map((a) => a.duration / a.length);
     const mean = speeds.reduce((sum, value) => sum + value, 0) / speeds.length;
     for (const speed of speeds) expect(Math.abs(speed - mean) / mean).toBeLessThan(0.05);
-    await page.waitForTimeout(1500);
+    await waitForTracingTime(page, 1500);
     await shot(page, 's1-spare-t1500');
     await expect(sigil(page).locator('path.sigil-renderer__stroke')).toHaveCount(strokes.length);
   });
@@ -564,7 +566,7 @@ test.describe('scenario 2: reduced motion', () => {
     const dash = await path.evaluate((element) => getComputedStyle(element).strokeDasharray);
     expect(['none', '0px', '']).toContain(dash);
     // The end mark is there as soon as the 150 ms fade is over.
-    await page.waitForTimeout(250);
+    await waitForAnimationsToFinish(page);
     await expect(sigil(page).locator('[data-mark="end-bar"]')).toHaveCSS('opacity', '1');
     // Only the 150 ms fade of design.md remains: no tracing, no pen movement.
     expect((await sigilAnimations(page)).map((a) => a.name)).toEqual(['sigil-renderer-fade']);
@@ -596,7 +598,8 @@ test.describe('scenario 3: style changes redraw without changing the shape', () 
     await page.evaluate(() => {
       Object.assign(window, { before: document.getAnimations() });
     });
-    await page.waitForTimeout(600);
+    // The changes land while the tracing is playing.
+    await waitForTracingTime(page, 600);
     for (const width of STROKE_WIDTHS) {
       await setStrokeWidth(page, width);
       await expect(ink).toHaveAttribute('stroke-width', String(width));
@@ -652,7 +655,7 @@ test.describe('scenario 3: style changes redraw without changing the shape', () 
   test('a style change in the middle of the tracing does not restart it', async ({ page }) => {
     await page.goto('./');
     await trace(page);
-    await page.waitForTimeout(1000);
+    await waitForTracingTime(page, 1000);
     const before = (await sigilAnimations(page)).find((a) => a.name.endsWith('draw'));
     await setStrokeWidth(page, 2);
     await page.getByRole('switch', { name: 'Extrémités arrondies' }).click({ force: true });
@@ -683,7 +686,7 @@ test.describe('scenario 4: "Rejouer" restarts the animation', () => {
     expect(restarted?.currentTime ?? Infinity).toBeLessThan(600);
     await expect(sigil(page)).toHaveClass(/sigil-renderer--trace/);
     const path = sigil(page).locator('path.sigil-renderer__stroke');
-    await page.waitForTimeout(500);
+    await waitForTracingTime(page, 500);
     const offset = await path.evaluate((element) =>
       Number(getComputedStyle(element).strokeDashoffset.replace('px', '')),
     );
@@ -691,7 +694,7 @@ test.describe('scenario 4: "Rejouer" restarts the animation', () => {
     await shot(page, 's4-replaying');
 
     // Again, in the middle of the tracing.
-    await page.waitForTimeout(800);
+    await waitForTracingTime(page, 1300);
     await page.getByRole('button', { name: 'Rejouer' }).click();
     expect(await runKey(page)).not.toBe(second);
     const again = (await sigilAnimations(page)).find((a) => a.name.endsWith('draw'));
@@ -959,7 +962,8 @@ test.describe('strict CSP (D12)', () => {
     await traceSpare(page, LONG_INTENTION);
     await page.getByRole('button', { name: /autre variante/i }).click();
     await page.getByRole('button', { name: 'Rejouer' }).click();
-    await page.waitForTimeout(3300);
+    // The whole tracing plays before the violations are read.
+    await waitForAnimationsToFinish(page);
 
     expect(await cspViolations(page)).toEqual([]);
     expect(consoleMessages.filter((text) => /content security policy|refused/i.test(text))).toEqual(

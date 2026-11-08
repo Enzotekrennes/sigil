@@ -70,7 +70,8 @@ Used in: src/assets/fonts/eb-garamond/
 Copyright 2017 The EB Garamond Project Authors
 (https://github.com/octaviopardo/EBGaramond12)
 Licensed under the SIL Open Font License, Version 1.1; full text in
-src/assets/fonts/eb-garamond/OFL.txt.
+OFL-EB-Garamond.txt, published next to this file (in the repository:
+src/assets/fonts/eb-garamond/OFL.txt).
 
 --------------------------------------------------------------------------------
 IBM Plex Mono
@@ -79,4 +80,5 @@ IBM Plex Mono
 Used in: src/assets/fonts/ibm-plex-mono/
 Copyright 2017 IBM Corp. All rights reserved.
 Licensed under the SIL Open Font License, Version 1.1; full text in
-src/assets/fonts/ibm-plex-mono/OFL.txt.
+OFL-IBM-Plex-Mono.txt, published next to this file (in the repository:
+src/assets/fonts/ibm-plex-mono/OFL.txt).

@@ -889,6 +889,7 @@ test.describe('scenario 4: no sigil, no export', () => {
     let downloads = 0;
     page.on('download', () => (downloads += 1));
     await exporter.click({ force: true });
+    // Proving that nothing happens takes a quiet window: no event marks its end.
     await page.waitForTimeout(600);
     await expect(exportDialog(page)).toBeHidden();
     expect(downloads).toBe(0);
@@ -1018,6 +1019,9 @@ test('a double click on "Télécharger" for PNG produces one file, no error, and
   const dialog = await openExport(page, 'PNG', 4096);
   await dialog.getByRole('button', { name: 'Télécharger' }).dblclick();
   await expect.poll(() => saved.length).toBeGreaterThan(0);
+  await expect(dialog).toBeHidden();
+  // A second file would come from the second click, rendered on its own: no
+  // event marks that it will never come, so it gets a quiet window.
   await page.waitForTimeout(2500);
   expect(saved).toHaveLength(1);
   const first = saved[0];
@@ -1045,6 +1049,8 @@ test('a double click on "Télécharger" for SVG gives one or two valid, identica
   const dialog = await openExport(page, 'SVG');
   await dialog.getByRole('button', { name: 'Télécharger' }).dblclick();
   await expect.poll(() => saved.length).toBeGreaterThan(0);
+  // Every file the double click produces must be collected before they are
+  // compared; none marks the last one, so they get a quiet window.
   await page.waitForTimeout(1500);
   expect(saved.length).toBeLessThanOrEqual(2);
   const files = await Promise.all(
@@ -1312,6 +1318,7 @@ test.describe('the export dialog', () => {
     await expect(dialog).toBeVisible();
     await page.keyboard.press('Escape');
     await expectClosed(page);
+    // Proving that no download starts takes a quiet window: no event marks its end.
     await page.waitForTimeout(500);
     expect(downloads).toBe(0);
     await expectClean(seen);

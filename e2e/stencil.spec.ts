@@ -232,6 +232,8 @@ test('reopens the export dialog on Enter right after Escape, every time (F5)', a
     await page.keyboard.press('Escape');
     await page.keyboard.press('Enter');
     await expect(dialog).toBeVisible();
+    // A late `close` event would hide it again: give it the time to arrive, as
+    // proving that it does not come takes a quiet window.
     await page.waitForTimeout(50);
     await expect(dialog).toBeVisible();
     await page.keyboard.press('Escape');

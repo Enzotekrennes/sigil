@@ -1,9 +1,15 @@
 # Builds the site and publishes it to GitHub Pages (<account>.github.io/sigil/).
 #
 # Runs on every push to main and on demand. The build job runs the same checks
-# as a local session (lint, types, unit tests) before producing dist/; the
-# deploy job only publishes an artifact that passed them. Requires Pages to be
-# enabled with "GitHub Actions" as the source in the repository settings.
+# as a local session (lint, formatting, types, unit and script tests), builds dist/, then
+# plays the privacy, CSP and offline end-to-end specs on that build before
+# uploading it; the deploy job only publishes an artifact that passed them.
+# Requires Pages to be enabled with "GitHub Actions" as the source in the
+# repository settings.
+#
+# Every action is pinned to a full commit SHA (the tag it was taken from is in
+# the comment next to it); Dependabot (.github/dependabot.yml) proposes the
+# updates.
 
 name: Deploy to GitHub Pages
 
@@ -12,11 +18,10 @@ on:
     branches: [main]
   workflow_dispatch:
 
-# Least privilege: read the code, write Pages, prove the deploy's origin (OIDC).
+# Least privilege: every job can only read the code. The deploy job alone gets
+# the Pages and OIDC rights it needs.
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 # One deploy at a time; a newer push does not cancel a deploy already running.
 concurrency:
@@ -28,19 +33,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # No job step pushes: the token is not left in .git/config.
+          persist-credentials: false
 
       - name: Set up Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
           cache: npm
 
+      # Dependency install scripts never run: the build needs none of them.
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       - name: Lint
         run: npm run lint
+
+      - name: Check formatting
+        run: npm run format:check
 
       - name: Type-check
         run: npm run typecheck
@@ -48,24 +60,40 @@ jobs:
       - name: Unit tests
         run: npm run test
 
+      - name: Script tests
+        run: npm run test:scripts
+
       - name: Build
         run: npm run build
 
+      - name: Install the end-to-end browser
+        run: npx playwright install --with-deps chromium
+
+      # Privacy, network, CSP and offline guarantees of the built site (F7).
+      # Playwright serves the production build itself (`vite preview`).
+      - name: Privacy, CSP and offline end-to-end tests
+        run: npx playwright test e2e/f7-acceptance.spec.ts e2e/privacy.spec.ts e2e/offline.spec.ts
+
       - name: Configure Pages
-        uses: actions/configure-pages@v6
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
 
       - name: Upload site
-        uses: actions/upload-pages-artifact@v5
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: dist
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    # Write Pages and prove the deploy's origin (OIDC); nothing else.
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Deploy
         id: deployment
-        uses: actions/deploy-pages@v5
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

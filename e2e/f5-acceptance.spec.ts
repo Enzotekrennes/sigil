@@ -554,6 +554,7 @@ test('scenario 3: sizes out of range show the range and block the export, bounda
       dialog.getByRole('alert').or(dialog.locator('#export-size-error')),
     ).not.toBeEmpty();
   }
+  // Proving that no download starts takes a quiet window: no event marks its end.
   await page.waitForTimeout(500);
   expect(downloads).toBe(0);
   await expect(dialog).toBeVisible();
@@ -894,6 +895,9 @@ test('the dialog gives the focus back after a PDF download and downloads once on
   });
   await dialog.getByRole('button', { name: 'Télécharger' }).dblclick();
   await expect(dialog).toHaveCount(0);
+  await expect.poll(() => downloads).toBe(1);
+  // A second file would come from the second click: no event marks that it
+  // will never come, so it gets a quiet window.
   await page.waitForTimeout(800);
   expect(downloads).toBe(1);
   await expect(page.getByRole('button', { name: 'Exporter', exact: true })).toBeFocused();

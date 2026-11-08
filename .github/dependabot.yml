@@ -1,0 +1,21 @@
+# Weekly update proposals for the pinned GitHub Actions (SHA pins in
+# .github/workflows/) and the npm dependencies, one grouped pull request per
+# ecosystem so that updates are reviewed and tested together.
+
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      github-actions:
+        patterns: ['*']
+
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      npm-dependencies:
+        patterns: ['*']

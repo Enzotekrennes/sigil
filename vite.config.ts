@@ -5,12 +5,14 @@
  * prefixed with `/sigil/`. The production build is an installable PWA that
  * works offline: a generated service worker precaches the whole build (scripts,
  * styles, fonts, icons, legal files). The build also publishes LICENSE.txt,
- * NOTICE.txt and the third-party licence notices, and keeps legal comments
- * through minification. Vitest reuses this file: unit tests run in jsdom and
- * only cover `src/`; end-to-end specs in `e2e/` belong to Playwright.
+ * NOTICE.txt, the Open Font Licenses of the two font families and the
+ * third-party licence notices, and keeps legal comments through minification.
+ * Vitest reuses this file: unit tests run in jsdom and only cover `src/`;
+ * end-to-end specs in `e2e/` belong to Playwright.
  */
 import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { createRequire } from 'node:module';
+import { dirname, resolve } from 'node:path';
 
 import react from '@vitejs/plugin-react';
 import type { Plugin } from 'vite';
@@ -44,12 +46,16 @@ const THIRD_PARTY_LICENSES_FILE = 'THIRD-PARTY-LICENSES.txt';
 /**
  * Project files published next to the app, so that the deployed site carries
  * its own licence and the attributions it owes (Hershey Fonts, fonts,
- * dependencies). Copied from the repository at build time: no second copy to
- * keep in sync. Key: source file at the project root; value: published name.
+ * dependencies): the SIL Open Font License must accompany the font files it
+ * covers. Copied from the repository at build time: no second copy to keep in
+ * sync. Key: source file, relative to the project root; value: published name,
+ * the one NOTICE and LICENSE refer to.
  */
 const LEGAL_FILES: Readonly<Record<string, string>> = {
   LICENSE: 'LICENSE.txt',
   NOTICE: 'NOTICE.txt',
+  'src/assets/fonts/eb-garamond/OFL.txt': 'OFL-EB-Garamond.txt',
+  'src/assets/fonts/ibm-plex-mono/OFL.txt': 'OFL-IBM-Plex-Mono.txt',
 };
 
 /**
@@ -66,16 +72,34 @@ const WORKBOX_RUNTIME_PACKAGES = [
 ];
 
 /**
- * Formats the licence notice of one installed package as a section of the
- * third-party licences file, in the layout Vite uses for `build.license`.
+ * Finds the directory of a Workbox runtime package the way the service worker
+ * build does: from `workbox-build`, itself resolved from `vite-plugin-pwa`.
+ * A copy nested under `workbox-build` (when the root `node_modules` holds
+ * another version) is therefore the one reported, as it is the one bundled.
  *
- * @param packageName - Name of a package installed in `node_modules`.
- * @returns A Markdown section: heading with name, version and SPDX
- *   identifier, then the full text of its `LICENSE` file.
+ * @param packageName - A package of `WORKBOX_RUNTIME_PACKAGES`.
+ * @returns Absolute path of the package directory.
+ * @throws {Error} When `vite-plugin-pwa`, `workbox-build` or the package cannot be resolved.
+ */
+function workboxPackageDir(packageName: string): string {
+  const fromProject = createRequire(resolve(import.meta.dirname, 'package.json'));
+  const fromPlugin = createRequire(fromProject.resolve('vite-plugin-pwa'));
+  const fromWorkboxBuild = createRequire(fromPlugin.resolve('workbox-build'));
+  return dirname(fromWorkboxBuild.resolve(`${packageName}/package.json`));
+}
+
+/**
+ * Formats the licence notice of one Workbox runtime package as a section of
+ * the third-party licences file, in the layout Vite uses for `build.license`.
+ *
+ * @param packageName - A package of `WORKBOX_RUNTIME_PACKAGES`.
+ * @returns A Markdown section: heading with name, version (from the copy
+ *   `workbox-build` bundles, see `workboxPackageDir`) and SPDX identifier,
+ *   then the full text of its `LICENSE` file.
  * @throws {Error} When the package or its `LICENSE` file is missing.
  */
 function packageLicenseSection(packageName: string): string {
-  const packageDir = resolve(import.meta.dirname, 'node_modules', packageName);
+  const packageDir = workboxPackageDir(packageName);
   const manifest = JSON.parse(readFileSync(resolve(packageDir, 'package.json'), 'utf8')) as {
     version: string;
     license: string;

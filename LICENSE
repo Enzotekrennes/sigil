@@ -22,7 +22,9 @@ SOFTWARE.
 
 The following are not covered by this licence:
 - the fonts in src/assets/fonts/: EB Garamond and IBM Plex Mono are distributed
-  under the SIL Open Font License 1.1 (see the OFL.txt file next to each family);
+  under the SIL Open Font License 1.1 (full texts published with the site as
+  OFL-EB-Garamond.txt and OFL-IBM-Plex-Mono.txt; in the repository, the OFL.txt
+  file next to each family);
 - the Hershey Fonts glyph data in src/features/spare/glyphs/ (letter skeletons
   of the Spare method), which remains under the usage notice of the Hershey
   Fonts distribution, including its required acknowledgements (see NOTICE);

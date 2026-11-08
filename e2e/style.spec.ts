@@ -7,6 +7,9 @@
  */
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
+import { PEN_LIFT_MS, TRACE_DURATION_MS, TRACE_MAX_MS } from '../src/features/sigil/geometry.ts';
+import { waitForTracingTime } from './animations.ts';
+
 /** Intention of the F1 scenario, traced on Saturn by default. */
 const INTENTION = 'Je suis calme';
 
@@ -73,7 +76,7 @@ test('traces the path first, then shows the end mark (F3)', async ({ page }) => 
   const endBar = sigil(page).locator('[data-mark="end-bar"]');
   await expect(sigil(page)).toHaveClass(/sigil-renderer--trace/);
   // Midway, the path is partly drawn and the end bar not shown yet.
-  await page.waitForTimeout(1200);
+  await waitForTracingTime(page, 1200);
   const midway = await path.evaluate((element) =>
     Number(getComputedStyle(element).strokeDashoffset.replace('px', '')),
   );
@@ -161,9 +164,10 @@ test('serves the duration tokens the tracing cap is computed from', async ({ pag
       style.getPropertyValue(name).trim(),
     );
   });
-  // TRACE_DURATION_MS, PEN_LIFT_MS and TRACE_MAX_MS of src/features/sigil/geometry.ts;
-  // the minified build may write a duration in seconds (2.4s), so compare in ms.
-  expect(tokens.map(toMilliseconds)).toEqual([2400, 80, 2700]);
+  // The tracing cap is computed in TypeScript from these constants: the CSS
+  // tokens must say the same. The minified build may write a duration in
+  // seconds (2.4s), so compare in ms.
+  expect(tokens.map(toMilliseconds)).toEqual([TRACE_DURATION_MS, PEN_LIFT_MS, TRACE_MAX_MS]);
 });
 
 test('replays the tracing on demand (F3)', async ({ page }) => {

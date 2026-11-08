@@ -97,8 +97,17 @@ test('the browser enforces the CSP: no inline script, no markup style, CSSOM sty
     cssomStyled.style.setProperty('--sigil-test-length', '5');
     document.body.append(cssomStyled);
 
-    // Violation events are dispatched asynchronously.
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    // Violation events are dispatched asynchronously: wait for the two blocked
+    // probes to be reported (the test timeout bounds the wait).
+    await new Promise<void>((resolve) => {
+      const reported = () =>
+        violations.includes('script-src-elem') && violations.includes('style-src-attr');
+      const check = () => {
+        if (reported()) resolve();
+        else requestAnimationFrame(check);
+      };
+      check();
+    });
 
     return {
       inlineScriptRan: document.documentElement.dataset.inlineScriptRan === 'yes',

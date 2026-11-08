@@ -23,6 +23,8 @@ import { inflateSync } from 'node:zlib';
 import { expect, test } from '@playwright/test';
 import type { Browser, Locator, Page } from '@playwright/test';
 
+import { waitForAnimationsToFinish } from './animations.ts';
+
 /** Storage keys documented in `src/features/i18n/storage.ts` and `src/app/theme.ts`. */
 const LANGUAGE_KEY = 'sigil.language';
 const THEME_KEY = 'sigil.theme';
@@ -448,7 +450,14 @@ test.describe('scenario 1: language on first load', () => {
     });
     await page.goto('./');
     await expect(page.getByRole('button', { name: 'Trace', exact: true })).toBeVisible();
-    await page.waitForTimeout(300);
+    // Keep recording a few more painted frames once the English interface is up.
+    const recorded = await page.evaluate(
+      () => (window as unknown as { f6Frames: string[] }).f6Frames.length,
+    );
+    await page.waitForFunction(
+      (count) => (window as unknown as { f6Frames: string[] }).f6Frames.length >= count + 10,
+      recorded,
+    );
     const frames = await page.evaluate(
       () => (window as unknown as { f6Frames: string[] }).f6Frames,
     );
@@ -639,7 +648,7 @@ test.describe('scenario 3: WCAG AA contrast', () => {
           for (const screen of SCREENS) {
             await page.reload();
             await reach(page, lang, screen);
-            await page.waitForTimeout(250);
+            await waitForAnimationsToFinish(page, { outsideSigil: true });
             const { measured, failures } = await audit(page);
             expect(measured, `${screen}: texts measured`).toBeGreaterThan(5);
             report.push(...failures.map((f) => `${screen}: ${f.what} ${f.ratio} < ${f.threshold}`));
@@ -990,7 +999,7 @@ test.describe('English interface', () => {
     for (const screen of SCREENS) {
       await page.reload();
       await reach(page, 'en', screen);
-      await page.waitForTimeout(200);
+      await waitForAnimationsToFinish(page, { outsideSigil: true });
       const texts = await page.evaluate(() => {
         const out: string[] = [document.body.innerText];
         for (const el of document.querySelectorAll('[aria-label],[title],[alt],[placeholder]')) {
