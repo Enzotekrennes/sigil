@@ -683,7 +683,8 @@ test('the PDF carries the printing instruction in French and in English', async 
   await trace(english, { words: EN });
   const en = (await exportPdf(english, testInfo, '6', EN)).pdf;
   expect(en.texts[0]).toBe('1 cm');
-  expect(en.texts[1]).toBe('Print at 100%, without scaling or fit to page.');
+  expect(en.texts[1]).toMatch(/^Print at 100%, with no scaling and no \W?fit to page\W?\.$/);
+  expect(en.texts[1]).toContain('fit to page');
   expect(en.texts[2]).toMatch(/^Sigil: 6\s?cm along its largest dimension, 0\.6\s?mm stroke\.$/);
   await context.close();
 });
