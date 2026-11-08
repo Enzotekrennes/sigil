@@ -1,6 +1,6 @@
 /**
- * The FR | EN selector of the header: two native radio buttons in a
- * `<fieldset>`, drawn as a compact pair of segments.
+ * The FR | EN selector of the header, drawn with the shared `CompactChoice`
+ * of the header selectors.
  *
  * Exposes `LanguageToggle`, its props and `LanguageToggleStrings`. Controlled:
  * the caller owns the language (see `LanguageProvider`). Each option shows
@@ -8,10 +8,10 @@
  * its `lang` so screen readers pronounce "Français" and "English" correctly
  * whatever the interface language.
  */
-import '../../components/ui/VisuallyHidden.css';
+import { CompactChoice } from '../../components/ui/index.ts';
+import type { CompactOption } from '../../components/ui/index.ts';
 import { LANGUAGES } from './language.ts';
 import type { Language } from './language.ts';
-import './LanguageToggle.css';
 
 /** Texts of the selector, in the interface language. */
 export interface LanguageToggleStrings {
@@ -42,29 +42,19 @@ const RADIO_NAME = 'interface-language';
  * @returns The `<fieldset>` element.
  */
 export function LanguageToggle({ value, onChange, strings }: LanguageToggleProps) {
+  const options: CompactOption<Language>[] = LANGUAGES.map((language) => ({
+    value: language,
+    face: strings.codes[language],
+    label: strings.names[language],
+    lang: language,
+  }));
   return (
-    <fieldset className="language-toggle">
-      <legend className="visually-hidden">{strings.legend}</legend>
-      {LANGUAGES.map((language) => (
-        <label key={language} className="language-toggle__option">
-          <input
-            type="radio"
-            className="language-toggle__input visually-hidden"
-            name={RADIO_NAME}
-            value={language}
-            checked={language === value}
-            onChange={() => {
-              onChange(language);
-            }}
-          />
-          <span className="language-toggle__face" aria-hidden="true">
-            {strings.codes[language]}
-          </span>
-          <span className="visually-hidden" lang={language}>
-            {strings.names[language]}
-          </span>
-        </label>
-      ))}
-    </fieldset>
+    <CompactChoice
+      legend={strings.legend}
+      name={RADIO_NAME}
+      options={options}
+      value={value}
+      onChange={onChange}
+    />
   );
 }

@@ -12,8 +12,8 @@
       The intention typed by the user must never leave the browser: everything
       is restricted to the site's own origin and no third party is allowed.
       - default-src 'self': fallback for every other fetch, same origin only.
-      - script-src 'self': bundled scripts and the service worker registration
-        file only; no inline script, no eval.
+      - script-src 'self': bundled scripts, the theme start-up file and the
+        service worker registration file only; no inline script, no eval.
       - style-src 'self': bundled stylesheet only. React applies the `style`
         prop through the CSSOM (element.style), which the policy does not
         restrict, so 'unsafe-inline' is not needed. It still blocks <style>
@@ -39,6 +39,21 @@
     <!-- Never tell another site which page a visitor came from. -->
     <meta name="referrer" content="no-referrer" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      Both themes are supported: until the stylesheet loads, the browser paints
+      its default canvas in the system scheme. The toolbar colour follows the
+      page background of each theme (--color-bg in src/styles/tokens.css); the
+      app points both at the chosen theme when the visitor picks one.
+    -->
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f3eee3" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0f0e0c" />
+    <!--
+      Applies the stored theme before the first paint (no flash of the other
+      theme). A blocking file from the site's own origin, not an inline script,
+      which the policy above forbids. See public/theme-init.js.
+    -->
+    <script src="/theme-init.js"></script>
     <meta
       name="description"
       content="Deterministic sigil generator: kamea and Spare methods, drawn in SVG in your browser."

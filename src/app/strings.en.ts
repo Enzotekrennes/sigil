@@ -18,6 +18,7 @@ import type { LanguageToggleStrings } from '../features/i18n/index.ts';
 import type { StrokeWidthLevel } from '../features/sigil/index.ts';
 import type { Planet } from '../features/sigil/types.ts';
 import type { AppStrings } from './strings.fr.ts';
+import type { ThemeToggleStrings } from './ThemeToggle.tsx';
 
 /** Planet names as shown on the picker. */
 const PLANET_NAMES: Readonly<Record<Planet, string>> = {
@@ -225,10 +226,17 @@ const LANGUAGE: LanguageToggleStrings = {
   names: { fr: 'Français', en: 'English' },
 };
 
+/** Texts of the theme selector. */
+const THEME: ThemeToggleStrings = {
+  legend: 'Theme',
+  names: { system: 'System', light: 'Ink on paper', dark: 'Gold on black' },
+};
+
 /** All English texts of the interface. */
 export const STRINGS_EN: AppStrings = {
   appTitle: 'Sigil',
   language: LANGUAGE,
+  theme: THEME,
 
   controls: {
     heading: 'Trace a sigil',

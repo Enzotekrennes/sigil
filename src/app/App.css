@@ -16,7 +16,7 @@
   min-height: 100vh;
 }
 
-/* Header: 56 px on mobile, 64 px from 768 px, with a bottom rule; title left, language selector right. */
+/* Header: 56 px on mobile, 64 px from 768 px, with a bottom rule; title left, language and theme selectors right. */
 .app-header {
   box-sizing: border-box;
   display: flex;
@@ -35,6 +35,13 @@
   font-weight: var(--font-weight-medium);
   letter-spacing: var(--letter-spacing-title);
   line-height: var(--line-height-tight);
+}
+
+/* Language then theme, side by side: 2 + 3 segments of 44 px fit beside the title at 375 px. */
+.app-header__settings {
+  display: flex;
+  flex: none;
+  gap: var(--space-2);
 }
 
 .app-layout {

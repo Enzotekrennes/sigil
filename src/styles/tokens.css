@@ -5,7 +5,11 @@
  * Exposes semantic CSS custom properties on :root. The default theme is
  * "ink on paper" (light); "gold on black" (dark) redefines the same tokens
  * under [data-theme="dark"], or follows prefers-color-scheme when no theme
- * has been chosen explicitly (no data-theme attribute on <html>).
+ * has been chosen explicitly (no data-theme attribute on <html>);
+ * [data-theme="light"] keeps ink on paper whatever the system says. The
+ * attribute is set by the header selector (src/app/theme.ts) and, before the
+ * first paint, by public/theme-init.js. The two "gold on black" blocks below
+ * must stay identical (checked by e2e/theme.spec.ts).
  *
  * Does not declare @font-face rules (see fonts.css) and does not style any
  * element. The tattoo stencil export uses the --stencil-* values, which are
@@ -29,6 +33,8 @@
   --color-on-accent: #faf7f0;
   --color-focus: var(--color-accent);
   --color-selection: #ead3c8;
+  /* Veil laid over the page under a modal dialog: the sunken tone, 85 % opaque. */
+  --color-backdrop: rgb(233 226 211 / 0.85);
 
   --color-success: #2f6b3a;
   --color-warning: #8a5a00;
@@ -147,6 +153,7 @@
   --color-accent-hover: #e4c47e;
   --color-on-accent: #0f0e0c;
   --color-selection: #33291a;
+  --color-backdrop: rgb(9 8 7 / 0.85);
 
   --color-success: #7fbf8a;
   --color-warning: #e0b04f;
@@ -179,6 +186,7 @@
     --color-accent-hover: #e4c47e;
     --color-on-accent: #0f0e0c;
     --color-selection: #33291a;
+    --color-backdrop: rgb(9 8 7 / 0.85);
 
     --color-success: #7fbf8a;
     --color-warning: #e0b04f;

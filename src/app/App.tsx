@@ -1,7 +1,7 @@
 /**
  * Application shell: the single screen of Sigil.
  *
- * Assembles the header (title and FR | EN selector), the trace controls
+ * Assembles the header (title, FR | EN selector and theme selector), the trace controls
  * (intention, method, then the planet for kamea or the vowel option for
  * Spare), the sigil scene with its actions (replay, another Spare variant,
  * the "Export" dialog for SVG, PNG and the real-size stencil PDF), the
@@ -16,7 +16,9 @@
  * in the features, chained by `trace.ts`, and the replay (animated, or step
  * by step under reduced motion) in `useTraceReplay`.
  *
- * Style settings live in React state only and are not persisted. The
+ * Style settings live in React state only and are not persisted. The colour
+ * theme (system, ink on paper, gold on black) is held by `useTheme`, which
+ * applies it to `<html>` and stores the choice. The
  * interface language is held by `LanguageProvider` around the screen:
  * switching it only re-renders the screen, so the intention typed, the sigil
  * shown and its animation are kept as they are.
@@ -62,6 +64,8 @@ import { SigilStage } from './SigilStage.tsx';
 import type { AppStrings } from './strings.fr.ts';
 import { useStrings } from './strings.ts';
 import { StylePanel } from './StylePanel.tsx';
+import { useTheme } from './theme.ts';
+import { ThemeToggle } from './ThemeToggle.tsx';
 import { traceErrorMessage, traceKamea, traceSpare } from './trace.ts';
 import type { Trace, TraceResult } from './trace.ts';
 
@@ -137,6 +141,7 @@ export function App() {
 function SigilScreen() {
   const strings = useStrings();
   const { language, setLanguage } = useLanguage();
+  const { theme, setTheme } = useTheme();
   const [source, setSource] = useState('');
   const [method, setMethod] = useState<Method>(DEFAULT_METHOD);
   const [planet, setPlanet] = useState<Planet>(DEFAULT_PLANET);
@@ -246,7 +251,10 @@ function SigilScreen() {
     <div className="app">
       <header className="app-header">
         <h1 className="app-header__title">{strings.appTitle}</h1>
-        <LanguageToggle value={language} onChange={setLanguage} strings={strings.language} />
+        <div className="app-header__settings">
+          <LanguageToggle value={language} onChange={setLanguage} strings={strings.language} />
+          <ThemeToggle value={theme} onChange={setTheme} strings={strings.theme} />
+        </div>
       </header>
 
       <main className="app-layout">

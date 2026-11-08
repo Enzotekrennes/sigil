@@ -20,7 +20,7 @@
 
 /* The page fades under a veil of its own sunken tone: cream on paper, near black on gold. */
 .dialog::backdrop {
-  background: color-mix(in srgb, var(--color-surface-sunken) 85%, transparent);
+  background: var(--color-backdrop);
 }
 
 .dialog__body {

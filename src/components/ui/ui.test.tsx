@@ -7,6 +7,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { Button } from './Button.tsx';
 import { ChoiceCards } from './ChoiceCards.tsx';
+import { CompactChoice } from './CompactChoice.tsx';
 import { Disclosure } from './Disclosure.tsx';
 import { SegmentedControl } from './SegmentedControl.tsx';
 import { Slider } from './Slider.tsx';
@@ -296,5 +297,34 @@ describe('Slider', () => {
     );
 
     expect(screen.getByRole('slider', { name: 'Taille' })).toHaveAttribute('aria-valuetext', '3');
+  });
+});
+
+describe('CompactChoice', () => {
+  it('names each segment by its label, not its face, and reports the choice', () => {
+    const onChange = vi.fn();
+    render(
+      <CompactChoice
+        legend="Langue de l’interface"
+        name="language"
+        options={[
+          { value: 'fr', face: 'FR', label: 'Français', lang: 'fr' },
+          { value: 'en', face: 'EN', label: 'English', lang: 'en' },
+        ]}
+        value="fr"
+        onChange={onChange}
+      />,
+    );
+
+    expect(screen.getByRole('group', { name: 'Langue de l’interface' })).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'Français' })).toBeChecked();
+    const english = screen.getByRole('radio', { name: 'English' });
+    expect(english.closest('label')).toHaveAttribute('lang', 'en');
+    expect(english.closest('label')).toHaveAttribute('title', 'English');
+    expect(screen.getByText('EN')).toHaveAttribute('aria-hidden', 'true');
+
+    fireEvent.click(english);
+
+    expect(onChange).toHaveBeenCalledWith('en');
   });
 });

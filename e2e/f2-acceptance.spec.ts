@@ -330,9 +330,11 @@ test('is usable at 375 px: no horizontal scroll, touch-sized controls, sigil ins
 
 test('can be driven entirely with the keyboard', async ({ page }) => {
   await page.goto('./');
-  // First stop: the language selector of the header, on its checked radio.
+  // First stops: the language then the theme selector of the header, on their checked radios.
   await page.keyboard.press('Tab');
   await expect(page.getByRole('radio', { name: 'Français' })).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('radio', { name: 'Système' })).toBeFocused();
   await page.keyboard.press('Tab');
   await expect(page.getByRole('textbox', { name: 'Intention' })).toBeFocused();
   await page.keyboard.type(CALM);

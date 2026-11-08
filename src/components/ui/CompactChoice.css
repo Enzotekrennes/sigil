@@ -1,29 +1,31 @@
 /*
- * Styles of LanguageToggle.tsx: the "FR | EN" pair of the header, following
- * the segmented control of the method (selected = accent background,
- * on-accent text) at header size. Each segment keeps a 44 px touch target.
+ * Styles of CompactChoice.tsx: the small selectors of the header (FR | EN,
+ * theme), following the segmented control of the method (selected = accent
+ * background, on-accent text) at header size. Each segment keeps a 44 px
+ * touch target; an icon face is drawn in the text colour at 16 px.
  * Every value comes from tokens.css.
  */
 
-.language-toggle {
+.compact-choice {
   display: flex;
+  min-width: 0;
   margin: 0;
   padding: 0;
   border: thin solid var(--color-border);
   border-radius: var(--radius-field);
 }
 
-.language-toggle__option {
+.compact-choice__option {
   position: relative;
   display: flex;
   cursor: pointer;
 }
 
-.language-toggle__option + .language-toggle__option {
+.compact-choice__option + .compact-choice__option {
   border-left: thin solid var(--color-border);
 }
 
-.language-toggle__face {
+.compact-choice__face {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -41,24 +43,30 @@
     color var(--duration-fast) var(--ease-standard);
 }
 
-.language-toggle__option:hover .language-toggle__face {
+.compact-choice__face svg {
+  flex: none;
+  width: var(--font-size-16);
+  height: var(--font-size-16);
+}
+
+.compact-choice__option:hover .compact-choice__face {
   background: var(--color-surface);
 }
 
-.language-toggle__input:focus-visible ~ .language-toggle__face {
+.compact-choice__input:focus-visible ~ .compact-choice__face {
   outline: var(--focus-ring-width) solid var(--color-focus);
   outline-offset: var(--focus-ring-offset);
 }
 
-.language-toggle__input:checked ~ .language-toggle__face {
+.compact-choice__input:checked ~ .compact-choice__face {
   background: var(--color-accent);
   color: var(--color-on-accent);
 }
 
-.language-toggle__option:active .language-toggle__face {
+.compact-choice__option:active .compact-choice__face {
   background: var(--color-surface-sunken);
 }
 
-.language-toggle__input:checked:active ~ .language-toggle__face {
+.compact-choice__input:checked:active ~ .compact-choice__face {
   background: var(--color-accent-hover);
 }
