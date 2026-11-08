@@ -242,3 +242,9 @@
 ## 2026-11-08 — Retour d'Enzo sur le rendu Spare
 - Constat d'Enzo sur une capture (« L'amour que je ressens pour toi », 10 lettres retenues) : rendu peu esthétique. Diagnostic : le score de lisibilité (D13) récompense les traits qui en longent d'autres à moins de 3 unités, d'où des traits parallèles décalés de 1 à 3 unités (« hachures ») trop écartés pour être fusionnés ; aucun plafond de densité.
 - Décisions d'Enzo : un seul mot (D18) pour les deux méthodes ; composition en rune liée (D19) d'après ses références ; lettres anguleuses (D20). Brief et plan mis à jour, F2 à rejouer. Livraison suspendue jusqu'à validation de la nouvelle planche.
+
+## 2026-11-08 — T23 Intention en un seul mot
+- Rôle : dev
+- Fait : `checkSingleWord` (MULTIPLE_WORDS, TOO_LONG, 24 lettres max), contrôle dans `trace.ts` après « vide » et « aucune lettre latine », aide et compteur FR/EN ; toutes les données de test passées de phrases à des mots avec valeurs recalculées (ex. kamea « Calme » Saturne 3,1,3,4,5 ; Spare « Tranquillité » → T R N Q L ; boucles Lune « Allée ») ; scénarios « un seul mot » ajoutés à F1 et F2.
+- Vérifications : intention + trace 59/59 (revérifié) ; e2e 281 passés sur un build antérieur aux derniers changements de T24.
+- Suites : ponctuation finale après un blanc tolérée (« Calme ! ») — en cours ; scénarios F1/F2 du plan mis à jour.
