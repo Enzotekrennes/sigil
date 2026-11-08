@@ -7,7 +7,8 @@
  * steps. Holds no wording: every text comes from `strings`. The characters
  * left out by the normalisation are reported once, under the form, not here.
  * The intention itself is never written into an attribute, only shown as
- * letters on screen.
+ * letters on screen, marked `translate="no"` so a browser's page translation
+ * leaves them as they were drawn.
  */
 import { VisuallyHidden } from '../../components/ui/index.ts';
 import type { Sigil } from '../sigil/types.ts';
@@ -48,7 +49,7 @@ export function KameaExplanation({ sigil, strings }: KameaExplanationProps) {
         <p className="explain-steps__text">{strings.lettersBody}</p>
         <p className="explain-steps__letters">
           <VisuallyHidden>{strings.lettersLabel(letters.length)}</VisuallyHidden>
-          {letters.join('')}
+          <span translate="no">{letters.join('')}</span>
         </p>
       </li>
 
@@ -83,7 +84,7 @@ export function KameaExplanation({ sigil, strings }: KameaExplanationProps) {
                 <VisuallyHidden>
                   {strings.tableEntry(entry.letter, entry.rank, entry.number)}
                 </VisuallyHidden>
-                <span className="letter-table__letter" aria-hidden="true">
+                <span className="letter-table__letter" aria-hidden="true" translate="no">
                   {entry.letter}
                 </span>
                 <span className="letter-table__rank" aria-hidden="true">

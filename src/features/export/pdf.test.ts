@@ -3,12 +3,15 @@
  * (centred, fits or refused with the largest size that fits), and the file
  * itself read back with pdf-lib: A4 portrait, the sigil's ink measuring the
  * size asked for within 0.5 mm, the stroke in points, pure black, the 1 cm
- * ruler, and neutral metadata without any tool name or intention.
+ * ruler, the miter limit of the SVG with flat ends, neutral metadata without
+ * any tool name or intention, and texts that read back with their accents
+ * through the font's ToUnicode table.
  */
-import { decodePDFRawStream, PDFDict, PDFDocument, PDFRawStream } from 'pdf-lib';
+import { decodePDFRawStream, PDFDict, PDFDocument, PDFName, PDFRawStream } from 'pdf-lib';
 import { describe, expect, it } from 'vitest';
 
 import { buildKameaSigil } from '../kamea/index.ts';
+import { lineEndsFor } from '../sigil/index.ts';
 import type { Sigil } from '../sigil/types.ts';
 import { buildSpareSigil } from '../spare/index.ts';
 import {
@@ -19,6 +22,7 @@ import {
   mmToPoints,
   PT_PER_MM,
   STENCIL_AREA_MM,
+  winAnsiToUnicodeCMap,
 } from './pdf.ts';
 import type { StencilPdfTexts } from './pdf.ts';
 
@@ -142,6 +146,35 @@ function pathExtent(block: ReadBack['blocks'][number]): { width: number; height:
     width: Math.max(...xs) - Math.min(...xs),
     height: Math.max(...ys) - Math.min(...ys),
   };
+}
+
+/**
+ * Reads the shown texts back as a text extractor does: each byte of the
+ * `Tj` strings looked up in the ToUnicode table of the page's font.
+ *
+ * @param document - Loaded PDF.
+ * @param content - Its decoded page content.
+ * @returns Every shown string, in order, as Unicode.
+ * @throws {Error} When the page has no font or the font has no ToUnicode table.
+ */
+function extractTexts(document: PDFDocument, content: ReadBack): string[] {
+  const fonts = document.getPage(0).node.Resources()?.lookup(PDFName.of('Font'), PDFDict);
+  const [fontRef] = fonts?.values() ?? [];
+  if (fontRef === undefined) throw new Error('Page without font.');
+  const font = document.context.lookup(fontRef, PDFDict);
+  const toUnicode = font.lookup(PDFName.of('ToUnicode'));
+  if (!(toUnicode instanceof PDFRawStream)) throw new Error('Font without ToUnicode table.');
+  const cmap = new TextDecoder('latin1').decode(decodePDFRawStream(toUnicode).decode());
+  const unicodeOf = new Map<number, string>();
+  for (const [, code = '', unicode = ''] of cmap.matchAll(/<([0-9A-F]{2})> <([0-9A-F]{4})>/g)) {
+    unicodeOf.set(Number.parseInt(code, 16), String.fromCodePoint(Number.parseInt(unicode, 16)));
+  }
+  return Array.from(content.text.matchAll(/<([0-9A-Fa-f]*)>\s*Tj/g), ([, hex = '']) =>
+    Array.from(
+      hex.matchAll(/../g),
+      ([byte]) => unicodeOf.get(Number.parseInt(byte, 16)) ?? '?',
+    ).join(''),
+  );
 }
 
 /**
@@ -329,9 +362,59 @@ describe('buildStencilPdf', () => {
     await expect(roundTrip(kamea(JE_SUIS_CALME), 6, 0.6, true, texts)).resolves.toBeDefined();
   });
 
+  it('reads its French notes back with their accents and apostrophe (B2)', async () => {
+    const { document, content } = await roundTrip(kamea(JE_SUIS_CALME), 6, 0.6);
+    const texts = extractTexts(document, content);
+
+    expect(texts).toEqual([TEXTS_FR.ruler, TEXTS_FR.instruction, TEXTS_FR.details]);
+    expect(texts.join(' ')).toMatch(/à.*l’échelle/);
+  });
+
+  it('sets the miter limit of the SVG with flat ends, and none with round ends', async () => {
+    const flat = await roundTrip(kamea(JE_SUIS_CALME), 6, 0.6, false);
+    const round = await roundTrip(kamea(JE_SUIS_CALME), 6, 0.6, true);
+    const miter = (blocks: ReadBack['blocks']) =>
+      blocks[0]?.find((operator) => operator.op === 'M')?.args;
+
+    expect(miter(flat.content.blocks)).toEqual([lineEndsFor(false).strokeMiterlimit]);
+    expect(flat.content.blocks[0]?.find((operator) => operator.op === 'j')?.args).toEqual([0]);
+    expect(miter(round.content.blocks)).toBeUndefined();
+  });
+
   it('refuses to write a page the sigil does not fit', async () => {
     const page = layoutStencilPage(kamea(ABCD), true, 0.6, 25, TEXTS_FR);
 
     await expect(buildStencilPdf(page, NOW)).rejects.toThrow(RangeError);
+  });
+});
+
+describe('winAnsiToUnicodeCMap', () => {
+  const cmap = winAnsiToUnicodeCMap();
+  const entries = new Map(
+    Array.from(cmap.matchAll(/<([0-9A-F]{2})> <([0-9A-F]{4})>/g), ([, code, unicode]) => [
+      code,
+      unicode,
+    ]),
+  );
+
+  it('maps the WinAnsi codes the French notes use to their Unicode characters', () => {
+    expect(entries.get('20')).toBe('0020');
+    expect(entries.get('41')).toBe('0041');
+    expect(entries.get('E0')).toBe('00E0'); // à
+    expect(entries.get('E9')).toBe('00E9'); // é
+    expect(entries.get('92')).toBe('2019'); // ’
+    expect(entries.get('80')).toBe('20AC'); // €
+    expect(entries.get('A0')).toBe('00A0'); // no-break space
+  });
+
+  it('leaves out the codes WinAnsi does not define', () => {
+    for (const code of ['7F', '81', '8D', '8F', '90', '9D']) expect(entries.has(code)).toBe(false);
+    expect(entries.size).toBe(0xff - 0x20 + 1 - 6);
+  });
+
+  it('keeps every bfchar block within the 100 entries the CMap format allows', () => {
+    const counts = Array.from(cmap.matchAll(/(\d+) beginbfchar/g), ([, count]) => Number(count));
+    expect(counts.every((count) => count > 0 && count <= 100)).toBe(true);
+    expect(counts.reduce((total, count) => total + count, 0)).toBe(entries.size);
   });
 });

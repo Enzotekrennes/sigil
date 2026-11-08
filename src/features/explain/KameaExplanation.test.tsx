@@ -1,6 +1,7 @@
 /**
  * Component tests of the kamea explanation panel: the four steps, the worked
- * example of the rule, the table, the square with the path and the loops.
+ * example of the rule, the table, the square with the path and the loops;
+ * the letters kept out of a browser's page translation.
  */
 import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
@@ -98,6 +99,18 @@ describe('KameaExplanation', () => {
     expect(
       screen.getByText('Exemple : Z, rang 26 → ((26 − 1) mod 25) + 1 = 1'),
     ).toBeInTheDocument();
+  });
+
+  it('keeps the joined letters and the table letters out of page translation (S8)', () => {
+    const { container } = render(
+      <KameaExplanation sigil={kamea(['J', 'E', 'S'], 'saturn')} strings={STRINGS} />,
+    );
+
+    const joined = container.querySelector('.explain-steps__letters [translate="no"]');
+    expect(joined).toHaveTextContent(/^JES$/);
+    const tableLetters = Array.from(container.querySelectorAll('.letter-table__letter'));
+    expect(tableLetters.map((letter) => letter.textContent)).toEqual(['J', 'E', 'S']);
+    for (const letter of tableLetters) expect(letter).toHaveAttribute('translate', 'no');
   });
 
   it('renders nothing for a sigil without kamea steps', () => {

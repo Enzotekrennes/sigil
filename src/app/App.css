@@ -7,7 +7,7 @@
  *              under the scene;
  *   ≥ 1280     three columns (320 / 1fr / 360), 32 px gaps, 48 px margins.
  * The DOM order is the mobile one (controls, scene and its actions, style,
- * panel), which is also the keyboard order at every width.
+ * panel, then the footer), which is also the keyboard order at every width.
  * The panel is a size container so its content can switch to two internal
  * columns when it is wide enough. Every value comes from tokens.css.
  */
@@ -148,6 +148,14 @@
   font-style: italic;
   text-align: center;
   color: var(--color-text-muted);
+}
+
+/* Footer: a rule above, the privacy note's button aligned with the content. */
+.app-footer {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-2) var(--page-gutter) var(--space-5);
+  border-top: thin solid var(--color-border-subtle);
 }
 
 @media (min-width: 640px) {

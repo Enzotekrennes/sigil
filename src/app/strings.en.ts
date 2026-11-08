@@ -18,6 +18,7 @@ import type { LanguageToggleStrings } from '../features/i18n/index.ts';
 import type { StrokeWidthLevel } from '../features/sigil/index.ts';
 import type { Planet } from '../features/sigil/types.ts';
 import type { AppStrings } from './strings.fr.ts';
+import type { PrivacyNoteStrings } from './PrivacyNote.tsx';
 import type { ThemeToggleStrings } from './ThemeToggle.tsx';
 
 /** Planet names as shown on the picker. */
@@ -203,6 +204,13 @@ function articleBefore(value: number): 'a' | 'an' {
   return String(whole).startsWith('8') || whole === 11 || whole === 18 ? 'an' : 'a';
 }
 
+/**
+ * How readable a kamea sigil stays, said in the export dialog and in the
+ * privacy note.
+ */
+const KAMEA_READABLE =
+  'A kamea sigil can be read back by someone who knows the method: its letters can be recovered from the cells of the square. A Spare sigil is far less reversible.';
+
 /** Texts of the "Export" button and dialog. */
 const EXPORT: ExportStrings = {
   open: 'Export',
@@ -232,6 +240,7 @@ const EXPORT: ExportStrings = {
   download: 'Download',
   error: (format) =>
     `The ${format} export failed. Try again; if it keeps failing, try another browser.`,
+  kameaReadable: KAMEA_READABLE,
   pdf: (centimetres, millimetres) => ({
     ruler: '1 cm',
     instruction: 'Print at 100%, with no scaling and no “fit to page”.',
@@ -252,6 +261,20 @@ const THEME: ThemeToggleStrings = {
   names: { system: 'System', light: 'Ink on paper', dark: 'Gold on black' },
 };
 
+/** Texts of the privacy note opened from the footer. */
+const PRIVACY: PrivacyNoteStrings = {
+  open: 'Privacy',
+  title: 'Privacy',
+  nothingSent:
+    'Everything happens in this browser. The intention is never sent anywhere or saved: not in the page address, not on the device, not in the name or metadata of exported files.',
+  preferences:
+    'Only two preferences stay on the device, in the browser’s local storage: the language and the theme.',
+  hosting:
+    'The site is hosted by GitHub Pages, which logs visitors’ IP addresses under its own privacy policy. The site itself transmits nothing and uses no cookies or analytics.',
+  kameaReadable: KAMEA_READABLE,
+  close: 'Close',
+};
+
 /** All English texts of the interface. */
 export const STRINGS_EN: AppStrings = {
   appTitle: 'Sigil',
@@ -259,6 +282,7 @@ export const STRINGS_EN: AppStrings = {
     'Deterministic sigil generator: kamea and Spare methods, drawn in SVG in your browser.',
   language: LANGUAGE,
   theme: THEME,
+  privacy: PRIVACY,
 
   controls: {
     heading: 'Trace a sigil',

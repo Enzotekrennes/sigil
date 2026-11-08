@@ -1,7 +1,8 @@
 /*
  * Styles of ExportDialog.tsx: the settings and the thumbnail side by side
  * from 640 px (stacked below), the actions on one line at the end, the
- * download button last. Every value comes from tokens.css.
+ * download button last, pinned to the bottom of the full-screen dialog under
+ * 640 px. Every value comes from tokens.css.
  */
 
 .export-dialog {
@@ -38,16 +39,34 @@
   border-radius: var(--radius-field);
 }
 
+/*
+ * Under 640 px the dialog fills the screen and scrolls when its content is
+ * long (the kamea note, a size error): the actions stay pinned to its bottom
+ * edge, on the dialog's own surface, so "Download" is always within reach.
+ */
 .export-dialog__actions {
+  position: sticky;
+  bottom: 0;
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: var(--space-2);
+  margin-inline: calc(-1 * var(--page-gutter));
+  padding: var(--space-3) var(--page-gutter);
+  border-top: thin solid var(--color-border-subtle);
+  background: var(--color-surface);
 }
 
 @media (min-width: 640px) {
   .export-dialog {
     grid-template-columns: minmax(0, 1fr) auto;
     align-items: start;
+  }
+
+  .export-dialog__actions {
+    position: static;
+    margin-inline: 0;
+    padding: 0;
+    border-top: none;
   }
 }

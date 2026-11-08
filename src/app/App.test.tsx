@@ -3,8 +3,8 @@
  * empty state, tracing a kamea or a Spare sigil, Spare variants and vowel
  * option, the explanation panels, business errors under the field, replay
  * (animated, or step by step under reduced motion), the style settings and
- * the tattoo stencil mode, and
- * the privacy guarantees (decision D8). The browser is set to French; the
+ * the tattoo stencil mode, the kamea note of the export dialog, the privacy
+ * note of the footer, and the privacy guarantees (decision D8). The browser is set to French; the
  * language switch has its own tests in `App.i18n.test.tsx`.
  */
 import { fireEvent, render, screen, within } from '@testing-library/react';
@@ -655,5 +655,51 @@ describe('App', () => {
     expect(window.location.href.toLowerCase()).not.toContain('calme');
     expect(localStorage).toHaveLength(0);
     expect(sessionStorage).toHaveLength(0);
+  });
+  it('keeps the intention field out of page translation (S8)', () => {
+    render(<App />);
+
+    expect(screen.getByLabelText('Intention')).toHaveAttribute('translate', 'no');
+  });
+
+  it('warns in the export dialog that a kamea sigil can be read back, not for Spare (S1)', () => {
+    stubNativeDialog();
+    render(<App />);
+    typeIntention(INTENTION);
+    clickTrace();
+    fireEvent.click(screen.getByRole('button', { name: 'Exporter' }));
+
+    const dialog = screen.getByRole('dialog', { name: 'Exporter le sigil' });
+    expect(
+      within(dialog).getByText(/peut être relu par quelqu’un qui connaît la méthode/),
+    ).toBeInTheDocument();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Annuler' }));
+
+    chooseSpare();
+    clickTrace();
+    fireEvent.click(screen.getByRole('button', { name: 'Exporter' }));
+    expect(screen.getByRole('dialog', { name: 'Exporter le sigil' })).toBeInTheDocument();
+    expect(screen.queryByText(/peut être relu/)).toBeNull();
+  });
+
+  it('opens the privacy note from the footer and closes it, focus back on its button (S9)', () => {
+    stubNativeDialog();
+    render(<App />);
+    const opener = screen.getByRole('button', { name: 'Confidentialité' });
+    expect(opener.closest('footer')).not.toBeNull();
+
+    opener.focus();
+    fireEvent.click(opener);
+    const note = screen.getByRole('dialog', { name: 'Confidentialité' });
+    expect(within(note).getByText(/n’est envoyée nulle part ni enregistrée/)).toBeInTheDocument();
+    expect(within(note).getByText(/la langue et le thème/)).toBeInTheDocument();
+    expect(
+      within(note).getByText(/GitHub Pages, qui journalise les adresses IP/),
+    ).toBeInTheDocument();
+    expect(within(note).getByText(/Un sigil kamea peut être relu/)).toBeInTheDocument();
+
+    fireEvent.click(within(note).getByRole('button', { name: 'Fermer' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(opener).toHaveFocus();
   });
 });

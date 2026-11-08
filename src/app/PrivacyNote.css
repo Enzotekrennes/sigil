@@ -1,0 +1,29 @@
+/*
+ * Styles of PrivacyNote.tsx: the footer button kept discreet (secondary text
+ * colour, the ghost button's underline on hover), and the note as body text
+ * at reading width with its close button at the end. Every value comes from
+ * tokens.css.
+ */
+
+.privacy-note__open {
+  color: var(--color-text-muted);
+}
+
+.privacy-note__open:hover {
+  color: var(--color-text);
+}
+
+.privacy-note {
+  display: grid;
+  gap: var(--space-3);
+  max-width: var(--measure);
+}
+
+.privacy-note__text {
+  margin: 0;
+}
+
+.privacy-note__actions {
+  display: flex;
+  justify-content: flex-end;
+}

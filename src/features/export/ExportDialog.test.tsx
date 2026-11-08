@@ -3,9 +3,10 @@
  * sigil; the format, PNG resolution and PDF settings; the validation of the
  * print size (message under the field, download blocked); a thumbnail of the
  * file; an SVG download under a neutral name; the loading state keeping the
- * focus; an error message when an export fails.
+ * focus; an error message when an export fails; the note that a kamea sigil
+ * can be read back, shown for kamea only.
  */
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -15,6 +16,7 @@ import { DEFAULT_STYLE_OPTIONS } from '../sigil/index.ts';
 import type { Sigil } from '../sigil/types.ts';
 import { ExportDialog } from './ExportDialog.tsx';
 import type { ExportStrings } from './ExportDialog.tsx';
+import type { SigilMethod } from './fileName.ts';
 
 /** Texts close to the French dictionary, simplified where the test does not read them. */
 const STRINGS: ExportStrings = {
@@ -36,6 +38,7 @@ const STRINGS: ExportStrings = {
   cancel: 'Annuler',
   download: 'Télécharger',
   error: (format) => `Export ${format} en échec.`,
+  kameaReadable: 'Un sigil kamea peut être relu.',
   pdf: () => ({ ruler: '1 cm', instruction: 'Imprimer à 100 %.', details: 'Sigil.' }),
 };
 
@@ -66,15 +69,22 @@ function sigil(letters = ['J', 'E', 'S', 'U', 'I', 'S', 'C', 'A', 'L', 'M', 'E']
  *
  * @param props - Props of the harness.
  * @param props.shown - The sigil shown, if any.
+ * @param props.method - Method of that sigil; kamea unless said otherwise.
  * @returns The export button and dialog.
  */
-function Harness({ shown }: { readonly shown: Sigil | undefined }) {
+function Harness({
+  shown,
+  method = 'kamea',
+}: {
+  readonly shown: Sigil | undefined;
+  readonly method?: SigilMethod;
+}) {
   const [strokeMm, setStrokeMm] = useState(0.6);
   const [sizeText, setSizeText] = useState('8');
   return (
     <ExportDialog
       sigil={shown}
-      method={shown === undefined ? undefined : 'kamea'}
+      method={shown === undefined ? undefined : method}
       styleOptions={DEFAULT_STYLE_OPTIONS}
       strokeMm={strokeMm}
       onStrokeMmChange={setStrokeMm}
@@ -151,6 +161,24 @@ describe('ExportDialog', () => {
     expect(preview.getAttribute('src')).toMatch(/^data:image\/svg\+xml/);
     expect(decodeURIComponent(preview.getAttribute('src') ?? '')).toContain('stroke="#1c1914"');
     expect(dialog).not.toHaveAttribute('style');
+  });
+
+  it('says a kamea sigil can be read back, whatever the format', () => {
+    render(<Harness shown={sigil()} />);
+    openDialog();
+
+    const dialog = screen.getByRole('dialog', { name: 'Exporter le sigil' });
+    expect(within(dialog).getByText(STRINGS.kameaReadable)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('radio', { name: 'PDF' }));
+    expect(within(dialog).getByText(STRINGS.kameaReadable)).toBeInTheDocument();
+  });
+
+  it('does not show the kamea note for a Spare sigil', () => {
+    render(<Harness shown={sigil()} method="spare" />);
+    openDialog();
+
+    expect(screen.getByRole('dialog', { name: 'Exporter le sigil' })).toBeInTheDocument();
+    expect(screen.queryByText(STRINGS.kameaReadable)).toBeNull();
   });
 
   it('offers the three PNG resolutions, 2048 px by default', () => {

@@ -17,6 +17,7 @@ import { countNoun, formatDecimal } from '../features/i18n/index.ts';
 import type { LanguageToggleStrings } from '../features/i18n/index.ts';
 import type { StrokeWidthLevel } from '../features/sigil/index.ts';
 import type { Planet } from '../features/sigil/types.ts';
+import type { PrivacyNoteStrings } from './PrivacyNote.tsx';
 import type { ThemeToggleStrings } from './ThemeToggle.tsx';
 
 /** Planet names as shown on the picker. */
@@ -189,6 +190,13 @@ function centimetresText(centimetres: number): string {
   return `${formatDecimal(centimetres, 'fr', digits)}${NBSP}cm`;
 }
 
+/**
+ * How readable a kamea sigil stays, said in the export dialog and in the
+ * privacy note. Here and in the privacy note, a no-break space keeps each
+ * colon on the line of the word before it.
+ */
+const KAMEA_READABLE = `Un sigil kamea peut être relu par quelqu’un qui connaît la méthode${NBSP}: les lettres se retrouvent à partir des cases du carré. Un sigil de Spare est bien moins réversible.`;
+
 /** Texts of the "Export" button and dialog. */
 const EXPORT: ExportStrings = {
   open: 'Exporter',
@@ -218,6 +226,7 @@ const EXPORT: ExportStrings = {
   download: 'Télécharger',
   error: (format) =>
     `L’export ${format} a échoué. Réessayez ; si l’échec persiste, essayez un autre navigateur.`,
+  kameaReadable: KAMEA_READABLE,
   pdf: (centimetres, millimetres) => ({
     ruler: '1 cm',
     instruction: 'Imprimer à 100 %, sans mise à l’échelle ni ajustement à la page.',
@@ -241,6 +250,18 @@ const THEME: ThemeToggleStrings = {
   names: { system: 'Système', light: 'Encre sur papier', dark: 'Or sur noir' },
 };
 
+/** Texts of the privacy note opened from the footer. */
+const PRIVACY: PrivacyNoteStrings = {
+  open: 'Confidentialité',
+  title: 'Confidentialité',
+  nothingSent: `Tout se passe dans ce navigateur. L’intention n’est envoyée nulle part ni enregistrée${NBSP}: ni dans l’adresse de la page, ni sur l’appareil, ni dans le nom ou les métadonnées des fichiers exportés.`,
+  preferences: `Seules deux préférences restent sur l’appareil, dans le stockage local du navigateur${NBSP}: la langue et le thème.`,
+  hosting:
+    'Le site est hébergé par GitHub Pages, qui journalise les adresses IP des visiteurs selon sa propre politique de confidentialité. Le site lui-même ne transmet rien et n’utilise ni cookie ni mesure d’audience.',
+  kameaReadable: KAMEA_READABLE,
+  close: 'Fermer',
+};
+
 /** All French texts of the interface. */
 export const STRINGS_FR = {
   appTitle: 'Sigil',
@@ -249,6 +270,7 @@ export const STRINGS_FR = {
     'Générateur de sigils déterministe : carrés magiques (kamea) et méthode de Spare, tracés en SVG dans votre navigateur.',
   language: LANGUAGE,
   theme: THEME,
+  privacy: PRIVACY,
 
   controls: {
     heading: 'Tracer un sigil',

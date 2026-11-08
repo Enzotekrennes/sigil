@@ -10,7 +10,9 @@
  * "Style" section shares the stroke). While a file is being written the
  * download button stays focusable (`aria-disabled`, never `disabled`) and
  * ignores further clicks. A size outside 1–25 cm, or too large for the page,
- * is explained under the field and blocks the PDF download. Holds no wording
+ * is explained under the field and blocks the PDF download. For a kamea
+ * sigil, a note says it can be read back by someone who knows the method
+ * (decision D8). Holds no wording
  * of its own and never receives the intention, so it cannot end up in a file
  * or its name.
  */
@@ -98,6 +100,12 @@ export interface ExportStrings {
   readonly download: string;
   /** Message shown when an export fails, given the format's label. */
   readonly error: (format: string) => string;
+  /**
+   * Short note shown for a kamea sigil only: someone who knows the method can
+   * read its letters back from the cells, while a Spare sigil is far less
+   * reversible.
+   */
+  readonly kameaReadable: string;
   /** Texts printed on the PDF, given its size and stroke. */
   readonly pdf: (centimetres: number, millimetres: number) => StencilPdfTexts;
 }
@@ -272,6 +280,7 @@ export function ExportDialog({
             </figure>
           )}
         </div>
+        {method === 'kamea' && <p className="export-dialog__help">{strings.kameaReadable}</p>}
         {failed !== null && (
           <StatusMessage tone="error">{strings.error(strings.formats[failed])}</StatusMessage>
         )}

@@ -10,11 +10,15 @@
  * `buildStencilPdf` (writes the file with pdf-lib, loaded on demand so the
  * library only weighs on the first PDF export). The file's metadata are
  * neutral: title, creator and producer "Sigil", the export date, and nothing
- * else; the intention is never passed here.
+ * else; the intention is never passed here. The notes use the standard
+ * Helvetica font with a WinAnsi to Unicode table (`winAnsiToUnicodeCMap`), so
+ * their accents and apostrophes come out right when the text is copied or
+ * searched. Line ends and the miter limit come from `lineEndsFor`, as in the SVG.
  */
-import type { PDFOperator } from 'pdf-lib';
+import type { PDFDocument, PDFFont, PDFOperator } from 'pdf-lib';
+import type * as PdfLib from 'pdf-lib';
 
-import { endBarEndpoints, stencilScale } from '../sigil/index.ts';
+import { endBarEndpoints, lineEndsFor, stencilScale } from '../sigil/index.ts';
 import type { Mark, Point, Sigil } from '../sigil/types.ts';
 import { MM_PER_CM, PRINT_SIZE_MAX_CM, PRINT_SIZE_MIN_CM } from './printSize.ts';
 import { EXPORT_SVG_TITLE } from './svg.ts';
@@ -71,8 +75,21 @@ const NOTE_BASELINES_MM = [280, 285] as const;
 /** Text size of the label and the notes, in points: legible once printed. */
 const NOTE_FONT_SIZE_PT = 9;
 
-/** Miter limit with flat ends, as in the SVG (`stroke-miterlimit="4"`, docs/design.md). */
-const MITER_LIMIT = 4;
+/**
+ * WinAnsi codes the notes can use, space (0x20) to ÿ (0xFF): the standard
+ * Helvetica font draws one byte per character in that encoding.
+ */
+const WIN_ANSI_FIRST_CODE = 0x20;
+const WIN_ANSI_LAST_CODE = 0xff;
+
+/**
+ * Unicode control characters a WinAnsi code may decode to (DEL and the C1
+ * range): they mark the codes WinAnsi leaves undefined.
+ */
+const CONTROL_CHARACTERS = { first: 0x7f, last: 0x9f } as const;
+
+/** Entries per `beginbfchar` block: the CMap format allows at most 100. */
+const CMAP_BLOCK_SIZE = 100;
 
 /**
  * Distance of the Bézier control points from the ends of a quarter circle,
@@ -300,14 +317,26 @@ export async function buildStencilPdf(page: StencilPage, now: Date): Promise<Uin
       lib.stroke(),
     ]);
 
-  // Sigil first, in its own graphics state: pure black, the stroke in millimetres.
+  // Sigil first, in its own graphics state: pure black, the stroke in
+  // millimetres, the line ends and miter limit of the SVG.
+  const lineEnds = lineEndsFor(page.roundEnds);
   pdfPage.pushOperators(
     lib.pushGraphicsState(),
     lib.setStrokingRgbColor(0, 0, 0),
     lib.setLineWidth(page.lineWidth),
-    lib.setLineCap(page.roundEnds ? lib.LineCapStyle.Round : lib.LineCapStyle.Butt),
-    lib.setLineJoin(page.roundEnds ? lib.LineJoinStyle.Round : lib.LineJoinStyle.Miter),
-    lib.PDFOperator.of(lib.PDFOperatorNames.SetLineMiterLimit, [lib.PDFNumber.of(MITER_LIMIT)]),
+    lib.setLineCap(
+      lineEnds.strokeLinecap === 'round' ? lib.LineCapStyle.Round : lib.LineCapStyle.Butt,
+    ),
+    lib.setLineJoin(
+      lineEnds.strokeLinejoin === 'round' ? lib.LineJoinStyle.Round : lib.LineJoinStyle.Miter,
+    ),
+    ...(lineEnds.strokeMiterlimit === undefined
+      ? []
+      : [
+          lib.PDFOperator.of(lib.PDFOperatorNames.SetLineMiterLimit, [
+            lib.PDFNumber.of(lineEnds.strokeMiterlimit),
+          ]),
+        ]),
     ...pathOperators(page.paths),
     lib.popGraphicsState(),
   );
@@ -329,7 +358,85 @@ export async function buildStencilPdf(page: StencilPage, now: Date): Promise<Uin
       color: lib.rgb(0, 0, 0),
     });
   }
+  await attachToUnicode(lib, document, font);
   return document.save();
+}
+
+/**
+ * Gives the embedded standard font a ToUnicode table, which pdf-lib does not
+ * write: without it, several readers turn the accented letters and the
+ * typographic apostrophe of the notes into garbage when the text is copied
+ * or searched.
+ *
+ * @param lib - The pdf-lib module, loaded on demand.
+ * @param document - Document being written.
+ * @param font - Standard Helvetica font, after every text was drawn with it.
+ * @remarks Embeds the font dictionary now (pdf-lib would otherwise write it
+ *   at save time, over this addition) and adds a compressed CMap stream to it.
+ */
+async function attachToUnicode(
+  lib: typeof PdfLib,
+  document: PDFDocument,
+  font: PDFFont,
+): Promise<void> {
+  // Embedding clears the font's "modified" flag, so `save()` keeps this dictionary.
+  await font.embed();
+  const fontDict = document.context.lookup(font.ref, lib.PDFDict);
+  const cmap = document.context.flateStream(winAnsiToUnicodeCMap());
+  fontDict.set(lib.PDFName.of('ToUnicode'), document.context.register(cmap));
+}
+
+/**
+ * ToUnicode CMap of the WinAnsi encoding: each one-byte code the standard
+ * fonts draw, mapped to its Unicode character.
+ *
+ * @returns The CMap program, as text (ASCII only).
+ * @remarks Codes WinAnsi leaves undefined (0x7F, 0x81, 0x8D, 0x8F, 0x90,
+ *   0x9D) decode to control characters and get no entry.
+ */
+export function winAnsiToUnicodeCMap(): string {
+  const decoder = new TextDecoder('windows-1252');
+  const entries: string[] = [];
+  for (let code = WIN_ANSI_FIRST_CODE; code <= WIN_ANSI_LAST_CODE; code += 1) {
+    const unicode = decoder.decode(Uint8Array.of(code)).codePointAt(0) ?? 0;
+    const isControl =
+      unicode < WIN_ANSI_FIRST_CODE ||
+      (unicode >= CONTROL_CHARACTERS.first && unicode <= CONTROL_CHARACTERS.last);
+    if (isControl) continue;
+    entries.push(`<${hexCode(code, 2)}> <${hexCode(unicode, 4)}>`);
+  }
+  const charBlocks: string[] = [];
+  for (let start = 0; start < entries.length; start += CMAP_BLOCK_SIZE) {
+    const block = entries.slice(start, start + CMAP_BLOCK_SIZE);
+    charBlocks.push(`${String(block.length)} beginbfchar`, ...block, 'endbfchar');
+  }
+  return [
+    '/CIDInit /ProcSet findresource begin',
+    '12 dict begin',
+    'begincmap',
+    '/CIDSystemInfo << /Registry (Adobe) /Ordering (UCS) /Supplement 0 >> def',
+    '/CMapName /Adobe-Identity-UCS def',
+    '/CMapType 2 def',
+    '1 begincodespacerange',
+    '<00> <FF>',
+    'endcodespacerange',
+    ...charBlocks,
+    'endcmap',
+    'CMapName currentdict /CMap defineresource pop',
+    'end',
+    'end',
+  ].join('\n');
+}
+
+/**
+ * Upper-case hexadecimal of a code, padded with zeros.
+ *
+ * @param value - Non-negative integer.
+ * @param digits - Minimum number of digits.
+ * @returns For instance `"E9"` or `"2019"`.
+ */
+function hexCode(value: number, digits: number): string {
+  return value.toString(16).toUpperCase().padStart(digits, '0');
 }
 
 /**

@@ -1,7 +1,8 @@
 /**
  * Component tests of the Spare explanation panel: the four steps, the letter
  * strip with the reason of each removal, the transform of each skeleton, the
- * superimposed letters, the chosen candidate and the merge counts.
+ * superimposed letters, the chosen candidate and the merge counts; the
+ * letters kept out of a browser's page translation.
  */
 import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
@@ -74,6 +75,33 @@ describe('SpareExplanation', () => {
       row.textContent.trim(),
     );
     expect(rows).toEqual(['DoublonsS E', 'VoyellesE U I A', 'RetenuesJ S C L M']);
+  });
+
+  it('keeps the intention letters out of page translation, but not the "none" word (S8)', () => {
+    const { container } = render(
+      <SpareExplanation sigil={spare(['J', 'S', 'C'])} strings={STRINGS} />,
+    );
+
+    const strip = screen.getByRole('list', { name: 'Les 3 lettres de l’intention' });
+    for (const item of within(strip).getAllByRole('listitem')) {
+      expect(item.querySelector('[translate="no"]')?.textContent).toMatch(/^[A-Z]$/);
+    }
+    const lines = Array.from(container.querySelectorAll('.spare-removal dd'));
+    // No duplicate and no vowel: "aucune" stays translatable; the retained letters do not.
+    expect(lines.map((line) => line.getAttribute('translate'))).toEqual([null, null, 'no']);
+    expect(lines[2]).toHaveTextContent('J S C');
+    for (const tile of container.querySelectorAll('.glyph-tile__letter')) {
+      expect(tile).toHaveAttribute('translate', 'no');
+    }
+  });
+
+  it('marks the removed letters lines as not to translate when they list letters (S8)', () => {
+    const { container } = render(
+      <SpareExplanation sigil={spare(JE_SUIS_CALME)} strings={STRINGS} />,
+    );
+
+    const lines = Array.from(container.querySelectorAll('.spare-removal dd'));
+    expect(lines.map((line) => line.getAttribute('translate'))).toEqual(['no', 'no', 'no']);
   });
 
   it('draws one tile per retained letter and the letters laid on top of each other', () => {

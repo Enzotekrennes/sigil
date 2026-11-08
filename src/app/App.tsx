@@ -6,7 +6,8 @@
  * Spare), the sigil scene with its actions (replay, another Spare variant,
  * the "Export" dialog for SVG, PNG and the real-size stencil PDF), the
  * "Style" section (tattoo stencil, stroke width, ends, framing circle) and
- * the "how it is made" panel of the method used.
+ * the "how it is made" panel of the method used, and a footer with the
+ * privacy note.
  *
  * Owns the tattoo stencil settings shared by the "Style" section and the
  * export dialog: the stroke in millimetres and the print size typed. In
@@ -26,6 +27,9 @@
  * Privacy (decision D8): the intention lives in React state only. It is
  * never put in the URL, in storage or in an attribute; the form never
  * submits (its submit event is cancelled, and the CSP forbids form actions).
+ * Its field, like the letters of the explanation panel, is marked
+ * `translate="no"` against a browser's page translation. A footer link opens
+ * the privacy note (`PrivacyNote`).
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { SubmitEvent } from 'react';
@@ -60,6 +64,7 @@ import type { Sigil } from '../features/sigil/types.ts';
 import type { Planet, StyleOptions } from '../features/sigil/types.ts';
 import './App.css';
 import { PlanetPicker } from './PlanetPicker.tsx';
+import { PrivacyNote } from './PrivacyNote.tsx';
 import { SigilStage } from './SigilStage.tsx';
 import type { AppStrings } from './strings.fr.ts';
 import { useStrings } from './strings.ts';
@@ -277,6 +282,7 @@ function SigilScreen() {
                 autoComplete="off"
                 autoCapitalize="sentences"
                 spellCheck={false}
+                translate="no"
               />
               {offersKeepVowels && (
                 <Button
@@ -413,6 +419,10 @@ function SigilScreen() {
           </Disclosure>
         </section>
       </main>
+
+      <footer className="app-footer">
+        <PrivacyNote strings={strings.privacy} />
+      </footer>
     </div>
   );
 }

@@ -8,7 +8,8 @@
  * Exposes `SpareExplanation`. Reads everything from the sigil's explanation
  * steps (`features/spare` produces them); holds no wording, every text comes
  * from `strings`. The intention is never written into an attribute, only
- * shown as letters on screen.
+ * shown as letters on screen, marked `translate="no"` so a browser's page
+ * translation leaves them as they were drawn.
  */
 import { VisuallyHidden } from '../../components/ui/index.ts';
 import { FRAME_MARGIN } from '../sigil/frame.ts';
@@ -80,7 +81,7 @@ export function SpareExplanation({ sigil, strings }: SpareExplanationProps) {
                   reason === null ? 'letter-strip__letter' : 'letter-strip__letter is-removed'
                 }
               >
-                {letter}
+                <span translate="no">{letter}</span>
                 <VisuallyHidden>{strings.letterStatus(reason)}</VisuallyHidden>
               </li>
             );
@@ -89,17 +90,21 @@ export function SpareExplanation({ sigil, strings }: SpareExplanationProps) {
         <dl className="spare-removal">
           <div className="spare-removal__row">
             <dt>{strings.duplicatesLabel}</dt>
-            <dd>{lettersOrNone(duplicates, strings.noneRemoved)}</dd>
+            <dd translate={lettersTranslate(duplicates)}>
+              {lettersOrNone(duplicates, strings.noneRemoved)}
+            </dd>
           </div>
           {!reduction.keepVowels && (
             <div className="spare-removal__row">
               <dt>{strings.vowelsLabel}</dt>
-              <dd>{lettersOrNone(vowels, strings.noneRemoved)}</dd>
+              <dd translate={lettersTranslate(vowels)}>
+                {lettersOrNone(vowels, strings.noneRemoved)}
+              </dd>
             </div>
           )}
           <div className="spare-removal__row spare-removal__row--kept">
             <dt>{strings.keptLabel}</dt>
-            <dd>{reduction.kept.join(' ')}</dd>
+            <dd translate="no">{reduction.kept.join(' ')}</dd>
           </div>
         </dl>
       </li>
@@ -116,7 +121,9 @@ export function SpareExplanation({ sigil, strings }: SpareExplanationProps) {
                 viewBox={GLYPH_VIEW}
                 className="glyph-tile__drawing"
               />
-              <span className="glyph-tile__letter">{placement.letter}</span>
+              <span className="glyph-tile__letter" translate="no">
+                {placement.letter}
+              </span>
               <span className="glyph-tile__transform">
                 {describeTransform(placement, placements.letters, strings)}
               </span>
@@ -165,6 +172,17 @@ export function SpareExplanation({ sigil, strings }: SpareExplanationProps) {
  */
 function lettersOrNone(letters: readonly string[], none: string): string {
   return letters.length === 0 ? none : letters.join(' ');
+}
+
+/**
+ * `translate` attribute of a removal line: letters are kept out of a
+ * browser's page translation, the "none" word is left to it.
+ *
+ * @param letters - Letters the line lists.
+ * @returns `"no"` when the line shows letters, `undefined` for the "none" word.
+ */
+function lettersTranslate(letters: readonly string[]): 'no' | undefined {
+  return letters.length === 0 ? undefined : 'no';
 }
 
 /**
