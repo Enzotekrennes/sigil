@@ -167,3 +167,6 @@
 - Vérifications : lint, typecheck, 814/814 tests, build (22 entrées précachées) verts (revérifié) ; e2e 77/77 hors f3/f4 ; PDF 6 cm relu : encre 60 mm ± 0,5, trait 0,6 mm ; pdf-lib sans eval ni worker, export PDF hors ligne OK.
 - Écarts au plan : décision D16 ; design.md mis à jour.
 - Points ouverts : spec F4 à adapter au dialogue ; token `--color-backdrop` ; SVG pochoir sans dimensions physiques ; morceau pdf-lib nommé `es-*.js`.
+
+## 2026-11-08 — F4 Exports : spec adapté au dialogue
+- Test : spec `e2e/f4-acceptance.spec.ts` adapté au dialogue « Exporter » (45 tests, verts deux fois sur HEAD) ; B1 (focus) confirmé corrigé et devenu test normal ; PNG 1024 et 4096 vérifiés. Aucun nouveau bug.
