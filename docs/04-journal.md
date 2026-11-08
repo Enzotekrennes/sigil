@@ -280,3 +280,8 @@
 ## 2026-11-08 — Mise en ligne du dépôt
 - Dépôt privé `Enzotekrennes/sigil` créé, `main` poussé (accord d'Enzo). Liens de démo et de documentation pointés vers `enzotekrennes.github.io/sigil/`.
 - Reste à faire par Enzo : passer le dépôt en public quand le README et la démo lui conviennent, puis Settings → Pages → Source : « GitHub Actions » (Pages sur dépôt privé exige un compte payant) ; le premier déploiement réussi publiera la démo et la documentation.
+
+## 2026-11-08 — Publication
+- Dépôt passé en public par Enzo ; Pages activé en source « GitHub Actions ».
+- Auteur corrigé en « Enzo Monnier » (LICENSE, NOTICE, `package.json` ×2, page Crédits EN/FR, README) ; README français ajouté (`README.fr.md`, liens croisés avec `README.md`). Commits suivants signés Enzo Monnier (réglage local du dépôt) ; les commits précédents gardent « Enzo Abel » comme nom d'auteur.
+- Déploiement 03ff5f9 réussi (build + deploy). En ligne : app, `/sigil/docs/` (EN et FR), `LICENSE.txt`, service worker et manifest répondent en 200 ; tracé kamea de « Calme » vérifié dans le navigateur sur le site publié.

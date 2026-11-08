@@ -18,7 +18,7 @@ Un site statique, utilisable hors ligne et installable (PWA), qui transforme un 
 ## Comptes et connexions
 | Service | Compte / connexion | Propriétaire | Où est le secret |
 |---|---|---|---|
-| GitHub (dépôt, Actions, Pages) | `Enzotekrennes/sigil` (privé au 2026-11-08), démo prévue sur `https://enzotekrennes.github.io/sigil/` | Enzo | aucun secret : jeton `GITHUB_TOKEN` fourni par Actions, droits minimaux par job |
+| GitHub (dépôt, Actions, Pages) | `Enzotekrennes/sigil` (public), démo sur `https://enzotekrennes.github.io/sigil/`, Pages en source « GitHub Actions » | Enzo | aucun secret : jeton `GITHUB_TOKEN` fourni par Actions, droits minimaux par job |
 | Dependabot | activé par `.github/dependabot.yml` | Enzo | aucun |
 
 ## Maintenance
