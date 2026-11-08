@@ -208,3 +208,9 @@
 - `ef2ca1e` : test « no flash » de `theme.spec` isolé du service worker (12/12 en répétition).
 - `3997634` : article anglais variable (« an 8 cm print »), texte de simplification juste quand le nombre de segments diminue, reste égal ou augmente, relecture de `strings.en.ts`, titre et meta description localisés. 860/860 tests.
 - En cours : specs f5/f6 à aligner sur la nouvelle consigne d'impression ; course Échap → Entrée du dialogue ; stabilisation du test clavier F4.
+
+## 2026-11-08 — Fin du build : vérification complète
+- Commit de référence : de7ec88 (+ `2d605dd`, `2beb69a`, `3997634`, `ef2ca1e`).
+- `npm run lint` vert ; `npm run typecheck` vert ; `npx vitest run` 862/862 (42 fichiers) ; `npm run build` OK (23 entrées précachées) ; `npm run test:e2e` 260/260.
+- Contrôle des traces d'outil : historique git propre ; une liste de termes interdits dans `e2e/f5-acceptance.spec.ts` contient des noms d'outil → remplacée par une vérification positive (en cours).
+- Phase 5 lancée : relecture du code et audit de sécurité en parallèle.
