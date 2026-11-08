@@ -1,6 +1,6 @@
 # Review — Sigil
 Statut : validé le 2026-11-08
-Périmètre : tout le dépôt versionné hors `docs/` au commit a444eaf — `src/` (app, components/ui, features/*, lib, styles), `scripts/`, `public/`, `index.html`, `vite.config.ts`, configs (eslint, tsconfig, playwright), `package.json` et lockfile, `.github/workflows/deploy.yml`, `e2e/`, README, NOTICE, LICENSE ; plus le build `dist/`.
+Périmètre : tout le dépôt versionné hors `docs/` au commit 1a04f02 — `src/` (app, components/ui, features/*, lib, styles), `scripts/`, `public/`, `index.html`, `vite.config.ts`, configs (eslint, tsconfig, playwright), `package.json` et lockfile, `.github/workflows/deploy.yml`, `e2e/`, README, NOTICE, LICENSE ; plus le build `dist/`.
 
 ## Verdicts
 - Review code : GO après correction de R1 (relecture du 2026-11-08)
@@ -9,7 +9,7 @@ Périmètre : tout le dépôt versionné hors `docs/` au commit a444eaf — `src
 ## Bloquants
 | ID | Constat | Où | Rôle | Allers-retours | État |
 |---|---|---|---|---|---|
-| R1 + S3 | Mentions de licence absentes du site déployé : attribution Hershey supprimée par le minifieur (condition de la licence), NOTICE/LICENSE et avis des dépendances non servis ; LICENSE laisse croire que Hershey est sous MIT | `hersheyConversion.ts`, `hersheyRomanSimplex.ts`, `vite.config.ts`, `LICENSE`, `README.md` | dev | 1 | corrigé (5ec499e), GO à la relecture |
+| R1 + S3 | Mentions de licence absentes du site déployé : attribution Hershey supprimée par le minifieur (condition de la licence), NOTICE/LICENSE et avis des dépendances non servis ; LICENSE laisse croire que Hershey est sous MIT | `hersheyConversion.ts`, `hersheyRomanSimplex.ts`, `vite.config.ts`, `LICENSE`, `README.md` | dev | 1 | corrigé (2e7fc67), GO à la relecture |
 
 ## À corriger avant livraison
 | ID | Constat | Où | Décision (corriger / reporter / recommander) |
@@ -40,18 +40,18 @@ Périmètre : tout le dépôt versionné hors `docs/` au commit a444eaf — `src
 - Informations personnelles retirées de `docs/` avant publication.
 
 ## Correctifs appliqués
-- R1 + S3 : 5ec499e (GO à la relecture) ; R13 : a8d869f.
-- S1, S8, S9, B2, R4 (PDF) : 9959a1b (T20).
-- S2, S5, S6, S10, R5 (attentes fixes), R4 (anti-dérive, durées), R10 (scripts) : a8d869f (T21).
-- R2, R3, R4 (tokens, grille), R7, R9, R11 : 34a6b64 (T22), empreinte de rendu identique avant/après.
+- R1 + S3 : 2e7fc67 (GO à la relecture) ; R13 : 04ef729.
+- S1, S8, S9, B2, R4 (PDF) : ae66368 (T20).
+- S2, S5, S6, S10, R5 (attentes fixes), R4 (anti-dérive, durées), R10 (scripts) : 04ef729 (T21).
+- R2, R3, R4 (tokens, grille), R7, R9, R11 : 50b86ba (T22), empreinte de rendu identique avant/après.
 - Reportés en « Plus tard » (roadmap) : fusion des specs e2e (R5), S7, R6, R8, R12, S4 (domaine dédié).
 
 ## Évolution après review (décision d'Enzo)
-- Un seul mot (D18), Spare en rune liée (D19–D21) : T23, T24, T25 ; planche validée par Enzo ; F2 revalidé (passage n° 4) ; correctif des contacts 0ca5e81.
+- Un seul mot (D18), Spare en rune liée (D19–D21) : T23, T24, T25 ; planche validée par Enzo ; F2 revalidé (passage n° 4) ; correctif des contacts dfb4d1d.
 
 ## Vérifié au pilotage
-- Sur 0ca5e81 : lint, format:check, typecheck ; 989/989 unitaires ; 5/5 script ; build ; e2e 283/283.
-- Après correctifs (34a6b64) : lint, format:check, typecheck verts ; 878/878 tests unitaires ; 5/5 tests du script ; build (28 entrées précachées) ; e2e 269/269.
+- Sur dfb4d1d : lint, format:check, typecheck ; 989/989 unitaires ; 5/5 script ; build ; e2e 283/283.
+- Après correctifs (50b86ba) : lint, format:check, typecheck verts ; 878/878 tests unitaires ; 5/5 tests du script ; build (28 entrées précachées) ; e2e 269/269.
 - `npm audit --omit=dev` : 0 vulnérabilité (2026-11-08).
 
 ## Non vérifié

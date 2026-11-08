@@ -137,7 +137,7 @@
 - Points ouverts : logique d'ajustement dupliquée renderer / export → `fittedDrawing` en cours ; état chargement visuel de `Button` → T13.
 
 ## 2026-11-08 — F2 Spare : non-régression après T18 et T19
-- Verdict : VALIDÉ (passage n° 3, sur le commit 2aa51b2 en worktree isolé)
+- Verdict : VALIDÉ (passage n° 3, sur le commit 4a8a2cf en worktree isolé)
 - Preuves : 5 scénarios OK ; 0 lettre nettement lisible / 15, 4 cas limites (aucune lettre entière et isolée) ; ratio moyen 1,09 (B2 corrigé) ; tracé ~2,87 s sur 124 lettres (B3 corrigé) ; CSP, confidentialité, 375 px OK.
 - Réserve mineure : air de famille (courbe en S + zigzag) entre certaines variantes de « Je suis calme » — non bloquant, à noter en limite connue.
 
@@ -149,13 +149,13 @@
 - Points ouverts : deux tests clavier e2e à décaler d'un arrêt (sélecteur de langue) — en cours ; composant commun langue/thème à décider en T15.
 
 ## 2026-11-08 — F3 Tracé animé et style : test
-- Verdict : VALIDÉ (passage n° 1, commit 2aa51b2 en worktree)
+- Verdict : VALIDÉ (passage n° 1, commit 4a8a2cf en worktree)
 - Preuves : ordre départ → tracé → arrivée chronométré ; mouvement réduit sans tracé ; `d` identique quel que soit le style, cercle = même dessin réduit (résidu < 0,01) ; Rejouer relance ; durée 2,70 s (kamea, 7 planètes) et 2,85 s (Spare 120+ lettres) ; écart dessin / cercle ≥ 2 ; boucle finale / arrivée > 0 de 0,4 à 2,4 ; pas-à-pas correct ; CSP, 375 px, clavier OK.
 - Bugs : aucun. Observations : Spare long à 2,4 très dense ; Lune à 2,4 écart boucle / arrivée étroit (1,2).
 - Tests e2e ajoutés : `e2e/f3-acceptance.spec.ts` (37 tests), en revalidation sur HEAD avant commit.
 
 ## 2026-11-08 — F4 Exports SVG et PNG : test
-- Verdict : VALIDÉ (passage n° 1, commit 2aa51b2 en worktree)
+- Verdict : VALIDÉ (passage n° 1, commit 4a8a2cf en worktree)
 - Preuves : 43 SVG en XML strict, autonomes (couleurs littérales, ni classe ni style), < 0,3 % de pixels d'écart avec l'écran ; PNG 2048×2048 opaques, fond exact selon le thème, sans métadonnées texte ; 194 noms de fichiers sans intention ; boutons désactivés sans sigil ; CSP, 375 px, clavier OK ; contrôle de mutation.
 - Bug mineur renvoyé à T13 : B1 focus perdu après export PNG au clavier (`disabled` pendant la rastérisation).
 - Tests e2e : `e2e/f4-acceptance.spec.ts` (42 tests) — commit différé : à adapter au dialogue d'export de T13 et au sélecteur de langue.
@@ -179,7 +179,7 @@
 - Points ouverts : f4-acceptance non rejoué avec le nouvel arrêt clavier de l'en-tête (à couvrir au test F6/F7).
 
 ## 2026-11-08 — F5 Pochoir et PDF : test
-- Verdict : VALIDÉ (passage n° 1, commit bfd7017 en worktree)
+- Verdict : VALIDÉ (passage n° 1, commit b4410db en worktree)
 - Preuves : pochoir noir pur sans cercle ni fond (kamea, Spare, deux thèmes) ; PDF relu avec PyMuPDF : A4 exact, règle 10,000 mm, encre 60,000 mm à 6 cm (raster 1200 dpi : 59,99–60,01), 1 / 8 / 19 / 25 cm exacts, épaisseurs 0,3–1,2 mm exactes ; métadonnées « Sigil » + dates seulement, ni outil ni intention ; consigne FR/EN ; sigil trop large refusé avec taille max ; PNG 4096 pochoir sans pixel coloré ; export PDF hors ligne ; CSP, clavier, 375 px OK ; contrôle de mutation (9/25 tests échouent).
 - Bugs : B1 valeur négative → message de format au lieu de la plage (mineur, renvoyé à dev) ; B2 texte FR du PDF non extractible avec accents (Helvetica standard sans ToUnicode, rendu correct) — observation.
 - Tests e2e : `e2e/f5-acceptance.spec.ts` (25 tests), commit après la correction de B1.
@@ -190,14 +190,14 @@
 - B2 consigné en limite connue : correctif possible sans dépendance (table ToUnicode WinAnsi dans `pdf.ts`, ~30 lignes) — à arbitrer en phase 5.
 
 ## 2026-11-08 — F6 Thèmes et FR/EN : test
-- Verdict : VALIDÉ (passage n° 1, commit 8bced35 en worktree)
+- Verdict : VALIDÉ (passage n° 1, commit 9943f07 en worktree)
 - Preuves : 12 combinaisons de langues navigateur ; choix langue/thème conservés, stockage limité à `sigil.language` et `sigil.theme` ; contraste AA mesuré sur 8 écrans × 2 thèmes × 2 langues, 0 échec (pire 5,88:1) ; aucun flash de thème (bundle retardé 1,2 s) ; mode Système en direct ; décimales et pluriels selon la langue ; PDF EN/FR ; aucune chaîne française en EN ; CSP, clavier, 375 px OK.
 - Bugs mineurs renvoyés à dev : B1 « a 8 cm print » ; B2 texte de simplification contradictoire quand le nombre de segments augmente ; B3 tournures anglaises lourdes.
 - Observations : titre et meta description non localisés ; test clavier F4 instable sous charge (4 workers).
 - Tests e2e : `e2e/f6-acceptance.spec.ts` (55 tests), commit après correction.
 
 ## 2026-11-08 — F7 Hors ligne, confidentialité, déploiement : test
-- Verdict : VALIDÉ (passage n° 1, commit 8bced35 en worktree)
+- Verdict : VALIDÉ (passage n° 1, commit 9943f07 en worktree)
 - Preuves : hors ligne complet, serveur tué compris (tracés, panneau, langue, thème, exports SVG/PNG/PDF, chunk pdf-lib précaché) ; 46 requêtes toutes sur l'origine `/sigil/` ; intention absente de l'URL, des stockages, des caches (octets), du titre, de l'historique, contre-épreuve OK ; 23 fichiers précachés en 200, installabilité Chromium sans erreur ; mise à jour du service worker sur deux builds OK ; CSP avec dialogue ouvert ; `deploy.yml` (permissions minimales, sans secret) et ses commandes verts.
 - Suite e2e complète (hors f5/f6 non commités) : 178/179, l'échec étant B1.
 - Bugs mineurs : B1 test « no flash » de `theme.spec` instable (service worker) → design ; B2 course Échap → Entrée dans le dialogue d'export → dev.
@@ -205,19 +205,19 @@
 - Tests e2e : `e2e/f7-acceptance.spec.ts` (11 tests).
 
 ## 2026-11-08 — Correctifs issus des tests F6 et F7
-- `ef2ca1e` : test « no flash » de `theme.spec` isolé du service worker (12/12 en répétition).
-- `3997634` : article anglais variable (« an 8 cm print »), texte de simplification juste quand le nombre de segments diminue, reste égal ou augmente, relecture de `strings.en.ts`, titre et meta description localisés. 860/860 tests.
+- `2723cf6` : test « no flash » de `theme.spec` isolé du service worker (12/12 en répétition).
+- `894b67a` : article anglais variable (« an 8 cm print »), texte de simplification juste quand le nombre de segments diminue, reste égal ou augmente, relecture de `strings.en.ts`, titre et meta description localisés. 860/860 tests.
 - En cours : specs f5/f6 à aligner sur la nouvelle consigne d'impression ; course Échap → Entrée du dialogue ; stabilisation du test clavier F4.
 
 ## 2026-11-08 — Fin du build : vérification complète
-- Commit de référence : de7ec88 (+ `2d605dd`, `2beb69a`, `3997634`, `ef2ca1e`).
+- Commit de référence : 4dd20a4 (+ `46a4d18`, `c60e494`, `894b67a`, `2723cf6`).
 - `npm run lint` vert ; `npm run typecheck` vert ; `npx vitest run` 862/862 (42 fichiers) ; `npm run build` OK (23 entrées précachées) ; `npm run test:e2e` 260/260.
 - Contrôle des traces d'outil : historique git propre ; une liste de termes interdits dans `e2e/f5-acceptance.spec.ts` contient des noms d'outil → remplacée par une vérification positive (en cours).
 - Phase 5 lancée : relecture du code et audit de sécurité en parallèle.
 
 ## 2026-11-08 — Review : bloquant R1 + S3 (licences)
 - Rôle : dev ; relecture → GO.
-- Fait (5ec499e) : commentaire légal Hershey conservé dans le bundle, `LICENSE.txt`, `NOTICE.txt`, `THIRD-PARTY-LICENSES.txt` publiés et précachés, LICENSE précisée, script `glyphs:generate`.
+- Fait (2e7fc67) : commentaire légal Hershey conservé dans le bundle, `LICENSE.txt`, `NOTICE.txt`, `THIRD-PARTY-LICENSES.txt` publiés et précachés, LICENSE précisée, script `glyphs:generate`.
 - Suites : OFL des polices et version Workbox (R13) confiés à T21.
 
 ## 2026-11-08 — T20 Correctifs review interface et export
@@ -259,18 +259,18 @@
 ## 2026-11-08 — T25 Panneau Spare (rune liée)
 - Rôle : design
 - Fait : panneau en 5 étapes (lettres retirées, squelettes anguleux, accroche sur la hampe avec dessin de la rune, choix de la variante, simplification), vocabulaire de l'ancienne composition retiré (test), `translate="no"` sur les lettres.
-- Vérifications : lint, format:check, typecheck, 955/955 (revérifié après les commits 0ac69bb et 1b56798) ; e2e 280/281 (échec `f5-acceptance:643`, qui supposait un Spare plus large que haut) ; 32 captures FR/EN, clair/sombre.
+- Vérifications : lint, format:check, typecheck, 955/955 (revérifié après les commits 96d7474 et d1375b5) ; e2e 280/281 (échec `f5-acceptance:643`, qui supposait un Spare plus large que haut) ; 32 captures FR/EN, clair/sombre.
 - Suites : espace avant « : » en anglais (en cours) ; specs F2 sc. 4 et F5:643 à réécrire par le test (F2 passage n° 4 en cours).
 
 ## 2026-11-08 — F2 Spare (rune liée) : test
-- Verdict : VALIDÉ (passage n° 4, HEAD 5b31656 en worktree)
+- Verdict : VALIDÉ (passage n° 4, HEAD 19d9c96 en worktree)
 - Preuves : 6 scénarios OK ; 108 sigils (36 mots × 3 variantes) mesurés : traits droits uniquement, hampe continue à x≈50 sur ≥ 70 % de la hauteur, traits tous reliés, plus hauts que larges, aucune hachure ; planche conforme à celle validée par Enzo ; e2e complet 282/282.
 - Bug mineur : B1 jambe du R décollée de 0,4 unité (« Victory » v2), visible en trait fin → dev.
 - Specs : scénario 4 de `f2-acceptance` réécrit sur la structure de la rune ; `f5-acceptance:643` teste le sigil trop large avec un chemin kamea (Lune, « Paix »), plus un test Spare accepté à 25 cm.
 
 ## 2026-11-08 — Correctif contacts des lettres (B1 du test F2) et vérification complète
-- 0ca5e81 : points de contact partagés dans les squelettes (`jointedStrokes`), fusion limitée aux traits confondus (0,5), sommets de contact conservés, correction des hachures sans ouvrir de contact ; 4 610 contacts vérifiés, aucun ouvert ; planche inchangée.
-- Vérification complète sur 0ca5e81 : lint, format:check, typecheck verts ; 989/989 tests unitaires ; 5/5 tests du script ; build (28 entrées précachées) ; e2e 283/283 ; aucune trace d'outil hors `docs/` ni dans les messages de commit.
+- dfb4d1d : points de contact partagés dans les squelettes (`jointedStrokes`), fusion limitée aux traits confondus (0,5), sommets de contact conservés, correction des hachures sans ouvrir de contact ; 4 610 contacts vérifiés, aucun ouvert ; planche inchangée.
+- Vérification complète sur dfb4d1d : lint, format:check, typecheck verts ; 989/989 tests unitaires ; 5/5 tests du script ; build (28 entrées précachées) ; e2e 283/283 ; aucune trace d'outil hors `docs/` ni dans les messages de commit.
 
 ## 2026-11-08 — Livraison : documentation et vérification finale
 - Site de documentation EN/FR dans `site/` (Starlight, 14 pages par langue + référence d'API générée), publié par le workflow sous `/sigil/docs/` ; le service worker de l'app laisse passer ces pages.
