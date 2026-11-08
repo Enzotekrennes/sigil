@@ -188,3 +188,10 @@
 ## 2026-11-08 — F5 suites
 - B1 corrigé (taille négative ou nulle → message de plage, FR/EN), test unitaire ; specs f5 + stencil 32/32.
 - B2 consigné en limite connue : correctif possible sans dépendance (table ToUnicode WinAnsi dans `pdf.ts`, ~30 lignes) — à arbitrer en phase 5.
+
+## 2026-11-08 — F6 Thèmes et FR/EN : test
+- Verdict : VALIDÉ (passage n° 1, commit 8bced35 en worktree)
+- Preuves : 12 combinaisons de langues navigateur ; choix langue/thème conservés, stockage limité à `sigil.language` et `sigil.theme` ; contraste AA mesuré sur 8 écrans × 2 thèmes × 2 langues, 0 échec (pire 5,88:1) ; aucun flash de thème (bundle retardé 1,2 s) ; mode Système en direct ; décimales et pluriels selon la langue ; PDF EN/FR ; aucune chaîne française en EN ; CSP, clavier, 375 px OK.
+- Bugs mineurs renvoyés à dev : B1 « a 8 cm print » ; B2 texte de simplification contradictoire quand le nombre de segments augmente ; B3 tournures anglaises lourdes.
+- Observations : titre et meta description non localisés ; test clavier F4 instable sous charge (4 workers).
+- Tests e2e : `e2e/f6-acceptance.spec.ts` (55 tests), commit après correction.

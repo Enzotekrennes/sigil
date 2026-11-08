@@ -120,7 +120,7 @@ Voir `docs/design.md` et `src/styles/tokens.css`. Page de grimoire : beaucoup de
 - Étant donné le premier chargement avec un navigateur en anglais, quand la page s'ouvre, alors l'interface est en anglais ; sinon en français.
 - Étant donné un changement de langue ou de thème, quand je recharge, alors le choix est conservé.
 - Étant donné le thème « or sur noir », quand je l'active, alors les textes respectent le contraste AA.
-- Test : [ ] VALIDÉ
+- Test : [x] VALIDÉ (2026-11-08)
 
 ### F7 — App hors ligne, confidentielle et déployable
 - Étant donné une première visite, quand je coupe le réseau et recharge, alors l'app fonctionne entièrement.
