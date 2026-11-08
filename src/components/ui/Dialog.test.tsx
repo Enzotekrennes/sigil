@@ -1,6 +1,7 @@
 /**
  * Component tests of the modal dialog: named by its title, opened and closed
- * with `open`, Escape reported to the parent, Tab kept inside, and the focus
+ * with `open`, Escape reported to the parent (and a late `close` event of an
+ * Escape ignored once reopened), Tab kept inside, and the focus
  * given back to the element that opened it. jsdom has no `showModal`, so the
  * native methods are stubbed the way a browser behaves (open attribute, and a
  * `close` event when closed).
@@ -107,6 +108,49 @@ describe('Dialog', () => {
 
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(opener).toHaveFocus();
+  });
+
+  it('closes on Escape at once, the key kept from the browser, and reopens on the next press', () => {
+    render(<Harness />);
+    const opener = openDialog();
+
+    for (let round = 0; round < 5; round += 1) {
+      const dialog = screen.getByRole('dialog');
+      screen.getByRole('button', { name: 'Premier' }).focus();
+      const escape = new KeyboardEvent('keydown', {
+        key: 'Escape',
+        bubbles: true,
+        cancelable: true,
+      });
+      fireEvent(screen.getByRole('button', { name: 'Premier' }), escape);
+
+      expect(escape.defaultPrevented).toBe(true);
+      expect(screen.queryByRole('dialog')).toBeNull();
+      expect(opener).toHaveFocus();
+      fireEvent.click(opener);
+      expect(dialog).toHaveAttribute('open');
+    }
+  });
+
+  it('reopens at once when the opener is pressed right after a native cancel, again and again', () => {
+    render(<Harness />);
+    const opener = openDialog();
+
+    for (let round = 0; round < 5; round += 1) {
+      const dialog = screen.getByRole('dialog');
+      // Escape in a browser: `cancel` first, then the element closes and `close` is queued.
+      fireEvent(dialog, new Event('cancel', { cancelable: true }));
+      expect(screen.queryByRole('dialog')).toBeNull();
+      expect(opener).toHaveFocus();
+
+      // Enter on the opener before the queued `close` event is handled.
+      fireEvent.click(opener);
+      expect(screen.getByRole('dialog')).toHaveAttribute('open');
+
+      // The late `close` event of the Escape must not close the reopened dialog.
+      fireEvent(dialog, new Event('close'));
+      expect(screen.getByRole('dialog', { name: 'Exporter le sigil' })).toHaveAttribute('open');
+    }
   });
 
   it('gives the focus back to the opener when the content closes it', () => {

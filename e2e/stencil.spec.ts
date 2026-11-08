@@ -2,7 +2,7 @@
  * End-to-end journey of feature F5 (tattoo stencil and real-size PDF) on the
  * production build: the stencil mode in pure black on pure white whatever the
  * theme, the width in millimetres; the "Exporter" dialog driven by keyboard
- * (focus kept inside, Escape, focus given back); a print size out of range
+ * (focus kept inside, Escape, focus given back, reopened at once by Enter); a print size out of range
  * explained and blocked; a PDF downloaded and read back (A4 portrait, sigil
  * 6 cm ± 0.5 mm, stroke in points, 1 cm ruler, neutral metadata, no
  * intention); a 4096 px PNG; a PDF exported offline; and no Content Security
@@ -216,6 +216,28 @@ test('opens, traps and closes the export dialog with the keyboard (F5)', async (
   await expect(dialog).toHaveCount(0);
   await expect(opener).toBeFocused();
   expect(await cspViolations(page)).toEqual([]);
+});
+
+test('reopens the export dialog on Enter right after Escape, every time (F5)', async ({ page }) => {
+  await page.goto('./');
+  await trace(page);
+  const opener = page.getByRole('button', { name: 'Exporter' });
+  const dialog = page.getByRole('dialog', { name: 'Exporter le sigil' });
+  await opener.focus();
+
+  for (let round = 0; round < 5; round += 1) {
+    await page.keyboard.press('Enter');
+    await expect(dialog).toBeVisible();
+    // No wait between the two keys: Enter lands before the queued `close` event.
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('Enter');
+    await expect(dialog).toBeVisible();
+    await page.waitForTimeout(50);
+    await expect(dialog).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(dialog).toHaveCount(0);
+    await expect(opener).toBeFocused();
+  }
 });
 
 test('explains a print size out of range and blocks the PDF (F5)', async ({ page }) => {
