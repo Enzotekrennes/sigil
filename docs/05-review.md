@@ -24,7 +24,7 @@ Périmètre : tout le dépôt versionné hors `docs/` au commit a444eaf — `src
 ## Recommandé
 | ID | Constat | Décision |
 |---|---|---|
-| S4 | Origine `<compte>.github.io` partagée avec les autres sites Pages du compte (stockage, caches, `'self'`) ; domaine dédié conseillé | à arbitrer (décision d'Enzo) |
+| S4 | Origine `<compte>.github.io` partagée avec les autres sites Pages du compte (stockage, caches, `'self'`) ; domaine dédié conseillé | rester sur github.io ; règle : aucun autre site Pages avec code tiers sur ce compte ; domaine dédié recommandé plus tard (Enzo, 2026-11-08) |
 | S5 | CI : actions figées par tag et non par SHA, `npm ci` avec scripts, pas de Dependabot | corriger |
 | S6 + R10 | E2e de confidentialité/CSP non lancés en CI ; README incomplet (`format:check`, régénération des glyphes, NOTICE) | corriger (e2e de confidentialité en CI, scripts) ; README en phase 6 |
 | S7 | Trusted Types dans la CSP | reporter (Plus tard) |

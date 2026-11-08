@@ -31,6 +31,10 @@ Fenêtre : 2026-11-07 → 2026-11-21 (V1 en ligne). S1 = semaine du 2026-11-09, 
 - [ ] Interface bilingue FR/EN
 
 ### Plus tard
+- [ ] Fusion des specs e2e en double et convention unique de captures (R5)
+- [ ] Trusted Types dans la CSP (S7)
+- [ ] Refactorings : rendu des marques partagé, stockage tolérant commun, `features/theme`, `SigilScreen` allégé (R6, R8, R12)
+- [ ] Domaine dédié pour isoler l'origine (S4)
 - [ ] Option « réduction pythagoricienne pour tous les carrés »
 - [ ] Roue rose-croix (translittération hébraïque)
 - [ ] Export pour traceur à stylo (pen plotter)
