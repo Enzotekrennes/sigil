@@ -205,19 +205,19 @@
 - Tests e2e : `e2e/f7-acceptance.spec.ts` (11 tests).
 
 ## 2026-11-08 — Correctifs issus des tests F6 et F7
-- `2723cf6` : test « no flash » de `theme.spec` isolé du service worker (12/12 en répétition).
-- `894b67a` : article anglais variable (« an 8 cm print »), texte de simplification juste quand le nombre de segments diminue, reste égal ou augmente, relecture de `strings.en.ts`, titre et meta description localisés. 860/860 tests.
+- `ca5bd0a` : test « no flash » de `theme.spec` isolé du service worker (12/12 en répétition).
+- `f351840` : article anglais variable (« an 8 cm print »), texte de simplification juste quand le nombre de segments diminue, reste égal ou augmente, relecture de `strings.en.ts`, titre et meta description localisés. 860/860 tests.
 - En cours : specs f5/f6 à aligner sur la nouvelle consigne d'impression ; course Échap → Entrée du dialogue ; stabilisation du test clavier F4.
 
 ## 2026-11-08 — Fin du build : vérification complète
-- Commit de référence : 4dd20a4 (+ `46a4d18`, `c60e494`, `894b67a`, `2723cf6`).
+- Commit de référence : f49de54 (+ `da4ba2a`, `a142026`, `f351840`, `ca5bd0a`).
 - `npm run lint` vert ; `npm run typecheck` vert ; `npx vitest run` 862/862 (42 fichiers) ; `npm run build` OK (23 entrées précachées) ; `npm run test:e2e` 260/260.
 - Contrôle des traces d'outil : historique git propre ; une liste de termes interdits dans `e2e/f5-acceptance.spec.ts` contient des noms d'outil → remplacée par une vérification positive (en cours).
 - Phase 5 lancée : relecture du code et audit de sécurité en parallèle.
 
 ## 2026-11-08 — Review : bloquant R1 + S3 (licences)
 - Rôle : dev ; relecture → GO.
-- Fait (2e7fc67) : commentaire légal Hershey conservé dans le bundle, `LICENSE.txt`, `NOTICE.txt`, `THIRD-PARTY-LICENSES.txt` publiés et précachés, LICENSE précisée, script `glyphs:generate`.
+- Fait (60bbe79) : commentaire légal Hershey conservé dans le bundle, `LICENSE.txt`, `NOTICE.txt`, `THIRD-PARTY-LICENSES.txt` publiés et précachés, LICENSE précisée, script `glyphs:generate`.
 - Suites : OFL des polices et version Workbox (R13) confiés à T21.
 
 ## 2026-11-08 — T20 Correctifs review interface et export
@@ -259,18 +259,18 @@
 ## 2026-11-08 — T25 Panneau Spare (rune liée)
 - Rôle : design
 - Fait : panneau en 5 étapes (lettres retirées, squelettes anguleux, accroche sur la hampe avec dessin de la rune, choix de la variante, simplification), vocabulaire de l'ancienne composition retiré (test), `translate="no"` sur les lettres.
-- Vérifications : lint, format:check, typecheck, 955/955 (revérifié après les commits 96d7474 et d1375b5) ; e2e 280/281 (échec `f5-acceptance:643`, qui supposait un Spare plus large que haut) ; 32 captures FR/EN, clair/sombre.
+- Vérifications : lint, format:check, typecheck, 955/955 (revérifié après les commits dec62cf et 2f63afc) ; e2e 280/281 (échec `f5-acceptance:643`, qui supposait un Spare plus large que haut) ; 32 captures FR/EN, clair/sombre.
 - Suites : espace avant « : » en anglais (en cours) ; specs F2 sc. 4 et F5:643 à réécrire par le test (F2 passage n° 4 en cours).
 
 ## 2026-11-08 — F2 Spare (rune liée) : test
-- Verdict : VALIDÉ (passage n° 4, HEAD 19d9c96 en worktree)
+- Verdict : VALIDÉ (passage n° 4, HEAD 0d4faca en worktree)
 - Preuves : 6 scénarios OK ; 108 sigils (36 mots × 3 variantes) mesurés : traits droits uniquement, hampe continue à x≈50 sur ≥ 70 % de la hauteur, traits tous reliés, plus hauts que larges, aucune hachure ; planche conforme à celle validée par Enzo ; e2e complet 282/282.
 - Bug mineur : B1 jambe du R décollée de 0,4 unité (« Victory » v2), visible en trait fin → dev.
 - Specs : scénario 4 de `f2-acceptance` réécrit sur la structure de la rune ; `f5-acceptance:643` teste le sigil trop large avec un chemin kamea (Lune, « Paix »), plus un test Spare accepté à 25 cm.
 
 ## 2026-11-08 — Correctif contacts des lettres (B1 du test F2) et vérification complète
-- dfb4d1d : points de contact partagés dans les squelettes (`jointedStrokes`), fusion limitée aux traits confondus (0,5), sommets de contact conservés, correction des hachures sans ouvrir de contact ; 4 610 contacts vérifiés, aucun ouvert ; planche inchangée.
-- Vérification complète sur dfb4d1d : lint, format:check, typecheck verts ; 989/989 tests unitaires ; 5/5 tests du script ; build (28 entrées précachées) ; e2e 283/283 ; aucune trace d'outil hors `docs/` ni dans les messages de commit.
+- ffcb51a : points de contact partagés dans les squelettes (`jointedStrokes`), fusion limitée aux traits confondus (0,5), sommets de contact conservés, correction des hachures sans ouvrir de contact ; 4 610 contacts vérifiés, aucun ouvert ; planche inchangée.
+- Vérification complète sur ffcb51a : lint, format:check, typecheck verts ; 989/989 tests unitaires ; 5/5 tests du script ; build (28 entrées précachées) ; e2e 283/283 ; aucune trace d'outil hors `docs/` ni dans les messages de commit.
 
 ## 2026-11-08 — Livraison : documentation et vérification finale
 - Site de documentation EN/FR dans `site/` (Starlight, 14 pages par langue + référence d'API générée), publié par le workflow sous `/sigil/docs/` ; le service worker de l'app laisse passer ces pages.
