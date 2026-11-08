@@ -38,7 +38,11 @@ export type SpareError =
    * The reduction left no letter. `suggestKeepVowels` is true when keeping
    * the vowels would leave some, so the interface can offer that option.
    */
-  | { readonly code: 'NO_LETTER_LEFT'; readonly suggestKeepVowels: boolean }
+  | {
+      readonly code: 'NO_LETTER_LEFT';
+      /** True when the reduction removed vowels, so keeping them would leave letters to compose. */
+      readonly suggestKeepVowels: boolean;
+    }
   /**
    * The composition refused its input: `INVALID_LETTER` (index in the letters
    * given to `buildSpareSigil`) or `INVALID_VARIANT`; the other codes cannot

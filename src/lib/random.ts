@@ -7,6 +7,8 @@
  * generator), `createRandom` (53-bit seed → generator) and the drawing
  * helper `randomBetween`. Not suitable for anything security related: these
  * are fast, well-distributed, predictable algorithms by design. Never uses `Math.random`.
+ *
+ * @packageDocumentation
  */
 
 /** A generator of numbers uniformly spread over [0, 1), like `Math.random`. */

@@ -27,7 +27,12 @@ import { EXPORT_SVG_TITLE } from './svg.ts';
 export const PT_PER_MM = 72 / 25.4;
 
 /** ISO 216 A4 sheet, portrait, in millimetres. */
-export const A4_MM = { width: 210, height: 297 } as const;
+export const A4_MM = {
+  /** Sheet width, in millimetres. */
+  width: 210,
+  /** Sheet height, in millimetres. */
+  height: 297,
+} as const;
 
 /**
  * Blank border kept on every side, in millimetres: wider than the unprintable
@@ -45,9 +50,13 @@ const NOTES_BAND_MM = 35;
  * limits a wide one.
  */
 export const STENCIL_AREA_MM = {
+  /** Left edge, in millimetres from the page's left edge: the margin. */
   x: PAGE_MARGIN_MM,
+  /** Top edge, in millimetres from the page's top edge: the margin. */
   y: PAGE_MARGIN_MM,
+  /** Width, in millimetres: the page minus both side margins (190 mm). */
   width: A4_MM.width - 2 * PAGE_MARGIN_MM,
+  /** Height, in millimetres: the page minus the top margin and the notes band (252 mm). */
   height: A4_MM.height - PAGE_MARGIN_MM - NOTES_BAND_MM,
 } as const;
 
@@ -128,19 +137,39 @@ export function cmToPoints(centimetres: number): number {
 }
 
 /** Width and height of ink on paper, in millimetres. */
-interface InkSize {
+export interface InkSize {
+  /** Horizontal extent of the ink, stroke included, in millimetres. */
   readonly width: number;
+  /** Vertical extent of the ink, stroke included, in millimetres. */
   readonly height: number;
 }
 
 /** One drawing command of a path, in PDF points (origin bottom-left, y upwards). */
 export type PdfPathCommand =
-  | { readonly op: 'move' | 'line'; readonly to: Point }
-  | { readonly op: 'curve'; readonly control1: Point; readonly control2: Point; readonly to: Point }
-  | { readonly op: 'close' };
+  | {
+      /** `move` starts a new subpath at `to` without drawing; `line` draws a straight segment to `to`. */
+      readonly op: 'move' | 'line';
+      /** End point of the command, in points. */
+      readonly to: Point;
+    }
+  | {
+      /** Cubic Bézier curve from the current point to `to` (circles are drawn as four of them). */
+      readonly op: 'curve';
+      /** Control point pulling the curve as it leaves the current point, in points. */
+      readonly control1: Point;
+      /** Control point pulling the curve as it arrives at `to`, in points. */
+      readonly control2: Point;
+      /** End point of the curve, in points. */
+      readonly to: Point;
+    }
+  | {
+      /** Closes the subpath with a straight segment back to its starting point. */
+      readonly op: 'close';
+    };
 
 /** A piece of text on the page. */
 export interface PdfText {
+  /** Text to write, on one line, in the interface language; drawn with standard Helvetica. */
   readonly text: string;
   /** Start of the baseline, in points. */
   readonly at: Point;
@@ -148,8 +177,9 @@ export interface PdfText {
 
 /** Everything drawn on the stencil page, in PDF points. */
 export interface StencilPage {
-  /** Page width and height in points (A4 portrait). */
+  /** Page width in points (A4 portrait). */
   readonly width: number;
+  /** Page height in points (A4 portrait). */
   readonly height: number;
   /** Stroke width of the sigil in points: the millimetres asked for. */
   readonly lineWidth: number;
@@ -168,7 +198,9 @@ export interface StencilPage {
   readonly maxSizeCm: number;
   /** Control ruler: its line and two end ticks, stroked at `ruler.lineWidth`. */
   readonly ruler: {
+    /** The ruler's line, then its two end ticks, in points. */
     readonly paths: readonly (readonly PdfPathCommand[])[];
+    /** Line width of the ruler, in points (0.2 mm): thinner than any sigil stroke. */
     readonly lineWidth: number;
   };
   /** Ruler label and the two note lines, in that order. */

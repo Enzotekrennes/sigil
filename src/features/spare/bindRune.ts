@@ -126,7 +126,9 @@ export interface AttachmentOption {
 
 /** A letter of the rune, as placed. */
 export interface RuneLetter {
+  /** The letter, A–Z: one of the retained letters, each placed once. */
   readonly letter: CapitalLetter;
+  /** How the letter is hooked onto the stem. */
   readonly attachment: Attachment;
   /** Flipped left to right around the stem. */
   readonly mirrored: boolean;

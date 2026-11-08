@@ -1,9 +1,12 @@
 # Builds the site and publishes it to GitHub Pages (<account>.github.io/sigil/).
 #
 # Runs on every push to main and on demand. The build job runs the same checks
-# as a local session (lint, formatting, types, unit and script tests), builds dist/, then
-# plays the privacy, CSP and offline end-to-end specs on that build before
-# uploading it; the deploy job only publishes an artifact that passed them.
+# as a local session (lint, formatting, types, unit and script tests), builds dist/
+# and the documentation site (site/, whose API reference is generated from the
+# app's TSDoc), then plays the privacy, CSP and offline end-to-end specs on the
+# app's build before adding the documentation under dist/docs/ (served at
+# /sigil/docs/) and uploading both; the deploy job only publishes an artifact
+# that passed them.
 # Requires Pages to be enabled with "GitHub Actions" as the source in the
 # repository settings.
 #
@@ -43,6 +46,10 @@ jobs:
         with:
           node-version: 24
           cache: npm
+          # Two lockfiles: the app's and the documentation site's.
+          cache-dependency-path: |
+            package-lock.json
+            site/package-lock.json
 
       # Dependency install scripts never run: the build needs none of them.
       - name: Install dependencies
@@ -66,6 +73,15 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Install documentation dependencies
+        working-directory: site
+        run: npm ci --ignore-scripts
+
+      # Fails on a broken internal link (starlight-links-validator).
+      - name: Build documentation
+        working-directory: site
+        run: npm run build
+
       - name: Install the end-to-end browser
         run: npx playwright install --with-deps chromium
 
@@ -73,6 +89,12 @@ jobs:
       # Playwright serves the production build itself (`vite preview`).
       - name: Privacy, CSP and offline end-to-end tests
         run: npx playwright test e2e/f7-acceptance.spec.ts e2e/privacy.spec.ts e2e/offline.spec.ts
+
+      # After the end-to-end specs: Playwright rebuilds dist/ to serve it, which
+      # would erase the documentation. The service worker of the app leaves
+      # /sigil/docs/ to the network (navigateFallbackDenylist in vite.config.ts).
+      - name: Add documentation
+        run: cp -r site/dist dist/docs
 
       - name: Configure Pages
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0

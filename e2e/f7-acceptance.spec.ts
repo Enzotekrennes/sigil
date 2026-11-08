@@ -16,7 +16,8 @@
  * - Deployment: every link and resource resolves with a 200 under `/sigil/`,
  *   the manifest meets Chromium's installability criteria, the CSP is
  *   enforced with the dialog open, and `deploy.yml` follows its security
- *   rules (minimal permissions, no secret, pinned action versions).
+ *   rules (minimal permissions, no secret, pinned action versions) and adds
+ *   the documentation site under `docs/` after the specs.
  * - Licences: the site publishes and precaches its licence, NOTICE, the Open
  *   Font Licenses of both font families and the third-party notices, the
  *   Workbox ones at the version actually bundled.
@@ -131,6 +132,23 @@ function jobBlock(yaml: string, job: string): string {
   const found = new RegExp(`^ {2}${job}:\\n(?:(?: {4}.*)?\\n)*`, 'm').exec(yaml);
   if (found === null) throw new Error(`deploy.yml has no "${job}" job.`);
   return found[0];
+}
+
+/**
+ * Extracts one step of a workflow job, from its `- name:` line up to the next
+ * step or the end of the job.
+ *
+ * @param job - Text of one job, as returned by `jobBlock`.
+ * @param name - Exact name of the step.
+ * @returns The step's lines, its `- name:` line included.
+ * @throws {Error} When the job has no step of that name.
+ */
+function stepBlock(job: string, name: string): string {
+  const header = `      - name: ${name}\n`;
+  const start = job.indexOf(header);
+  if (start === -1) throw new Error(`deploy.yml has no "${name}" step.`);
+  const next = job.indexOf('\n      - name: ', start + header.length - 1);
+  return job.slice(start, next === -1 ? undefined : next + 1);
 }
 
 /**
@@ -732,7 +750,7 @@ test('S6: the service worker takes over by itself and cleans old caches', async 
   expect(worker).not.toMatch(/https?:\/\/(?!www\.w3\.org)/);
 });
 
-test('S7: deploy.yml has minimal permissions, no secret and pinned action versions', async () => {
+test('S7: deploy.yml has minimal permissions, no secret, pinned actions, and adds the docs', async () => {
   const workflow = (await readFile(resolve('.github/workflows/deploy.yml'), 'utf8')).replaceAll(
     '\r\n',
     '\n',
@@ -760,7 +778,11 @@ test('S7: deploy.yml has minimal permissions, no secret and pinned action versio
   expect(buildJob).toMatch(
     /uses: actions\/checkout@.*\n\s+with:\n(?:\s+#.*\n)*\s+persist-credentials: false\n/,
   );
-  expect(workflow).toContain('run: npm ci --ignore-scripts\n');
+  // Two installs, the app's and the documentation site's, both without scripts.
+  const installs = [...workflow.matchAll(/run: npm (?:ci|install|i)\b.*$/gm)].map(
+    (match) => match[0],
+  );
+  expect(installs).toEqual(['run: npm ci --ignore-scripts', 'run: npm ci --ignore-scripts']);
 
   // Every action is pinned to a full commit SHA, the tag it stands for in a comment.
   const uses = [...workflow.matchAll(/uses:\s*(.+)$/gm)].map((match) => match[1] ?? '');
@@ -769,8 +791,9 @@ test('S7: deploy.yml has minimal permissions, no secret and pinned action versio
     expect(action, action).toMatch(/^[\w-]+\/[\w.-]+@[0-9a-f]{40} # v\d+\.\d+\.\d+$/);
   }
 
-  // The checks run before the artifact is built, then the privacy, CSP and
-  // offline specs play on that build before it is uploaded.
+  // The checks run before the artifact is built, then the documentation site
+  // is built, the privacy, CSP and offline specs play on the app's build, and
+  // the documentation joins it under docs/ before it is uploaded.
   const order = [
     'run: npm ci',
     'run: npm run lint',
@@ -779,8 +802,12 @@ test('S7: deploy.yml has minimal permissions, no secret and pinned action versio
     'run: npm run test',
     'run: npm run test:scripts',
     'run: npm run build',
+    '- name: Install documentation dependencies\n',
+    '- name: Build documentation\n',
     'run: npx playwright install --with-deps chromium',
     'run: npx playwright test ',
+    'run: cp -r site/dist dist/docs\n',
+    'uses: actions/configure-pages@',
     'uses: actions/upload-pages-artifact@',
   ];
   const positions = order.map((step) => workflow.indexOf(step));
@@ -797,11 +824,32 @@ test('S7: deploy.yml has minimal permissions, no secret and pinned action versio
   for (const script of ['lint', 'format:check', 'typecheck', 'test', 'test:scripts', 'build']) {
     expect(packageJson.scripts[script], script).toBeDefined();
   }
-  expect(workflow).toContain('path: dist');
+  expect(workflow).toContain('path: dist\n');
 
-  // Dependabot proposes the updates of the pinned actions and of the npm packages.
-  const dependabot = await readFile(resolve('.github/dependabot.yml'), 'utf8');
-  for (const ecosystem of ['github-actions', 'npm']) {
-    expect(dependabot).toContain(`package-ecosystem: ${ecosystem}`);
+  // The documentation site has its own lockfile: installed and built in site/,
+  // its dependencies cached next to the app's.
+  for (const [step, command] of [
+    ['Install documentation dependencies', 'run: npm ci --ignore-scripts'],
+    ['Build documentation', 'run: npm run build'],
+  ] as const) {
+    const block = stepBlock(buildJob, step);
+    expect(block, step).toContain('working-directory: site\n');
+    expect(block, step).toContain(`${command}\n`);
+  }
+  expect(stepBlock(buildJob, 'Set up Node.js')).toMatch(
+    /cache: npm\n(?:\s+#.*\n)*\s+cache-dependency-path: \|\n\s+package-lock\.json\n\s+site\/package-lock\.json\n/,
+  );
+
+  // Dependabot proposes the updates of the pinned actions and of the npm
+  // packages, the app's and the documentation site's.
+  const dependabot = (await readFile(resolve('.github/dependabot.yml'), 'utf8')).replaceAll(
+    '\r\n',
+    '\n',
+  );
+  expect(dependabot).toContain('- package-ecosystem: github-actions\n');
+  for (const directory of ['/', '/site']) {
+    expect(dependabot, directory).toContain(
+      `- package-ecosystem: npm\n    directory: ${directory}\n`,
+    );
   }
 });

@@ -43,7 +43,9 @@ const BISECTION_ROUNDS = 30;
 
 /** Lines and marks of a drawing, in frame units. */
 export interface Drawing {
+  /** Polylines in tracing order, as in `Sigil.strokes`. */
   readonly strokes: readonly (readonly Point[])[];
+  /** Marks over the strokes (start, end, loops), in the same frame as `strokes`. */
   readonly marks: readonly Mark[];
 }
 

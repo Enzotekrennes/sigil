@@ -90,13 +90,19 @@ export interface SpareCandidate {
   /** Merged polylines in the 0–100 frame: the stem first, shared strokes drawn once. */
   readonly strokes: readonly (readonly Point[])[];
   /** Ends of the stem, top first, on x = 50. */
-  readonly stem: { readonly top: Point; readonly bottom: Point };
+  readonly stem: {
+    /** Upper end of the stem, in the 0–100 frame. */
+    readonly top: Point;
+    /** Lower end of the stem, straight below `top`. */
+    readonly bottom: Point;
+  };
   /** The letters in the order they were given (not the hanging order). */
   readonly letters: readonly SpareCandidateLetter[];
   /** Segments of the stem and the placed letters before merging. */
   readonly segmentCountBefore: number;
   /** Segments once merged. */
   readonly segmentCountAfter: number;
+  /** Measures of the rune and their weighted penalty; the candidate with the lowest penalty is chosen. */
   readonly score: RuneScore;
 }
 
@@ -117,11 +123,27 @@ export type SpareCompositionError =
   /** No letter to compose (the reduction should have reported it first). */
   | { readonly code: 'NO_LETTERS' }
   /** An item is not a single upper-case letter A–Z (normalisation was skipped). */
-  | { readonly code: 'INVALID_LETTER'; readonly letter: string; readonly index: number }
+  | {
+      readonly code: 'INVALID_LETTER';
+      /** The item refused, as given. */
+      readonly letter: string;
+      /** Zero-based position of the item in the letters given. */
+      readonly index: number;
+    }
   /** A letter appears twice (the Spare reduction was skipped). */
-  | { readonly code: 'DUPLICATE_LETTER'; readonly letter: string; readonly index: number }
+  | {
+      readonly code: 'DUPLICATE_LETTER';
+      /** The repeated letter. */
+      readonly letter: string;
+      /** Zero-based position of its second occurrence in the letters given. */
+      readonly index: number;
+    }
   /** The variant number is not an integer ≥ 0. */
-  | { readonly code: 'INVALID_VARIANT'; readonly variant: number };
+  | {
+      readonly code: 'INVALID_VARIANT';
+      /** The variant number refused, as given. */
+      readonly variant: number;
+    };
 
 /** Outcome of `generateSpareCandidates`: the candidates, or the reason there are none. */
 export type SpareCandidatesResult =

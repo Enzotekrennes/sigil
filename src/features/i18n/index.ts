@@ -3,6 +3,11 @@
  * and persistence, the provider and hook that hold the current language, the
  * header selector, and the language-aware number and plural formatting.
  * The dictionaries themselves live with the app (`src/app/strings.*.ts`).
+ *
+ * Two languages only, French and English. The only value it stores is the
+ * language the user chose, in `localStorage`.
+ *
+ * @packageDocumentation
  */
 export { countNoun, formatDecimal } from './format.ts';
 export type { NounForms } from './format.ts';

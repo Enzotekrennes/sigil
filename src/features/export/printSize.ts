@@ -25,7 +25,11 @@ export type PrintSizeError = 'not-a-number' | 'out-of-range';
 
 /** A typed print size, read: the centimetres, or why they are refused. */
 export type PrintSizeResult =
-  | { readonly ok: true; readonly centimetres: number }
+  | {
+      readonly ok: true;
+      /** Size read, in centimetres, within `PRINT_SIZE_MIN_CM`–`PRINT_SIZE_MAX_CM`. */
+      readonly centimetres: number;
+    }
   | { readonly ok: false; readonly error: PrintSizeError };
 
 /**

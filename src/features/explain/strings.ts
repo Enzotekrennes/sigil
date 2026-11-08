@@ -15,8 +15,11 @@ import type {
 
 /** Column headings of the letter → number table. */
 export interface LetterTableHeadings {
+  /** Heading of the column of the intention's letters (A–Z). */
   readonly letter: string;
+  /** Heading of the column of alphabetical ranks (A = 1 … Z = 26). */
   readonly rank: string;
+  /** Heading of the column of numbers in the square (1 … N²). */
   readonly number: string;
 }
 

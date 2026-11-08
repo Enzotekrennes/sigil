@@ -98,7 +98,9 @@ const MITER_LIMIT = 4;
 
 /** SVG presentation attributes for the line ends and joins of one setting. */
 export interface LineEnds {
+  /** SVG `stroke-linecap`: `round` for rounded ends, `butt` for flat ends cut at the end point. */
   readonly strokeLinecap: 'round' | 'butt';
+  /** SVG `stroke-linejoin`: `round` with rounded ends, `miter` (sharp corners) with flat ends. */
   readonly strokeLinejoin: 'round' | 'miter';
   /** Only set for mitred joins. */
   readonly strokeMiterlimit?: number;

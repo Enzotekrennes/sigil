@@ -120,11 +120,25 @@ const UNIT_X: Point = { x: 1, y: 0 };
 /** Business error preventing a kamea sigil from being drawn. */
 export type KameaError =
   /** Fewer than two letters: no segment can be drawn. */
-  | { readonly code: 'TOO_FEW_LETTERS'; readonly letterCount: number }
+  | {
+      readonly code: 'TOO_FEW_LETTERS';
+      /** Number of letters given: 0 or 1. */
+      readonly letterCount: number;
+    }
   /** A letter outside A–Z reached the method (normalisation was skipped). */
-  | { readonly code: 'INVALID_LETTER'; readonly letter: string; readonly index: number }
+  | {
+      readonly code: 'INVALID_LETTER';
+      /** The item refused, as given. */
+      readonly letter: string;
+      /** Zero-based position of the item in the letters given. */
+      readonly index: number;
+    }
   /** Every letter falls on the same cell: the path would be a single point. */
-  | { readonly code: 'SINGLE_CELL'; readonly number: number };
+  | {
+      readonly code: 'SINGLE_CELL';
+      /** The number of the square every letter maps to, 1 … N². */
+      readonly number: number;
+    };
 
 /** Outcome of `buildKameaSigil`: the sigil, or the reason it cannot be drawn. */
 export type KameaResult =

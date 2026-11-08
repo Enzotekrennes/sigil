@@ -18,8 +18,11 @@ import type { Sigil, StyleOptions } from '../sigil/types.ts';
 
 /** What is exported: the sigil shown, how it is styled, and its method (for the file name). */
 export interface SigilExport {
+  /** The sigil as shown on the scene; only its strokes and marks are drawn, never the intention. */
   readonly sigil: Sigil;
+  /** Style of the scene (stroke width, line ends, framing circle, mode) the export reproduces. */
   readonly styleOptions: StyleOptions;
+  /** Method that produced the sigil; it only names the file (`sigil-<method>-…`). */
   readonly method: SigilMethod;
 }
 

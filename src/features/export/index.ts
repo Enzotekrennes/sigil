@@ -2,6 +2,12 @@
  * Public API of the export feature: the scene's "Export" button and dialog,
  * the SVG builder, the PNG rasteriser, the real-size stencil PDF, the print
  * size rules and the neutral file name.
+ *
+ * Everything happens in the browser: files are built in memory and handed
+ * to a download, never uploaded. The exports draw the sigil as shown and never
+ * receive the intention, so no file carries it, not even in its name (D8).
+ *
+ * @packageDocumentation
  */
 export { ExportDialog, EXPORT_PNG_SIZES } from './ExportDialog.tsx';
 export type { ExportDialogProps, ExportPngSize, ExportStrings } from './ExportDialog.tsx';
@@ -19,7 +25,7 @@ export {
   PT_PER_MM,
   STENCIL_AREA_MM,
 } from './pdf.ts';
-export type { PdfPathCommand, PdfText, StencilPage, StencilPdfTexts } from './pdf.ts';
+export type { InkSize, PdfPathCommand, PdfText, StencilPage, StencilPdfTexts } from './pdf.ts';
 export { EXPORT_PNG_SIZE, rasterizeSvg } from './png.ts';
 export {
   MM_PER_CM,

@@ -34,9 +34,18 @@ export type NormalizeIntentionError =
 
 /** Outcome of `normalizeIntention`: the intention, or a business error. */
 export type NormalizeIntentionResult =
-  | { ok: true; intention: Intention }
+  | {
+      ok: true;
+      /** The normalised intention, with at least one letter. */
+      intention: Intention;
+    }
   | { ok: false; error: 'EMPTY_INTENTION' }
-  | { ok: false; error: 'NO_LATIN_LETTER'; ignored: string[] };
+  | {
+      ok: false;
+      error: 'NO_LATIN_LETTER';
+      /** The characters that could not be read as letters, as in `Intention.ignored`, to show in the message. */
+      ignored: string[];
+    };
 
 /**
  * Ligatures and letters that Unicode decomposition (NFD) leaves intact but

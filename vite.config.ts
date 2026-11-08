@@ -4,9 +4,11 @@
  * The site is published as a GitHub Pages project page, so every asset URL is
  * prefixed with `/sigil/`. The production build is an installable PWA that
  * works offline: a generated service worker precaches the whole build (scripts,
- * styles, fonts, icons, legal files). The build also publishes LICENSE.txt,
- * NOTICE.txt, the Open Font Licenses of the two font families and the
- * third-party licence notices, and keeps legal comments through minification.
+ * styles, fonts, icons, legal files), and leaves the documentation site
+ * published next to it (`/sigil/docs/`) to the network. The build also
+ * publishes LICENSE.txt, NOTICE.txt, the Open Font Licenses of the two font
+ * families and the third-party licence notices, and keeps legal comments
+ * through minification.
  * Vitest reuses this file: unit tests run in jsdom and only cover `src/`;
  * end-to-end specs in `e2e/` belong to Playwright.
  */
@@ -30,6 +32,14 @@ const PAPER_COLOR = '#f3eee3';
  * offline use, legal files (`.txt`) included. The web app manifest is added to the precache by the plugin itself.
  */
 const PRECACHE_PATTERNS = ['**/*.{html,js,css,woff2,png,svg,txt}'];
+
+/**
+ * Navigations the service worker must leave to the network: the documentation
+ * site, published by the deploy workflow under `/sigil/docs/`, inside the
+ * app's scope. Without it, the navigation fallback would answer every docs
+ * page with the app's `index.html`.
+ */
+const DOCS_NAVIGATION_PATTERN = /^\/sigil\/docs(\/|$)/;
 
 /** Matches the Content-Security-Policy `<meta>` element of `index.html`, with its comment. */
 const CSP_META_PATTERN =
@@ -200,6 +210,7 @@ export default defineConfig({
       workbox: {
         globPatterns: PRECACHE_PATTERNS,
         cleanupOutdatedCaches: true,
+        navigateFallbackDenylist: [DOCS_NAVIGATION_PATTERN],
         // What "autoUpdate" means; set by hand because the plugin only infers it with injectRegister "auto".
         skipWaiting: true,
         clientsClaim: true,

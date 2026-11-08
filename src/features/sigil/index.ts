@@ -7,6 +7,11 @@
  * Model types (`Sigil`, `Mark`, `StyleOptions`…) stay importable from
  * `types.ts`, and the frame constants from `frame.ts`, where the methods take
  * them without loading the renderer.
+ *
+ * It draws a sigil it is given; it does not choose its shape, which is the
+ * methods' job (kamea, Spare).
+ *
+ * @packageDocumentation
  */
 export { SigilRenderer } from './SigilRenderer.tsx';
 export type { SigilRendererProps } from './SigilRenderer.tsx';
