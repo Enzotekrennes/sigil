@@ -184,3 +184,7 @@
 - Bugs : B1 valeur négative → message de format au lieu de la plage (mineur, renvoyé à dev) ; B2 texte FR du PDF non extractible avec accents (Helvetica standard sans ToUnicode, rendu correct) — observation.
 - Tests e2e : `e2e/f5-acceptance.spec.ts` (25 tests), commit après la correction de B1.
 - Non testé : impression papier et lecteurs PDF grand public.
+
+## 2026-11-08 — F5 suites
+- B1 corrigé (taille négative ou nulle → message de plage, FR/EN), test unitaire ; specs f5 + stencil 32/32.
+- B2 consigné en limite connue : correctif possible sans dépendance (table ToUnicode WinAnsi dans `pdf.ts`, ~30 lignes) — à arbitrer en phase 5.
