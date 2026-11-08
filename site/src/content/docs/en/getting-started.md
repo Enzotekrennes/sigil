@@ -44,6 +44,12 @@ npm run test:e2e
 Playwright builds the site and starts the preview server itself, on port 4173. Locally, it
 reuses a server already running on that port.
 
+## Generated files
+
+Some committed files come from scripts: the Spare glyphs (`npm run glyphs:generate`) and
+the README images (`npm run readme:assets`). See
+[Operations](/sigil/docs/en/operations/#generated-files) for when and how to run them.
+
 ## Build
 
 ```sh
@@ -65,6 +71,8 @@ npm ci
 npm run build      # generates the API reference, builds dist/, checks every internal link
 npm run preview    # serves site/dist/ at http://localhost:4321/sigil/docs/
 ```
+
+The deploy workflow builds it the same way and publishes it under `/sigil/docs/`.
 
 The API reference (`site/src/content/docs/en/reference/`) is generated at each build from
 the TSDoc of the app’s public modules, so the app’s dependencies must be installed first

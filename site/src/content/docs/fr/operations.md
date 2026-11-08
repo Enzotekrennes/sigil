@@ -10,19 +10,23 @@ fichiers qui doivent changer ensemble.
 ## Déployer
 
 Le workflow `.github/workflows/deploy.yml` publie l'app sur GitHub Pages à l'adresse
-`https://<account>.github.io/sigil/` :
+`https://<account>.github.io/sigil/`, et cette documentation à côté, à l'adresse
+`https://<account>.github.io/sigil/docs/` :
 
 - à chaque push sur `main` ;
 - à la main : **Actions → Deploy to GitHub Pages → Run workflow**.
 
 Le job `build` lance les mêmes vérifications qu'une session locale :
-`npm ci --ignore-scripts`, lint, formatage, types, tests unitaires, tests des scripts, le
-build, puis les tests de bout en bout de confidentialité, de CSP et de hors ligne sur ce
-build. Le job `deploy` ne publie qu'un build qui les a passés. Un seul déploiement à la
+`npm ci --ignore-scripts`, lint, formatage, types, tests unitaires, tests des scripts et
+build de l'app. Il installe et construit ensuite la documentation (`site/`), qui échoue sur
+un lien interne cassé, et joue les tests de bout en bout de confidentialité, de CSP et de
+hors ligne sur le build de l'app. Enfin, il copie la documentation dans `dist/docs/`. Le
+job `deploy` ne publie qu'un build qui a passé chaque étape. Un seul déploiement à la
 fois ; un push plus récent n'annule pas un déploiement en cours.
 
-Ce site de documentation (`site/`) se construit à part ; le workflow ne le publie pas
-encore. Son adresse prévue est `https://<account>.github.io/sigil/docs/`.
+Le service worker de l'app laisse `/sigil/docs/` au réseau (`navigateFallbackDenylist`
+dans `vite.config.ts`) : sans cela, chaque page de documentation ouvrirait l'app. La
+documentation n'est donc pas disponible hors ligne.
 
 Réglage à faire une fois sur GitHub : **Settings → Pages → Build and deployment → Source:
 GitHub Actions**.
@@ -33,7 +37,8 @@ GitHub Actions**.
    rouge.
 2. Lancez la même commande en local (voir [Prise en main](/sigil/docs/fr/getting-started/)) :
    `npm run lint`, `npm run format:check`, `npm run typecheck`, `npm run test`,
-   `npm run test:scripts`, `npm run build`, ou les tests de bout en bout.
+   `npm run test:scripts`, `npm run build`, les tests de bout en bout, ou `npm run build`
+   dans `site/` pour la documentation.
 3. Corrigez, poussez de nouveau. Pendant ce temps, le site en ligne reste sur le dernier
    déploiement réussi.
 
@@ -42,7 +47,12 @@ GitHub Actions**.
 Les visiteurs reçoivent la nouvelle version à leur visite suivante : le service worker
 remplace les fichiers enregistrés, sans rien demander.
 
-## Régénérer les glyphes Hershey
+## Fichiers générés
+
+Trois sortes de fichiers versionnés sont produits par des scripts ; ne les modifiez jamais
+à la main.
+
+### Glyphes Hershey
 
 `src/features/spare/glyphs/hersheyRomanSimplex.ts` est généré à partir du fichier de la
 police Hershey Roman Simplex `rowmans.jhf`, qui n'est pas versionné. Pour le régénérer :
@@ -62,25 +72,44 @@ lancements donnent le même fichier, et un test unitaire vérifie que le module 
 correspond à ses enregistrements source. Sans chemin, le script affiche son usage et
 s'arrête.
 
+### Images du README
+
+Les images du README, `.github/readme/trace-spare.svg`, `trace-kamea.svg` et
+`examples.svg`, sont dessinées à partir du tracé et de la géométrie de l'app elle-même :
+
+```sh
+npm run readme:assets
+```
+
+Le résultat est déterministe : relancé sur un code inchangé, il réécrit les mêmes octets.
+Lancez-le après une modification d'une méthode ou du moteur de rendu, pour que le README
+montre ce que l'app dessine. Les deux sigils tracés sont des SVG animés ; les lecteurs qui
+n'animent pas les SVG, et ceux qui demandent de réduire les animations, voient le sigil
+complet.
+
+### Icônes de la PWA
+
+`public/icon.svg` (aussi l'icône du site) et `public/icon-maskable.svg` sont les sources
+des icônes PNG voisines, exportées en 180, 192 et 512 px.
+
 ## Dépendances
 
-Dependabot (`.github/dependabot.yml`) propose chaque semaine une pull request groupée pour
-les dépendances npm et une pour les GitHub Actions, figées par leur SHA de commit complet.
-Relisez-les comme toute modification : le workflow lance toutes les vérifications avant un
-déploiement.
-
-Le site de documentation dans `site/` a son propre `package.json` et son propre lockfile,
-hors de la configuration actuelle de Dependabot.
+Dependabot (`.github/dependabot.yml`) propose chaque semaine une pull request groupée par
+écosystème et par dossier : les dépendances npm de l'app, celles de la documentation
+(`site/`, avec son propre `package.json` et son propre lockfile), et les GitHub Actions,
+figées par leur SHA de commit complet. Relisez-les comme toute modification : le workflow
+lance toutes les vérifications, build de la documentation compris, avant un déploiement.
 
 ## Modifier sans casser
 
 | Si vous changez… | Changez aussi… |
 |---|---|
-| Le nom du dépôt (le chemin `/sigil/`) | `BASE_PATH` dans `vite.config.ts`, l'URL de base dans `playwright.config.ts`, et `BASE_PATH` et les liens vers l'app dans `site/astro.config.mjs` |
+| Le nom du dépôt (le chemin `/sigil/`) | `BASE_PATH` et `DOCS_NAVIGATION_PATTERN` dans `vite.config.ts`, l'URL de base dans `playwright.config.ts`, et `BASE_PATH` et les liens vers l'app dans `site/astro.config.mjs` |
 | Un fond de thème (`--color-bg` dans `src/styles/tokens.css`) | Ses copies : le second bloc « or sur noir » de `tokens.css`, les métadonnées `theme-color` de `index.html`, `THEME_BACKGROUNDS` dans `src/app/theme.ts` et `PAPER_COLOR` dans `vite.config.ts` ; `e2e/theme.spec.ts` détecte un écart |
 | La politique de sécurité du contenu dans `index.html` | Gardez son commentaire : le serveur de développement trouve la balise `<meta>` grâce à lui, et échoue bruyamment sinon |
 | Un texte de l'interface | Les deux dictionnaires, `strings.fr.ts` et `strings.en.ts` |
 | Le comportement d'une fonction publique | Son TSDoc dans le même commit : la référence d'API en est générée |
+| Une méthode ou le moteur de rendu | Les images du README : `npm run readme:assets` |
 | Les données Hershey ou les polices | `NOTICE` et `LICENSE`, qui accompagnent le site |
 
 Ne mettez jamais l'intention dans l'URL, le stockage, un attribut ou un nom de fichier, et

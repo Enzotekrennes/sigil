@@ -24,6 +24,6 @@ replaces the stored files with the new ones, without asking anything.
 ## Where it lives
 
 The app is published on GitHub Pages under the `/sigil/` path. This documentation lives
-next to it, under `/sigil/docs/`.
+next to it, under `/sigil/docs/`; unlike the app, it needs a connection.
 
 - [Open the app](/sigil/)

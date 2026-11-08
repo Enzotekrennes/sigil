@@ -31,7 +31,16 @@ npm run test:e2e
 ```
 
 Le workflow de déploiement lance les mêmes vérifications, sauf les tests de bout en bout,
-dont il ne joue que ceux de confidentialité, de CSP et de hors ligne.
+dont il ne joue que ceux de confidentialité, de CSP et de hors ligne. Il construit aussi
+cette documentation : un lien interne cassé, ou un changement de TSDoc qui casse la
+référence, bloque le déploiement.
+
+Si votre modification touche une méthode ou le moteur de rendu, régénérez les images du
+README et commitez-les avec elle :
+
+```sh
+npm run readme:assets
+```
 
 ## Écrire un code qui se documente
 

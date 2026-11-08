@@ -30,7 +30,15 @@ npm run test:e2e
 ```
 
 The deploy workflow runs the same checks, except for the end-to-end specs, of which it
-plays only the privacy, CSP and offline ones.
+plays only the privacy, CSP and offline ones. It also builds this documentation: a broken
+internal link, or a TSDoc change that breaks the reference, stops the deploy.
+
+If your change touches a method or the renderer, regenerate the README images and commit
+them with it:
+
+```sh
+npm run readme:assets
+```
 
 ## Write code that documents itself
 

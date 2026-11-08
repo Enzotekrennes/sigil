@@ -25,6 +25,6 @@ service worker remplace les fichiers enregistrés par les nouveaux, sans rien de
 ## Où la trouver
 
 L'app est publiée sur GitHub Pages sous le chemin `/sigil/`. Cette documentation se trouve
-à côté, sous `/sigil/docs/`.
+à côté, sous `/sigil/docs/` ; contrairement à l'app, elle demande une connexion.
 
 - [Ouvrir l'app](/sigil/)

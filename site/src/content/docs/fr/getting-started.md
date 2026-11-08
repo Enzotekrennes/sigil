@@ -45,6 +45,13 @@ npm run test:e2e
 Playwright construit le site et lance lui-même le serveur de prévisualisation, sur le
 port 4173. En local, il réutilise un serveur qui tourne déjà sur ce port.
 
+## Fichiers générés
+
+Certains fichiers versionnés viennent de scripts : les glyphes de Spare
+(`npm run glyphs:generate`) et les images du README (`npm run readme:assets`). Voir
+[Exploitation](/sigil/docs/fr/operations/#fichiers-générés) pour savoir quand et comment
+les lancer.
+
 ## Construire
 
 ```sh
@@ -67,6 +74,8 @@ npm ci
 npm run build      # generates the API reference, builds dist/, checks every internal link
 npm run preview    # serves site/dist/ at http://localhost:4321/sigil/docs/
 ```
+
+Le workflow de déploiement la construit de la même façon et la publie sous `/sigil/docs/`.
 
 La référence d'API (`site/src/content/docs/en/reference/`) est générée à chaque build à
 partir du TSDoc des modules publics de l'app : les dépendances de l'app doivent donc être

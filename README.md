@@ -97,9 +97,9 @@ documentation into `dist/docs/`, then publishes. Actions are pinned by commit SH
 permissions are minimal per job, and Dependabot proposes updates weekly.
 
 One-time setup on GitHub: Settings → Pages → Build and deployment → Source:
-**GitHub Actions**. If the repository is not named `sigil`, change `BASE_PATH` in
-`vite.config.ts`, the base URL in `playwright.config.ts` and `base` in
-`site/astro.config.mjs`.
+**GitHub Actions**. If the repository is not named `sigil`, change `BASE_PATH` and
+`DOCS_NAVIGATION_PATTERN` in `vite.config.ts`, the base URL in `playwright.config.ts`,
+and `BASE_PATH` and the `APP_LINKS` list in `site/astro.config.mjs`.
 
 The build is an installable PWA: a service worker precaches every file, so the app
 works offline after the first visit, and a new deploy is picked up on the next visit.

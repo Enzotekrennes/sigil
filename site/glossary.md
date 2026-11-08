@@ -106,6 +106,9 @@ fichiers, commandes et code ne se traduisent jamais.
 | operations | exploitation | page title / titre de page |
 | contributing | contribuer | page title / titre de page |
 | user guide | guide d'usage | |
+| generated files | fichiers générés | |
+| renderer | moteur de rendu | `SigilRenderer` |
+| README images | images du README | |
 | API reference | référence d'API | |
 | end-to-end tests | tests de bout en bout | |
 | unit tests | tests unitaires | |
