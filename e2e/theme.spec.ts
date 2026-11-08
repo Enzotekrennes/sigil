@@ -288,20 +288,26 @@ test.describe('explicit choice', () => {
     expect(await cspViolations(page)).toEqual([]);
   });
 
-  test('applies the stored theme before the app starts (no flash of the other theme)', async ({
-    page,
-  }) => {
-    await page.emulateMedia({ colorScheme: 'light' });
-    await page.goto('./');
-    await pickTheme(page, 'Or sur noir');
+  test.describe('before the app starts', () => {
+    // A service worker would serve the bundle from its cache, out of reach of
+    // page.route(): it is blocked so that the bundle can really be withheld.
+    test.use({ serviceWorkers: 'block' });
 
-    // Without the app bundle, only the start-up script can have set the theme.
-    await page.route(/\/assets\/index-[^/]+\.js$/, (route) => route.abort());
-    await page.reload();
+    test('applies the stored theme before the app starts (no flash of the other theme)', async ({
+      page,
+    }) => {
+      await page.emulateMedia({ colorScheme: 'light' });
+      await page.goto('./');
+      await pickTheme(page, 'Or sur noir');
 
-    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-    await expect(page.locator('#root')).toBeEmpty();
-    expect(await pageBackground(page)).toBe(PAGE_BACKGROUND.dark);
+      // Without the app bundle, only the start-up script can have set the theme.
+      await page.route(/\/assets\/index-[^/]+\.js$/, (route) => route.abort());
+      await page.reload();
+
+      await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+      await expect(page.locator('#root')).toBeEmpty();
+      expect(await pageBackground(page)).toBe(PAGE_BACKGROUND.dark);
+    });
   });
 
   test('stores the theme name only, nothing for the system, and ignores invalid values', async ({
