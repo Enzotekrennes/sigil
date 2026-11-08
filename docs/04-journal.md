@@ -170,3 +170,10 @@
 
 ## 2026-11-08 — F4 Exports : spec adapté au dialogue
 - Test : spec `e2e/f4-acceptance.spec.ts` adapté au dialogue « Exporter » (45 tests, verts deux fois sur HEAD) ; B1 (focus) confirmé corrigé et devenu test normal ; PNG 1024 et 4096 vérifiés. Aucun nouveau bug.
+
+## 2026-11-08 — T15 Sélecteur de thème et finition
+- Rôle : design
+- Fait : sélecteur à trois états (D17), persistance bornée, `theme-init.js` sans flash, metas `color-scheme`/`theme-color`, composant commun `CompactChoice` (langue + thème), `--color-backdrop`.
+- Vérifications : lint, typecheck, 841/841 tests verts (revérifié) ; build ; e2e 123/123 (f4 exclu) ; 42 captures (7 écrans × 3 largeurs × 2 thèmes) ; contrastes AA mesurés dans le navigateur, 0 échec ; pochoir noir sur blanc en thème or.
+- Écarts au plan : trois états au lieu de ☾/☀ (D17, design.md mis à jour).
+- Points ouverts : f4-acceptance non rejoué avec le nouvel arrêt clavier de l'en-tête (à couvrir au test F6/F7).
