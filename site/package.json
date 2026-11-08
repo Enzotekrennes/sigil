@@ -1,0 +1,28 @@
+{
+  "name": "sigil-docs",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Bilingual (English/French) documentation site of Sigil, built with Starlight.",
+  "license": "MIT",
+  "author": "Enzo Abel",
+  "type": "module",
+  "engines": {
+    "node": "^22.13.0 || >=24"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "0.42.7",
+    "astro": "7.4.2",
+    "sharp": "0.35.5",
+    "starlight-links-validator": "0.27.0",
+    "starlight-typedoc": "0.23.1",
+    "typedoc": "0.28.20",
+    "typedoc-plugin-markdown": "4.14.1",
+    "typescript": "6.0.3"
+  }
+}

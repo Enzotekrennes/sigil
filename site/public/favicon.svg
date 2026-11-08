@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Sigil app icon (PWA "any" purpose and favicon): framing circle and a kamea path with its start circle and end bar, ink on paper (colors from src/styles/tokens.css). Source of pwa-192x192.png, pwa-512x512.png and apple-touch-icon-180x180.png. -->
+  <rect width="512" height="512" fill="#f3eee3"/>
+  <g fill="none" stroke="#1c1914" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="256" cy="256" r="200"/>
+    <polyline points="256,356 156,156 356,256 356,156 156,356"/>
+    <circle cx="256" cy="356" r="18" fill="#f3eee3"/>
+    <line x1="133" y1="333" x2="179" y2="379"/>
+  </g>
+</svg>

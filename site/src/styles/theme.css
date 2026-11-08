@@ -1,0 +1,33 @@
+/*
+ * Colours of the documentation site, taken from the app's themes
+ * (src/styles/tokens.css of the app): rubric red on paper for the light
+ * theme, flat gold on black for the dark one. Starlight's own system fonts are
+ * kept, so the site loads no font file.
+ */
+
+/* Dark theme (Starlight's default): gold on black. */
+:root {
+  --sl-color-accent-low: #3a2f14;
+  --sl-color-accent: #d2ae5c;
+  --sl-color-accent-high: #e4c47e;
+  --sl-color-black: #0f0e0c;
+  --sl-color-gray-6: #1a1814;
+  --sl-color-gray-5: #2e2a22;
+}
+
+/* Light theme: ink on paper with a rubric red accent. */
+:root[data-theme="light"] {
+  --sl-color-accent-low: #f0dcd6;
+  --sl-color-accent: #8e2a1d;
+  --sl-color-accent-high: #6e1f15;
+  --sl-color-white: #1c1914;
+  --sl-color-gray-7: #faf7f0;
+  --sl-color-black: #f3eee3;
+  --sl-color-gray-6: #e9e2d3;
+}
+
+/* Screenshots of the app: a thin frame so light shots stand out on a light page. */
+.sl-markdown-content img {
+  border: 1px solid var(--sl-color-gray-5);
+  border-radius: 4px;
+}
