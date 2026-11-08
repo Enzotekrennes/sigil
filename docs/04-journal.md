@@ -195,3 +195,11 @@
 - Bugs mineurs renvoyés à dev : B1 « a 8 cm print » ; B2 texte de simplification contradictoire quand le nombre de segments augmente ; B3 tournures anglaises lourdes.
 - Observations : titre et meta description non localisés ; test clavier F4 instable sous charge (4 workers).
 - Tests e2e : `e2e/f6-acceptance.spec.ts` (55 tests), commit après correction.
+
+## 2026-11-08 — F7 Hors ligne, confidentialité, déploiement : test
+- Verdict : VALIDÉ (passage n° 1, commit 8bced35 en worktree)
+- Preuves : hors ligne complet, serveur tué compris (tracés, panneau, langue, thème, exports SVG/PNG/PDF, chunk pdf-lib précaché) ; 46 requêtes toutes sur l'origine `/sigil/` ; intention absente de l'URL, des stockages, des caches (octets), du titre, de l'historique, contre-épreuve OK ; 23 fichiers précachés en 200, installabilité Chromium sans erreur ; mise à jour du service worker sur deux builds OK ; CSP avec dialogue ouvert ; `deploy.yml` (permissions minimales, sans secret) et ses commandes verts.
+- Suite e2e complète (hors f5/f6 non commités) : 178/179, l'échec étant B1.
+- Bugs mineurs : B1 test « no flash » de `theme.spec` instable (service worker) → design ; B2 course Échap → Entrée dans le dialogue d'export → dev.
+- Remarques : actions GitHub figées par tag majeur (pas par SHA) ; `base: '/sigil/'` impose le nom de dépôt `sigil` ; e2e non lancés en CI.
+- Tests e2e : `e2e/f7-acceptance.spec.ts` (11 tests).

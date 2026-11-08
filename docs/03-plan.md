@@ -127,7 +127,7 @@ Voir `docs/design.md` et `src/styles/tokens.css`. Page de grimoire : beaucoup de
 - Étant donné un parcours complet (saisie, tracé, exports), quand j'observe le réseau, alors aucune requête ne sort hors des fichiers du site.
 - Étant donné une intention saisie, quand je regarde l'URL et le stockage du navigateur, alors l'intention n'y figure pas.
 - Étant donné le build, quand le workflow de déploiement s'exécute, alors le site est servi sous `/sigil/` sans lien cassé (vérifié en local avec `vite preview --base /sigil/`).
-- Test : [ ] VALIDÉ
+- Test : [x] VALIDÉ (2026-11-08)
 
 ## Tâches
 | ID | Fonct. | Tâche | Rôle | Dépend de | Périmètre | Fini quand | État |
