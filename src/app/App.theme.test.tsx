@@ -88,13 +88,13 @@ describe('theme selector', () => {
 
   it('keeps the intention and the sigil shown', () => {
     render(<App />);
-    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Je suis calme' } });
+    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'Calme' } });
     fireEvent.click(screen.getByRole('button', { name: 'Tracer' }));
     const strokes = screen.getByRole('img', { name: 'Sigil kamea de Saturne' }).innerHTML;
 
     pickTheme('Or sur noir');
 
-    expect(screen.getByRole('textbox')).toHaveValue('Je suis calme');
+    expect(screen.getByRole('textbox')).toHaveValue('Calme');
     expect(screen.getByRole('img', { name: 'Sigil kamea de Saturne' }).innerHTML).toBe(strokes);
     expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe('dark');
   });

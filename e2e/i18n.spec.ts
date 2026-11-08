@@ -47,7 +47,7 @@ test.describe('with an English browser', () => {
   test('traces and explains in English', async ({ page }) => {
     await page.goto('./');
 
-    await page.getByLabel('Intention').fill('I am calm');
+    await page.getByLabel('Intention').fill('Calm');
     await page.getByRole('button', { name: 'Trace', exact: true }).click();
 
     await expect(page.getByRole('img', { name: 'Kamea sigil of Saturn' })).toBeVisible();
@@ -70,14 +70,14 @@ test.describe('with a French browser', () => {
   test('keeps the language picked across a reload, and stores only that', async ({ page }) => {
     await page.goto('./');
 
-    await page.getByLabel('Intention').fill('Je suis calme');
+    await page.getByLabel('Intention').fill('Calme');
     await page.getByRole('button', { name: 'Tracer', exact: true }).click();
     await expect(page.getByRole('img', { name: 'Sigil kamea de Saturne' })).toBeVisible();
     // The switch is drawn on the label; the radio itself is visually hidden.
     await page.getByText('EN', { exact: true }).click();
 
     await expect(page.getByRole('img', { name: 'Kamea sigil of Saturn' })).toBeVisible();
-    await expect(page.getByLabel('Intention')).toHaveValue('Je suis calme');
+    await expect(page.getByLabel('Intention')).toHaveValue('Calme');
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
     expect(await storageEntries(page)).toEqual({
       local: { [LANGUAGE_STORAGE_KEY]: 'en' },

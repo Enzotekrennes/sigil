@@ -170,7 +170,7 @@ const ENGLISH_WITNESSES = [
 /**
  * Walks the screen through its main states (empty, kamea traced with an
  * ignored character, Spare traced, an error with its action, the empty
- * intention error) and gathers the texts of each.
+ * intention error, the single-word errors) and gathers the texts of each.
  *
  * @param language - The interface language, which sets the button labels.
  * @returns All texts met, as one string.
@@ -179,7 +179,8 @@ function textsOfEveryState(language: Language): string {
   const trace = language === 'fr' ? 'Tracer' : 'Trace';
   const texts = [pageTexts(language)];
 
-  typeIntention('Calm mind 2');
+  // One word with a duplicate (M) and an ignored character (2).
+  typeIntention('Mammoth2');
   clickTrace(trace);
   texts.push(pageTexts(language));
 
@@ -192,6 +193,14 @@ function textsOfEveryState(language: Language): string {
   texts.push(pageTexts(language));
 
   typeIntention('');
+  clickTrace(trace);
+  texts.push(pageTexts(language));
+
+  typeIntention('Calm mind');
+  clickTrace(trace);
+  texts.push(pageTexts(language));
+
+  typeIntention('Anticonstitutionnellement');
   clickTrace(trace);
   texts.push(pageTexts(language));
 
@@ -292,7 +301,7 @@ describe('language switch', () => {
   it('keeps the intention, the sigil and its animation run', () => {
     browserLanguages('fr-FR');
     render(<App />);
-    typeIntention('Je suis calme');
+    typeIntention('Calme');
     clickTrace('Tracer');
     const sigil = screen.getByRole('img', { name: 'Sigil kamea de Saturne' });
     const run = sigil.querySelector('[data-run]')?.getAttribute('data-run');
@@ -300,12 +309,12 @@ describe('language switch', () => {
 
     pickLanguage('English');
 
-    expect(screen.getByRole('textbox')).toHaveValue('Je suis calme');
+    expect(screen.getByRole('textbox')).toHaveValue('Calme');
     const translated = screen.getByRole('img', { name: 'Kamea sigil of Saturn' });
     expect(translated.querySelector('[data-run]')?.getAttribute('data-run')).toBe(run);
     expect(translated.innerHTML).toBe(strokes);
     expect(
-      screen.getByText('Sigil traced: 11 letters on the square of Saturn.'),
+      screen.getByText('Sigil traced: 5 letters on the square of Saturn.'),
     ).toBeInTheDocument();
   });
 
@@ -313,7 +322,7 @@ describe('language switch', () => {
     browserLanguages('fr-FR');
     render(<App />);
     fireEvent.click(screen.getByRole('radio', { name: 'Spare' }));
-    typeIntention('Je suis calme');
+    typeIntention('Tranquillité');
     clickTrace('Tracer');
     fireEvent.click(screen.getByRole('button', { name: 'Autre variante' }));
     const strokes = screen.getByRole('img', { name: 'Sigil de Spare, variante 2' }).innerHTML;
@@ -321,6 +330,20 @@ describe('language switch', () => {
     pickLanguage('English');
 
     expect(screen.getByRole('img', { name: 'Spare sigil, variant 2' }).innerHTML).toBe(strokes);
+  });
+
+  it('translates the single-word error already shown under the field (D18)', () => {
+    browserLanguages('fr-FR');
+    render(<App />);
+    typeIntention('Je suis calme');
+    clickTrace('Tracer');
+    expect(screen.getByRole('textbox')).toHaveAccessibleDescription(/Un seul mot, sans espace/);
+
+    pickLanguage('English');
+
+    expect(screen.getByRole('textbox')).toHaveAccessibleDescription(
+      /One word only, without spaces: beyond one word, the sigil becomes unreadable\./,
+    );
   });
 
   it('translates an error already shown under the field', () => {
@@ -391,5 +414,6 @@ describe('no text outside the dictionaries', () => {
     expect(english).toContain('vowels');
     expect(english).toContain('duplicates');
     expect(english).toContain('ignored');
+    expect(english).toContain('unreadable');
   });
 });

@@ -31,8 +31,8 @@ import { decodePDFRawStream, PDFDict, PDFDocument, PDFName, PDFRawStream } from 
 import { waitForServiceWorkerControl } from './service-worker.ts';
 
 /** Intention of the F1 scenario, in French and in English. */
-const INTENTION_FR = 'Je suis calme';
-const INTENTION_EN = 'I am calm';
+const INTENTION_FR = 'Calme';
+const INTENTION_EN = 'Calm';
 
 /** PDF points per millimetre: 1 pt = 1/72 in, 1 in = 25.4 mm. */
 const PT_PER_MM = 72 / 25.4;
@@ -693,7 +693,8 @@ test('the PDF carries the printing instruction in French and in English', async 
 test('the PDF has neutral metadata and never contains the intention, its letters or the tool name', async ({
   page,
 }, testInfo) => {
-  const intention = 'Éè à ç <script> & "quote" 日本 Je suis calme';
+  // One word (D18): accents, markup, quotes and another script inside it, without spaces.
+  const intention = 'Éèàç<script>&"quote"日本calme';
   await page.goto('./');
   await trace(page, { intention });
   const { pdf, name } = await exportPdf(page, testInfo, '6');
@@ -734,14 +735,15 @@ test('the PDF has neutral metadata and never contains the intention, its letters
     'calme',
     'script',
     'quote',
-    'jsclm',
-    'suis',
+    // The letters traced, run together.
+    'eeacscriptquotecalme',
+    'eeac',
     'x-image',
     'xmp',
   ]) {
     expect(lowered, forbidden).not.toContain(forbidden);
   }
-  expect(pdf.texts.join(' ')).not.toMatch(/calme|suis|script|quote/i);
+  expect(pdf.texts.join(' ')).not.toMatch(/calme|eeac|script|quote/i);
 });
 
 test('the stencil PNG at 4096 px is pure black on pure white, opaque, with no coloured pixel', async ({

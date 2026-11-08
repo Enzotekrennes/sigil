@@ -10,8 +10,8 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import { PEN_LIFT_MS, TRACE_DURATION_MS, TRACE_MAX_MS } from '../src/features/sigil/geometry.ts';
 import { waitForTracingTime } from './animations.ts';
 
-/** Intention of the F1 scenario, traced on Saturn by default. */
-const INTENTION = 'Je suis calme';
+/** Intention of the F1 scenario, one word (D18), traced on Saturn by default. */
+const INTENTION = 'Calme';
 
 /**
  * Types the intention and presses the "Tracer" button.
@@ -196,11 +196,11 @@ test.describe('with reduced motion', () => {
     const path = sigil(page).locator('path.sigil-renderer__stroke');
     const whole = await path.getAttribute('d');
     await replay.click();
-    await expect(page.getByText('Pas à pas : étape 1 sur 10.').first()).toBeVisible();
+    await expect(page.getByText('Pas à pas : étape 1 sur 4.').first()).toBeVisible();
     expect((await path.getAttribute('d'))?.match(/L/g)).toHaveLength(1);
     await expect(sigil(page).locator('[data-mark="end-bar"]')).toHaveCount(0);
 
-    for (let step = 2; step <= 10; step += 1) await replay.click();
+    for (let step = 2; step <= 4; step += 1) await replay.click();
     expect(await path.getAttribute('d')).toBe(whole);
     await expect(sigil(page).locator('[data-mark="end-bar"]')).toHaveCount(1);
   });

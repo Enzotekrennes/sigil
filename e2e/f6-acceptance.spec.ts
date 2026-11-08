@@ -79,7 +79,8 @@ const L = {
   },
 } as const;
 
-const INTENTION = { en: 'I am calm and free', fr: 'Je suis calme et libre' } as const;
+/** Intention typed in each language: one word (D18). */
+const INTENTION = { en: 'Freedom', fr: 'Liberté' } as const;
 
 /** Locale of the browser context for each interface language. */
 const LOCALE = { en: 'en-US', fr: 'fr-FR' } as const;
@@ -537,7 +538,7 @@ test.describe('scenario 2: persistence', () => {
     browser,
   }) => {
     const page = await openApp(browser, { locale: 'fr-FR', scheme: 'light' });
-    await traceIntention(page, 'fr', 'Un secret très personnel');
+    await traceIntention(page, 'fr', 'Secret');
     await pickTheme(page, 'fr', 'dark');
     await page.getByTitle('English', { exact: true }).click();
     await expect(page.getByRole('radio', { name: 'Gold on black' })).toBeChecked();
@@ -553,7 +554,7 @@ test.describe('scenario 2: persistence', () => {
     // The intention is neither restored after a reload nor stored anywhere.
     await expect(page.getByLabel('Intention')).toHaveValue('');
     expect(JSON.stringify(state)).not.toContain('secret');
-    expect(page.url()).not.toMatch(/secret|personnel/i);
+    expect(page.url()).not.toMatch(/secret/i);
     const databases = await page.evaluate(async () => await indexedDB.databases());
     expect(databases.filter((db) => !/workbox|sigil-sw/i.test(db.name ?? ''))).toEqual([]);
     await page.context().close();
@@ -563,7 +564,7 @@ test.describe('scenario 2: persistence', () => {
     browser,
   }) => {
     const page = await openApp(browser, { locale: 'en-US' });
-    const secret = 'Zorglub Mistral Quetzal';
+    const secret = 'Zorglub';
     await traceIntention(page, 'en', secret);
     await pickTheme(page, 'en', 'dark');
     await page.getByTitle('Français', { exact: true }).click();
@@ -1092,7 +1093,7 @@ test.describe('English interface', () => {
     await chooseSpare(page);
     // Several intentions to meet the three cases (fewer, as many, more segments).
     const seen = new Set<string>();
-    for (const intention of [INTENTION.en, 'Strong clear mind', 'Peace', 'I am safe and loved']) {
+    for (const intention of [INTENTION.en, 'Strength', 'Peace', 'Safety']) {
       await traceIntention(page, 'en', intention);
       const text = await page
         .getByRole('heading', { name: 'Simplification' })
@@ -1164,7 +1165,7 @@ test.describe('PDF and stencil', () => {
     browser,
   }) => {
     const en = await openApp(browser, { locale: 'en-US' });
-    await traceIntention(en, 'en', 'Pure intention');
+    await traceIntention(en, 'en', 'Purity');
     const enPdf = await exportPdf(en, 'en');
     expect(enPdf.strings.join('|')).toMatch(
       /Print at 100%, with no scaling and no \W?fit to page\W?\./,
@@ -1175,11 +1176,11 @@ test.describe('PDF and stencil', () => {
     );
     expect(enPdf.strings.join('|')).not.toMatch(/Imprimer|Sigil : |trait/);
     expect(enPdf.fileName).toMatch(/\.pdf$/);
-    expect(enPdf.fileName.toLowerCase()).not.toContain('pure');
+    expect(enPdf.fileName.toLowerCase()).not.toContain('purity');
     await en.context().close();
 
     const fr = await openApp(browser, { locale: 'fr-FR' });
-    await traceIntention(fr, 'fr', 'Intention pure');
+    await traceIntention(fr, 'fr', 'Pureté');
     const frPdf = await exportPdf(fr, 'fr');
     expect(frPdf.strings.join('|')).toMatch(/Imprimer à 100/);
     expect(frPdf.strings.join('|')).not.toContain('Print at');

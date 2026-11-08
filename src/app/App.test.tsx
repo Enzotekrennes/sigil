@@ -14,8 +14,14 @@ import { stubNativeDialog } from '../test/dialogStub.ts';
 import { candidateCountFor } from '../features/spare/index.ts';
 import { App } from './App.tsx';
 
-/** Intention of the F1 scenario. */
-const INTENTION = 'Je suis calme';
+/** Intention of the F1 scenario: one word (D18), C A L M E. */
+const INTENTION = 'Calme';
+
+/**
+ * Intention of the Spare scenarios: one word whose reduction removes both
+ * duplicates (L I T) and vowels (A U I E), and keeps T R N Q L.
+ */
+const SPARE_INTENTION = 'Tranquillité';
 
 /**
  * Types an intention in the field.
@@ -170,12 +176,28 @@ describe('App', () => {
     expect(within(group).getByRole('radio', { name: 'Lune 9×9' })).not.toBeChecked();
   });
 
-  it('counts the letters to trace while typing', () => {
+  it('counts the letters to trace while typing, apostrophe left out', () => {
     render(<App />);
 
-    typeIntention('Je suis calme !');
+    typeIntention('Aujourd’hui');
 
-    expect(screen.getByText('11 lettres à tracer')).toBeInTheDocument();
+    expect(screen.getByText('10 lettres à tracer')).toBeInTheDocument();
+  });
+
+  it('asks for a single word of 24 letters at most in the help of the field (D18)', () => {
+    render(<App />);
+
+    expect(screen.getByLabelText('Intention')).toHaveAccessibleDescription(
+      /^Un seul mot, de 24 lettres au plus\./,
+    );
+  });
+
+  it('signals in the counter a word longer than 24 letters (D18)', () => {
+    render(<App />);
+
+    typeIntention('Anticonstitutionnellement');
+
+    expect(screen.getByText('25 lettres : 1 de trop, 24 au plus')).toBeInTheDocument();
   });
 
   it('traces the sigil with a generic accessible name that does not contain the intention', () => {
@@ -188,7 +210,7 @@ describe('App', () => {
     expect(sigil.outerHTML.toLowerCase()).not.toContain('calme');
     expect(screen.getByRole('button', { name: 'Rejouer' })).toBeEnabled();
     expect(
-      screen.getByText('Sigil tracé : 11 lettres sur le carré de Saturne.'),
+      screen.getByText('Sigil tracé : 5 lettres sur le carré de Saturne.'),
     ).toBeInTheDocument();
   });
 
@@ -215,15 +237,15 @@ describe('App', () => {
     const explanation = within(panel);
     expect(explanation.getByText('nombre = ((rang − 1) mod 9) + 1')).toBeInTheDocument();
     expect(
-      explanation.getByText('Exemple : J, rang 10 → ((10 − 1) mod 9) + 1 = 1'),
+      explanation.getByText('Exemple : L, rang 12 → ((12 − 1) mod 9) + 1 = 3'),
     ).toBeInTheDocument();
     expect(explanation.getByText(/réduction pythagoricienne/)).toBeInTheDocument();
     const table = explanation.getByRole('list', { name: 'Table lettre, rang, case' });
-    expect(within(table).getAllByRole('listitem')).toHaveLength(11);
-    expect(within(table).getByText('U : rang 21, case 3')).toBeInTheDocument();
+    expect(within(table).getAllByRole('listitem')).toHaveLength(5);
+    expect(within(table).getByText('M : rang 13, case 4')).toBeInTheDocument();
     expect(
       explanation.getByRole('img', {
-        name: 'Carré de Saturne, 3 × 3, avec le chemin : 1, 5, 1, 3, 9, 1, 3, 1, 3, 4, 5',
+        name: 'Carré de Saturne, 3 × 3, avec le chemin : 3, 1, 3, 4, 5',
       }),
     ).toBeInTheDocument();
   });
@@ -244,7 +266,7 @@ describe('App', () => {
   it('signals the characters it ignored', () => {
     render(<App />);
 
-    typeIntention('Calme 2026');
+    typeIntention('Calme2026');
     clickTrace();
 
     // Testing Library folds the no-break spaces inside the guillemets into plain spaces.
@@ -280,6 +302,51 @@ describe('App', () => {
     );
     expect(screen.queryByRole('img', { name: /^Sigil kamea/ })).not.toBeInTheDocument();
     expect(screen.getByText(/Rien à tracer : corrigez l’intention/)).toBeInTheDocument();
+  });
+
+  it('asks for a single word and draws nothing for a sentence, focus on the field (D18)', () => {
+    render(<App />);
+
+    typeIntention('Je suis calme');
+    clickTrace();
+
+    const field = screen.getByLabelText('Intention');
+    expect(field).toHaveAttribute('aria-invalid', 'true');
+    expect(field).toHaveFocus();
+    expect(field).toHaveAccessibleDescription(
+      /Un seul mot, sans espace : au-delà d’un mot, le sigil devient illisible\./,
+    );
+    expect(screen.queryByRole('img', { name: /^Sigil kamea/ })).not.toBeInTheDocument();
+    expect(screen.getByText(/Rien à tracer : corrigez l’intention/)).toBeInTheDocument();
+
+    chooseSpare();
+    clickTrace();
+    expect(field).toHaveAccessibleDescription(/Un seul mot, sans espace/);
+    expect(screen.queryByRole('img', { name: /^Sigil de Spare/ })).not.toBeInTheDocument();
+  });
+
+  it('refuses a word longer than 24 letters, with its count (D18)', () => {
+    render(<App />);
+
+    typeIntention('Anticonstitutionnellement');
+    clickTrace();
+
+    const field = screen.getByLabelText('Intention');
+    expect(field).toHaveAttribute('aria-invalid', 'true');
+    expect(field).toHaveAccessibleDescription(
+      /Ce mot donne 25 lettres, 24 au plus : au-delà, le sigil devient illisible\./,
+    );
+    expect(screen.queryByRole('img', { name: /^Sigil kamea/ })).not.toBeInTheDocument();
+  });
+
+  it('traces a word with a hyphen as a single word (D18)', () => {
+    render(<App />);
+
+    typeIntention('Peut-être');
+    clickTrace();
+
+    expect(screen.getByRole('img', { name: 'Sigil kamea de Saturne' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Intention')).toHaveAttribute('aria-invalid', 'false');
   });
 
   it('agrees the verb with the number of characters it could not trace', () => {
@@ -324,7 +391,7 @@ describe('App', () => {
     clickTrace();
     const firstRun = currentRun();
 
-    typeIntention('Je suis calme et serein');
+    typeIntention('Sérénité');
     expect(currentRun()).toBe(firstRun);
 
     fireEvent.click(screen.getByRole('button', { name: 'Rejouer' }));
@@ -440,24 +507,24 @@ describe('App', () => {
     const replay = screen.getByRole('button', { name: 'Rejouer' });
     const run = currentRun();
 
-    expect(kameaSegments()).toBe(10);
+    expect(kameaSegments()).toBe(4);
     expect(replay).toHaveAccessibleDescription(/chaque clic sur « Rejouer » trace une étape/);
 
     fireEvent.click(replay);
     expect(kameaSegments()).toBe(1);
     expect(
-      screen.getByText('Pas à pas : étape 1 sur 10.', { selector: '[role="status"]' }),
+      screen.getByText('Pas à pas : étape 1 sur 4.', { selector: '[role="status"]' }),
     ).toBeInTheDocument();
 
     fireEvent.click(replay);
     expect(kameaSegments()).toBe(2);
     expect(currentRun()).toBe(run);
 
-    for (let step = 3; step <= 10; step += 1) fireEvent.click(replay);
-    expect(kameaSegments()).toBe(10);
+    for (let step = 3; step <= 4; step += 1) fireEvent.click(replay);
+    expect(kameaSegments()).toBe(4);
     expect(kameaSigil().querySelector('[data-mark="end-bar"]')).not.toBeNull();
     expect(
-      screen.getByText(/étape 10 sur 10, sigil complet/, { selector: '[role="status"]' }),
+      screen.getByText(/étape 4 sur 4, sigil complet/, { selector: '[role="status"]' }),
     ).toBeInTheDocument();
 
     fireEvent.click(replay);
@@ -474,7 +541,7 @@ describe('App', () => {
 
     clickTrace();
 
-    expect(kameaSegments()).toBe(10);
+    expect(kameaSegments()).toBe(4);
   });
 
   it('swaps the planets for the vowel option, off by default, when Spare is chosen (D4)', () => {
@@ -493,11 +560,11 @@ describe('App', () => {
     render(<App />);
     chooseSpare();
 
-    typeIntention(INTENTION);
+    typeIntention(SPARE_INTENTION);
     clickTrace();
 
     const sigil = screen.getByRole('img', { name: 'Sigil de Spare, variante 1' });
-    expect(sigil.outerHTML.toLowerCase()).not.toContain('calme');
+    expect(sigil.outerHTML.toLowerCase()).not.toContain('tranquill');
     expect(sigil.querySelectorAll('[data-mark]')).toHaveLength(0);
     expect(screen.getByText('Variante 1')).toBeInTheDocument();
     expect(
@@ -512,12 +579,12 @@ describe('App', () => {
       'Composition retenue',
       'Simplification',
     ]);
-    const strip = panel.getByRole('list', { name: 'Les 11 lettres de l’intention' });
-    expect(within(strip).getAllByRole('listitem')[1]).toHaveTextContent('E, retirée : voyelle');
-    expect(within(strip).getAllByRole('listitem')[5]).toHaveTextContent('S, retirée : doublon');
-    expect(panel.getByText('S E')).toBeInTheDocument();
-    expect(panel.getByText('E U I A')).toBeInTheDocument();
-    expect(panel.getByText('J S C L M')).toBeInTheDocument();
+    const strip = panel.getByRole('list', { name: 'Les 12 lettres de l’intention' });
+    expect(within(strip).getAllByRole('listitem')[2]).toHaveTextContent('A, retirée : voyelle');
+    expect(within(strip).getAllByRole('listitem')[8]).toHaveTextContent('L, retirée : doublon');
+    expect(panel.getByText('L I T')).toBeInTheDocument();
+    expect(panel.getByText('A U I E')).toBeInTheDocument();
+    expect(panel.getByText('T R N Q L')).toBeInTheDocument();
     const tiles = panel.getByRole('list', {
       name: 'Lettres retenues et transformation de chacune',
     });
@@ -525,7 +592,7 @@ describe('App', () => {
     expect(
       panel.getByRole('img', { name: 'Les 5 lettres superposées avant fusion' }),
     ).toBeInTheDocument();
-    // J S C L M: five retained letters, as many candidates as the Spare budget gives them.
+    // T R N Q L: five retained letters, as many candidates as the Spare budget gives them.
     expect(
       panel.getByText(
         new RegExp(`^Parmi ${String(candidateCountFor(5))} façons de poser ces lettres`),
@@ -539,7 +606,7 @@ describe('App', () => {
   it('draws another, reproducible sigil for each variant', () => {
     const { unmount } = render(<App />);
     chooseSpare();
-    typeIntention(INTENTION);
+    typeIntention(SPARE_INTENTION);
     clickTrace();
     const first = spareStrokes();
 
@@ -552,7 +619,7 @@ describe('App', () => {
 
     render(<App />);
     chooseSpare();
-    typeIntention(INTENTION);
+    typeIntention(SPARE_INTENTION);
     clickTrace();
     expect(spareStrokes()).toEqual(first);
     fireEvent.click(screen.getByRole('button', { name: 'Autre variante' }));
@@ -562,14 +629,14 @@ describe('App', () => {
   it('keeps the variant when tracing again, and goes back to the first one on any change', () => {
     render(<App />);
     chooseSpare();
-    typeIntention(INTENTION);
+    typeIntention(SPARE_INTENTION);
     clickTrace();
     fireEvent.click(screen.getByRole('button', { name: 'Autre variante' }));
 
     clickTrace();
     expect(screen.getByRole('img', { name: 'Sigil de Spare, variante 2' })).toBeInTheDocument();
 
-    typeIntention('Je suis serein');
+    typeIntention('Sérénité');
     clickTrace();
     expect(screen.getByRole('img', { name: 'Sigil de Spare, variante 1' })).toBeInTheDocument();
 
@@ -582,7 +649,7 @@ describe('App', () => {
   it('keeps the vowels when asked, removing duplicates only', () => {
     render(<App />);
     chooseSpare();
-    typeIntention(INTENTION);
+    typeIntention(SPARE_INTENTION);
     clickTrace();
     const withoutVowels = spareStrokes();
 
@@ -590,7 +657,7 @@ describe('App', () => {
     clickTrace();
 
     const panel = explanationPanel();
-    expect(panel.getByText('J E S U I C A L M')).toBeInTheDocument();
+    expect(panel.getByText('T R A N Q U I L E')).toBeInTheDocument();
     expect(panel.queryByText('Voyelles')).not.toBeInTheDocument();
     expect(spareStrokes()).not.toEqual(withoutVowels);
     expect(
@@ -601,12 +668,12 @@ describe('App', () => {
   it('does not replay the tracing when a control changes after a Spare trace', () => {
     render(<App />);
     chooseSpare();
-    typeIntention(INTENTION);
+    typeIntention(SPARE_INTENTION);
     clickTrace();
     const firstRun = currentRun(/^Sigil de Spare/);
 
     fireEvent.click(screen.getByRole('switch', { name: 'Garder les voyelles' }));
-    typeIntention('Je suis calme et serein');
+    typeIntention('Sérénité');
 
     expect(currentRun(/^Sigil de Spare/)).toBe(firstRun);
   });
@@ -638,7 +705,7 @@ describe('App', () => {
     render(<App />);
     chooseSpare();
 
-    typeIntention('Calme 2026');
+    typeIntention('Calme2026');
     clickTrace();
 
     expect(screen.getAllByText(/Caractères ignorés|Ignorés car/)).toHaveLength(1);

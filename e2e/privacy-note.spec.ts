@@ -15,8 +15,11 @@ const AA_TEXT_CONTRAST = 4.5;
 /** Phone width of the design's mobile layout, in CSS pixels. */
 const PHONE = { width: 375, height: 812 } as const;
 
-/** Intention of the F1 scenario. */
-const INTENTION = 'Je suis calme';
+/**
+ * Intention traced, one word (D18) whose Spare reduction removes duplicates
+ * and vowels, so every row of the removal list holds letters.
+ */
+const INTENTION = 'Tranquillité';
 
 /**
  * Contrast ratio of an element's text colour on the first opaque background
@@ -207,12 +210,12 @@ test.describe('translation marks', () => {
 
     await trace(page, 'Kamea');
     await expect(page.locator('.explain-steps__letters [translate="no"]')).toHaveText(
-      'JESUISCALME',
+      'TRANQUILLITE',
     );
-    await expect(page.locator('.letter-table__letter[translate="no"]')).toHaveCount(11);
+    await expect(page.locator('.letter-table__letter[translate="no"]')).toHaveCount(12);
 
     await trace(page, 'Spare');
-    await expect(page.locator('.letter-strip [translate="no"]')).toHaveCount(11);
+    await expect(page.locator('.letter-strip [translate="no"]')).toHaveCount(12);
     await expect(page.locator('.spare-removal dd[translate="no"]')).toHaveCount(3);
   });
 });

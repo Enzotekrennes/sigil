@@ -2,8 +2,8 @@
  * Acceptance spec of feature F1 (kamea sigil), written by the tester from the
  * five scenarios of the plan plus edge cases: loops, determinism across
  * reloads, the seven squares against Agrippa's values (typed here
- * independently of the app source), business errors, privacy (D8), strict CSP
- * (D12), 375 px layout and keyboard use.
+ * independently of the app source), business errors, the single-word rule
+ * (D18), privacy (D8), strict CSP (D12), 375 px layout and keyboard use.
  */
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
@@ -111,20 +111,20 @@ function marksOf(page: Page): Promise<(string | undefined)[]> {
   );
 }
 
-test.describe('scenario 1 - "Je suis calme" on Saturn', () => {
-  test('joins cells 1,5,1,3,9,1,3,1,3,4,5 with a start circle and a perpendicular end bar', async ({
+test.describe('scenario 1 - "Calme" on Saturn', () => {
+  test('joins cells 3,1,3,4,5 with a start circle and a perpendicular end bar', async ({
     page,
   }) => {
     await page.goto('./');
-    await trace(page, 'Je suis calme');
+    await trace(page, 'Calme');
     await expect(sigilOf(page)).toBeVisible();
 
     await expect(
       page.getByRole('img', {
-        name: 'Carré de Saturne, 3 × 3, avec le chemin : 1, 5, 1, 3, 9, 1, 3, 1, 3, 4, 5',
+        name: 'Carré de Saturne, 3 × 3, avec le chemin : 3, 1, 3, 4, 5',
       }),
     ).toBeVisible();
-    await expect(page.getByText('Cases : 1 → 5 → 1 → 3 → 9 → 1 → 3 → 1 → 3 → 4 → 5')).toBeVisible();
+    await expect(page.getByText('Cases : 3 → 1 → 3 → 4 → 5')).toBeVisible();
 
     const geometry = await sigilOf(page).evaluate((svg) => {
       const d = svg.querySelector('path')?.getAttribute('d') ?? '';
@@ -140,13 +140,13 @@ test.describe('scenario 1 - "Je suis calme" on Saturn', () => {
         circle: [Number(circle?.getAttribute('cx')), Number(circle?.getAttribute('cy'))],
       };
     });
-    expect(geometry.points).toHaveLength(11);
+    expect(geometry.points).toHaveLength(5);
     // The circle sits on the first point of the path.
     expect(geometry.circle).toEqual(geometry.points[0]);
     // The bar is centred on the last point and perpendicular to the last segment.
     const [x1, y1, x2, y2] = geometry.bar as [number, number, number, number];
-    const last = geometry.points[10] as [number, number];
-    const before = geometry.points[9] as [number, number];
+    const last = geometry.points[4] as [number, number];
+    const before = geometry.points[3] as [number, number];
     expect((x1 + x2) / 2).toBeCloseTo(last[0], 1);
     expect((y1 + y2) / 2).toBeCloseTo(last[1], 1);
     const dot = (x2 - x1) * (last[0] - before[0]) + (y2 - y1) * (last[1] - before[1]);
@@ -162,9 +162,9 @@ test.describe('scenario 2 - loops', () => {
     expect(await marksOf(page)).toEqual(['start-circle', 'loop', 'end-bar']);
   });
 
-  test('draws one loop per case on "Belle allée" on the Moon (L-L and E-E)', async ({ page }) => {
+  test('draws one loop per case on "Allée" on the Moon (L-L and E-E)', async ({ page }) => {
     await page.goto('./');
-    await trace(page, 'Belle allée', 'Lune');
+    await trace(page, 'Allée', 'Lune');
     const loops = (await marksOf(page)).filter((mark) => mark === 'loop');
     expect(loops).toHaveLength(2);
   });
@@ -189,9 +189,10 @@ test.describe('scenario 2 - loops', () => {
 
 test.describe('scenario 3 - determinism', () => {
   for (const [text, planet] of [
-    ['Je suis calme', 'Saturne'],
-    ['Belle allée', 'Lune'],
-    ['Ça va très bien œuvre', 'Mars'],
+    ['Calme', 'Saturne'],
+    ['Allée', 'Lune'],
+    ['Garçonnière', 'Mars'],
+    ['Cœur', 'Vénus'],
   ] as const) {
     test(`gives the same SVG after a reload: "${text}" on ${planet}`, async ({ page }) => {
       await page.goto('./');
@@ -210,11 +211,11 @@ test.describe('scenario 3 - determinism', () => {
 test.describe('scenario 4 - "how it is made" panel', () => {
   test('shows the rule, the letter table and the square with the path', async ({ page }) => {
     await page.goto('./');
-    await trace(page, 'Je suis calme');
+    await trace(page, 'Calme');
     await expect(page.getByText('Règle de conversion')).toBeVisible();
     await expect(page.getByText('nombre = ((rang − 1) mod 9) + 1')).toBeVisible();
     await expect(page.getByText('Lettre → nombre')).toBeVisible();
-    await expect(page.getByText('J : rang 10, case 1')).toBeAttached();
+    await expect(page.getByText('L : rang 12, case 3')).toBeAttached();
     await expect(page.getByText('M : rang 13, case 4')).toBeAttached();
     await expect(page.locator('svg.kamea-grid .kamea-grid__path path')).toHaveCount(1);
   });
@@ -222,7 +223,7 @@ test.describe('scenario 4 - "how it is made" panel', () => {
   for (const [planet, square] of Object.entries(AGRIPPA)) {
     test(`shows Agrippa's square of ${planet}`, async ({ page }) => {
       await page.goto('./');
-      await trace(page, 'Je suis calme et serein', planet);
+      await trace(page, 'Tranquillité', planet);
       const values = await page
         .locator('svg.kamea-grid .kamea-grid__numbers text')
         .evaluateAll((nodes) => nodes.map((node) => Number(node.textContent)));
@@ -235,9 +236,10 @@ test.describe('scenario 4 - "how it is made" panel', () => {
     });
   }
 
-  test('traces every planet with a long intention', async ({ page }) => {
+  test('traces every planet with the longest intention allowed (24 letters)', async ({ page }) => {
     await page.goto('./');
-    const long = 'Je suis calme et serein, la paix grandit en moi chaque jour avec douceur';
+    const long = 'Désinstitutionnalisation';
+    expect(long.length).toBe(24);
     for (const planet of Object.keys(AGRIPPA)) {
       await trace(page, long, planet);
       await expect(sigilOf(page)).toHaveAttribute(
@@ -272,11 +274,69 @@ test.describe('scenario 5 - nothing to trace', () => {
 
   test('removes a previous sigil when the next trace fails', async ({ page }) => {
     await page.goto('./');
-    await trace(page, 'Je suis calme');
+    await trace(page, 'Calme');
     await expect(sigilOf(page)).toBeVisible();
     await trace(page, '123 !');
     await expect(sigilOf(page)).toHaveCount(0);
   });
+});
+
+test.describe('scenario 6 - one word only (D18)', () => {
+  for (const [text, message] of [
+    ['Je suis calme', /Un seul mot, sans espace : au-delà d’un mot, le sigil devient illisible\./],
+    ['Calme serein', /Un seul mot, sans espace/],
+    [
+      'Anticonstitutionnellement',
+      /Ce mot donne 25 lettres, 24 au plus : au-delà, le sigil devient illisible\./,
+    ],
+  ] as const) {
+    test(`refuses "${text}" with a message under the field and draws nothing`, async ({ page }) => {
+      await page.goto('./');
+      await trace(page, text);
+      const field = page.getByLabel('Intention');
+      await expect(page.getByText(message)).toBeVisible();
+      await expect(field).toHaveAttribute('aria-invalid', 'true');
+      await expect(field).toBeFocused();
+      // The message is part of the field description, so it is read with the field.
+      await expect(field).toHaveAccessibleDescription(message);
+      await expect(sigilOf(page)).toHaveCount(0);
+      await expect(page.getByText(/Rien à tracer : corrigez l’intention/)).toBeVisible();
+    });
+  }
+
+  test('removes the sigil shown when a sentence is traced next', async ({ page }) => {
+    await page.goto('./');
+    await trace(page, 'Calme');
+    await expect(sigilOf(page)).toBeVisible();
+    await trace(page, 'Je suis calme');
+    await expect(sigilOf(page)).toHaveCount(0);
+  });
+
+  test('says how many letters are too many while typing a long word', async ({ page }) => {
+    await page.goto('./');
+    await expect(
+      page.getByText('Un seul mot, de 24 lettres au plus.', { exact: false }),
+    ).toBeVisible();
+    await page.getByLabel('Intention').fill('Anticonstitutionnellement');
+    await expect(page.getByText('25 lettres : 1 de trop, 24 au plus')).toBeVisible();
+  });
+
+  for (const [text, cells] of [
+    ['Aujourd’hui', 10],
+    ["aujourd'hui", 10],
+    ['Peut-être', 8],
+    ['  Calme  ', 5],
+  ] as const) {
+    test(`traces "${text}" as one word of ${String(cells)} letters`, async ({ page }) => {
+      await page.goto('./');
+      await trace(page, text, 'Lune');
+      await expect(sigilOf(page)).toBeVisible();
+      await expect(page.getByLabel('Intention')).toHaveAttribute('aria-invalid', 'false');
+      await expect(page.getByRole('status').filter({ hasText: /Sigil tracé/ })).toHaveText(
+        `Sigil tracé : ${String(cells)} lettres sur le carré de la Lune.`,
+      );
+    });
+  }
 });
 
 test.describe('robustness', () => {
@@ -286,23 +346,29 @@ test.describe('robustness', () => {
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
     await page.goto('./');
-    await page.getByLabel('Intention').fill('Je suis calme');
+    await page.getByLabel('Intention').fill('Calme');
     await page.getByRole('button', { name: 'Tracer' }).dblclick();
     await expect(sigilOf(page)).toHaveCount(1);
     await page.getByLabel('Intention').press('Enter');
     await expect(sigilOf(page)).toHaveCount(1);
 
-    await trace(page, 'La paix '.repeat(1500), 'Lune');
-    await expect(sigilOf(page)).toBeVisible();
+    // A 12 000-letter word is refused as too long, without freezing the page.
+    await trace(page, 'Paix'.repeat(3000), 'Lune');
+    await expect(page.getByText(/Ce mot donne 12000 lettres, 24 au plus/)).toBeVisible();
+    await expect(sigilOf(page)).toHaveCount(0);
 
-    await trace(page, '<img src=x onerror=alert(1)> "&\' Je suis calme');
+    // Markup characters inside one word: 18 letters traced, nothing injected.
+    await trace(page, '<b/onclick=alert(1)>"&\'Calme', 'Lune');
     await expect(sigilOf(page)).toBeVisible();
+    // The same characters around spaces are refused as several words, still without error.
+    await trace(page, '<img src=x onerror=alert(1)> "&\' Calme', 'Lune');
+    await expect(page.getByText(/Un seul mot, sans espace/)).toBeVisible();
     expect(errors).toEqual([]);
   });
 
   test('starts empty after a reload (nothing restored)', async ({ page }) => {
     await page.goto('./');
-    await trace(page, 'Je suis calme');
+    await trace(page, 'Calme');
     await page.reload();
     await expect(sigilOf(page)).toHaveCount(0);
     await expect(page.getByLabel('Intention')).toHaveValue('');
@@ -328,7 +394,7 @@ test.describe('privacy and CSP', () => {
     });
     await page.goto('./');
     const url = page.url();
-    await trace(page, 'Je suis calme');
+    await trace(page, 'Calme');
     await page.getByLabel('Intention').press('Enter');
     await expect(sigilOf(page)).toBeVisible();
 
@@ -367,7 +433,7 @@ test.describe('mobile 375 px', () => {
 
   test('stays usable without horizontal scroll', async ({ page }) => {
     await page.goto('./');
-    await trace(page, 'Belle allée', 'Lune');
+    await trace(page, 'Allée', 'Lune');
     await expect(sigilOf(page)).toBeVisible();
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,

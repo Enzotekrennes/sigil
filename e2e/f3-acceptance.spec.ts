@@ -14,16 +14,20 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 
 import { waitForAnimationsToFinish, waitForTracingTime } from './animations.ts';
 
-/** Intention of the F1 scenario, traced on Saturn by default. */
-const CALM = 'Je suis calme';
+/** Intention of the F1 scenario, one word (D18), traced on Saturn by default. */
+const CALM = 'Calme';
 
-/** Intention with a doubled letter, so the kamea ends with a loop. */
-const BELLE_ALLEE = 'Belle allée';
+/**
+ * One word with two doubled letters (S-S inside, E-E at the end), so the kamea
+ * draws two loops on the Moon and ends with a loop.
+ */
+const DOUBLED = 'Rassemblée';
 
-/** Intention of more than 120 letters, to stress the cap on the Spare tracing time. */
-const LONG_INTENTION =
-  'Je trouve chaque jour la force de continuer mes projets avec patience courage et confiance ' +
-  'tout en gardant le calme necessaire pour apprendre de mes erreurs et avancer sereinement';
+/**
+ * Long single word (23 letters, the limit is 24) whose reduction keeps 11
+ * letters, to stress the cap on the Spare tracing time.
+ */
+const LONG_INTENTION = 'Psychophysiologiquement';
 
 /** Kamea planets, as labelled in the planet picker. */
 const PLANETS = [
@@ -478,7 +482,7 @@ async function drawnSegments(page: Page): Promise<number> {
 }
 
 test.describe('scenario 1: the sigil traces itself in path order, then the marks appear', () => {
-  test('kamea "Je suis calme" on Saturn: start mark, path, end mark', async ({ page }) => {
+  test('kamea "Calme" on Saturn: start mark, path, end mark', async ({ page }) => {
     await collectCspViolations(page);
     await page.goto('./');
     await trace(page);
@@ -716,9 +720,9 @@ test.describe('scenario 4: "Rejouer" restarts the animation', () => {
 
 test.describe('total tracing time (D19, T19)', () => {
   for (const planet of PLANETS) {
-    test(`kamea ${planet}, "${BELLE_ALLEE}": at most 3 s without the circle`, async ({ page }) => {
+    test(`kamea ${planet}, "${DOUBLED}": at most 3 s without the circle`, async ({ page }) => {
       await page.goto('./');
-      await page.getByLabel('Intention').fill(BELLE_ALLEE);
+      await page.getByLabel('Intention').fill(DOUBLED);
       await page.getByRole('radio', { name: planet }).check({ force: true });
       const wall = await timeTracing(page);
       const scheduled = tracingEnd(await sigilAnimations(page));
@@ -731,8 +735,8 @@ test.describe('total tracing time (D19, T19)', () => {
     });
   }
 
-  test('Spare with an intention of more than 120 letters: at most 3 s', async ({ page }) => {
-    expect(LONG_INTENTION.replace(/[^a-z]/gi, '').length).toBeGreaterThan(120);
+  test('Spare with a long one-word intention (11 letters kept): at most 3 s', async ({ page }) => {
+    expect(LONG_INTENTION.replace(/[^a-z]/gi, '').length).toBe(23);
     await page.goto('./');
     await page.getByText('Spare', { exact: true }).click();
     await page.getByLabel('Intention').fill(LONG_INTENTION);
@@ -792,9 +796,9 @@ test.describe('stroke width 0.4 to 2.4', () => {
 
 test.describe('the drawing stays inside the framing circle, with a visible gap', () => {
   for (const planet of PLANETS) {
-    test(`kamea ${planet}, "${BELLE_ALLEE}"`, async ({ page }) => {
+    test(`kamea ${planet}, "${DOUBLED}"`, async ({ page }) => {
       await page.goto('./');
-      await traceKamea(page, planet, BELLE_ALLEE);
+      await traceKamea(page, planet, DOUBLED);
       await setFrame(page, true);
       const gaps: string[] = [];
       for (const width of STROKE_WIDTHS) {
@@ -810,7 +814,7 @@ test.describe('the drawing stays inside the framing circle, with a visible gap',
 
   test('kamea with square line ends (butt caps, mitred joins)', async ({ page }) => {
     await page.goto('./');
-    await traceKamea(page, 'Lune 9×9', BELLE_ALLEE);
+    await traceKamea(page, 'Lune 9×9', DOUBLED);
     await setFrame(page, true);
     await page.getByRole('switch', { name: 'Extrémités arrondies' }).click({ force: true });
     await setStrokeWidth(page, 2.4);
@@ -845,9 +849,9 @@ test.describe('the drawing stays inside the framing circle, with a visible gap',
 
 test.describe('the final kamea loop does not touch the end bar (T17)', () => {
   for (const planet of ['Lune 9×9', 'Saturne 3×3']) {
-    test(`${planet}, "${BELLE_ALLEE}", widths 0.4 to 2.4`, async ({ page }) => {
+    test(`${planet}, "${DOUBLED}", widths 0.4 to 2.4`, async ({ page }) => {
       await page.goto('./');
-      await traceKamea(page, planet, BELLE_ALLEE);
+      await traceKamea(page, planet, DOUBLED);
       await expect(sigil(page).locator('[data-mark="loop"]').first()).toBeAttached();
       await setFrame(page, true);
       const gaps: string[] = [];
@@ -871,7 +875,7 @@ test.describe('reduced motion: step-by-step replay', () => {
     page,
   }) => {
     await page.goto('./');
-    await traceKamea(page, 'Lune 9×9', BELLE_ALLEE);
+    await traceKamea(page, 'Lune 9×9', DOUBLED);
     const path = sigil(page).locator('path.sigil-renderer__stroke');
     const whole = (await path.getAttribute('d')) ?? '';
     const segments = await drawnSegments(page);

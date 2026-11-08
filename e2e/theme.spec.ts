@@ -20,8 +20,8 @@ import type { Page } from '@playwright/test';
 /** Key documented in `src/app/theme.ts` and read by `public/theme-init.js`. */
 const THEME_STORAGE_KEY = 'sigil.theme';
 
-/** Intention of the F1 scenario. */
-const INTENTION = 'Je suis calme';
+/** Intention of the F1 scenario, one word (D18). */
+const INTENTION = 'Calme';
 
 /** Page backgrounds of the two themes, as computed by the browser. */
 const PAGE_BACKGROUND = { light: 'rgb(243, 238, 227)', dark: 'rgb(15, 14, 12)' } as const;
@@ -352,7 +352,7 @@ for (const theme of ['Or sur noir', 'Encre sur papier'] as const) {
     await expect(page.getByText(/Écrivez une intention avant de tracer/)).toBeVisible();
     audits.error = await contrastAudit(page);
 
-    await page.getByLabel('Intention').fill('Je suis calme 2');
+    await page.getByLabel('Intention').fill('Calme2');
     await page.getByRole('button', { name: 'Tracer', exact: true }).click();
     await expect(page.getByRole('img', { name: 'Sigil kamea de Saturne' })).toBeVisible();
     audits.kamea = await contrastAudit(page);

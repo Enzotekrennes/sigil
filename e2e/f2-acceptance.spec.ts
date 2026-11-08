@@ -2,16 +2,20 @@
  * Acceptance scenarios of feature F2 (Spare sigil), played on the production
  * build: reduction shown in the panel, determinism across reloads, variants,
  * frame and centre of gravity measured on the rendered path data, the
- * "only vowels" message, the vowels option resetting the variant, privacy of
- * the intention, CSP, 375 px layout and keyboard use.
+ * "only vowels" message, the vowels option resetting the variant, the
+ * single-word rule (D18), privacy of the intention, CSP, 375 px layout and
+ * keyboard use.
  *
  * The "no letter readable on its own" criterion is a visual judgement and is
  * not asserted here: it is recorded in the tester report.
  */
 import { expect, test, type Page } from '@playwright/test';
 
-/** Intention of the reference scenario. */
-const CALM = 'Je suis calme';
+/**
+ * Intention of the reference scenario: one word (D18) whose reduction removes
+ * duplicates (L I T) and vowels (A U I E) and keeps five letters, T R N Q L.
+ */
+const CALM = 'Tranquillité';
 
 /** Side of the sigil square in frame units (viewBox 0 0 100 100). */
 const FRAME_SIDE = 100;
@@ -134,14 +138,14 @@ async function measureSigil(page: Page): Promise<Geometry> {
   return { centreX: sumX / total, centreY: sumY / total, minX, minY, maxX, maxY };
 }
 
-test('scenario 1: shows the removed letters and the kept letters J S C L M', async ({ page }) => {
+test('scenario 1: shows the removed letters and the kept letters T R N Q L', async ({ page }) => {
   await page.goto('./');
   await traceSpare(page, CALM);
 
   await expect(page.getByRole('img', { name: 'Sigil de Spare, variante 1' })).toBeVisible();
-  await expect(page.getByText('S E', { exact: true })).toBeVisible(); // duplicates
-  await expect(page.getByText('E U I A', { exact: true })).toBeVisible(); // vowels
-  await expect(page.getByText('J S C L M', { exact: true })).toBeVisible(); // kept
+  await expect(page.getByText('L I T', { exact: true })).toBeVisible(); // duplicates
+  await expect(page.getByText('A U I E', { exact: true })).toBeVisible(); // vowels
+  await expect(page.getByText('T R N Q L', { exact: true })).toBeVisible(); // kept
 });
 
 test('scenario 2: same intention and settings give the same sigil after a reload, with or without punctuation', async ({
@@ -157,7 +161,7 @@ test('scenario 2: same intention and settings give the same sigil after a reload
   expect((await strokePaths(page)).join('|')).toBe(first);
 
   // The seed comes from the kept letters, not from the raw text.
-  await traceSpare(page, 'je suis calme !');
+  await traceSpare(page, 'tranquillite!');
   expect((await strokePaths(page)).join('|')).toBe(first);
 });
 
@@ -194,15 +198,13 @@ test('scenario 4: sigils fit the frame and their centre of gravity is within 10 
 }) => {
   const cases: readonly (readonly [string, number])[] = [
     [CALM, 5],
-    ['Je trouve ma voie', 2],
-    ['I am strong', 5],
-    ['My mind is clear', 1],
-    ['La paix est en moi', 1],
+    ['Trouver', 2],
+    ['Strong', 5],
+    ['Clarity', 1],
+    ['Paix', 1],
     ['Yeux', 1],
-    [
-      'Je choisis chaque jour la patience la clarté et la force tranquille pour avancer sereinement vers mes projets les plus chers',
-      1,
-    ],
+    // The longest word allowed, 24 letters (D18).
+    ['Désinstitutionnalisation', 1],
   ];
   let measured = 0;
   await page.goto('./');
@@ -259,7 +261,46 @@ test('tracing again after changing the vowels option restarts at variant 1', asy
 
   await traceSpare(page, CALM, true);
   await expect(page.getByRole('img', { name: 'Sigil de Spare, variante 1' })).toBeVisible();
-  await expect(page.getByText('J E S U I C A L M', { exact: true })).toBeVisible();
+  await expect(page.getByText('T R A N Q U I L E', { exact: true })).toBeVisible();
+});
+
+test('scenario 6: a sentence of several words asks for a single word, for Spare and kamea (D18)', async ({
+  page,
+}) => {
+  await page.goto('./');
+  await traceSpare(page, 'je suis calme');
+
+  const field = page.getByRole('textbox', { name: 'Intention' });
+  const message = /Un seul mot, sans espace : au-delà d’un mot, le sigil devient illisible\./;
+  await expect(page.getByText(message)).toBeVisible();
+  await expect(field).toHaveAttribute('aria-invalid', 'true');
+  await expect(field).toBeFocused();
+  await expect(field).toHaveAccessibleDescription(message);
+  await expect(page.getByRole('img', { name: /^Sigil de Spare/ })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Autre variante' })).toBeDisabled();
+
+  await page.getByText('Kamea', { exact: true }).click();
+  await page.getByRole('button', { name: 'Tracer' }).click();
+  await expect(page.getByText(message)).toBeVisible();
+  await expect(page.getByRole('img', { name: /^Sigil kamea/ })).toHaveCount(0);
+
+  // One word traces again, and the error goes away.
+  await page.getByText('Spare', { exact: true }).click();
+  await field.fill('Calme');
+  await page.getByRole('button', { name: 'Tracer' }).click();
+  await expect(page.getByRole('img', { name: 'Sigil de Spare, variante 1' })).toBeVisible();
+  await expect(field).toHaveAttribute('aria-invalid', 'false');
+});
+
+test('scenario 6: a word of more than 24 letters is refused with its count (D18)', async ({
+  page,
+}) => {
+  await page.goto('./');
+  await traceSpare(page, 'Anticonstitutionnellement');
+
+  await expect(page.getByText('25 lettres : 1 de trop, 24 au plus')).toBeVisible();
+  await expect(page.getByText(/Ce mot donne 25 lettres, 24 au plus/)).toBeVisible();
+  await expect(page.getByRole('img', { name: /^Sigil de Spare/ })).toHaveCount(0);
 });
 
 test('keeps the intention out of the URL, storage, caches and sigil, and breaks no CSP rule', async ({
@@ -280,12 +321,12 @@ test('keeps the intention out of the URL, storage, caches and sigil, and breaks 
   await page.goto('./');
   const before = page.url();
 
-  await traceSpare(page, 'Je trouve ma voie');
+  await traceSpare(page, 'Trouvaille');
   await goToVariant(page, 2);
 
   expect(page.url()).toBe(before);
   const leaks = await page.evaluate(async () => {
-    const words = ['trouve', 'voie'];
+    const words = ['trouvaille', 'trouv'];
     const holders = [
       JSON.stringify(Object.entries(localStorage)),
       JSON.stringify(Object.entries(sessionStorage)),

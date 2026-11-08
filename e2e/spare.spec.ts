@@ -6,8 +6,11 @@
  */
 import { expect, test, type Page } from '@playwright/test';
 
-/** Intention of the F2 scenario. */
-const INTENTION = 'Je suis calme';
+/**
+ * Intention of the F2 scenario: one word (D18) whose reduction removes
+ * duplicates (L I T) and vowels (A U I E) and keeps T R N Q L.
+ */
+const INTENTION = 'Tranquillité';
 
 /**
  * Selects Spare, types the intention and presses the "Tracer" button.
@@ -36,7 +39,7 @@ async function strokePaths(page: Page): Promise<string[]> {
     .evaluateAll((paths) => paths.map((path) => path.getAttribute('d') ?? ''));
 }
 
-test('traces "Je suis calme" with Spare, shows the reduction, and redraws each variant identically after a reload', async ({
+test('traces "Tranquillité" with Spare, shows the reduction, and redraws each variant identically after a reload', async ({
   page,
 }) => {
   // The screen sets custom properties through React's `style` prop: the strict CSP (D12) must allow it.
@@ -54,8 +57,8 @@ test('traces "Je suis calme" with Spare, shows the reduction, and redraws each v
   const sigil = page.getByRole('img', { name: 'Sigil de Spare, variante 1' });
   await expect(sigil).toBeVisible();
   await expect(sigil.locator('[data-mark]')).toHaveCount(0);
-  await expect(page.getByText('J S C L M', { exact: true })).toBeVisible();
-  await expect(page.getByText('E U I A', { exact: true })).toBeVisible();
+  await expect(page.getByText('T R N Q L', { exact: true })).toBeVisible();
+  await expect(page.getByText('A U I E', { exact: true })).toBeVisible();
   await expect(
     page.getByRole('img', { name: 'Les 5 lettres superposées avant fusion' }),
   ).toBeVisible();
@@ -127,9 +130,9 @@ test('keeps the intention out of the URL, the storage and the Spare sigil markup
       .join(';')
       .toLowerCase(),
   );
-  expect(stored).not.toContain('calme');
+  expect(stored).not.toContain('tranquill');
   const markup = await page
     .getByRole('img', { name: /^Sigil de Spare/ })
     .evaluate((svg) => svg.outerHTML.toLowerCase());
-  expect(markup).not.toContain('calme');
+  expect(markup).not.toContain('tranquill');
 });

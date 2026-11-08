@@ -15,6 +15,7 @@ import type {
 import type { ExportStrings } from '../features/export/index.ts';
 import { countNoun, formatDecimal } from '../features/i18n/index.ts';
 import type { LanguageToggleStrings } from '../features/i18n/index.ts';
+import { MAX_INTENTION_LETTERS } from '../features/intention/index.ts';
 import type { StrokeWidthLevel } from '../features/sigil/index.ts';
 import type { Planet } from '../features/sigil/types.ts';
 import type { AppStrings } from './strings.fr.ts';
@@ -290,9 +291,14 @@ export const STRINGS_EN: AppStrings = {
 
   intention: {
     label: 'Intention',
-    help: 'A short sentence in the present tense. It stays in this browser: nothing is sent or saved.',
-    letterCount: (count) =>
-      count === 0 ? 'No letters to trace yet' : `${counted(count, 'letter', 'letters')} to trace`,
+    help: `A single word, ${String(MAX_INTENTION_LETTERS)} letters at most. It stays in this browser: nothing is sent or saved.`,
+    letterCount: (count) => {
+      if (count === 0) return 'No letters to trace yet';
+      if (count > MAX_INTENTION_LETTERS) {
+        return `${counted(count, 'letter', 'letters')}: ${String(count - MAX_INTENTION_LETTERS)} too many, ${String(MAX_INTENTION_LETTERS)} at most`;
+      }
+      return `${counted(count, 'letter', 'letters')} to trace`;
+    },
   },
 
   method: {
@@ -360,11 +366,14 @@ export const STRINGS_EN: AppStrings = {
   },
 
   errors: {
-    empty: 'Write an intention before tracing, for example “I am calm”.',
+    empty: `Write an intention before tracing, as a single word, for example ${quoted(['Calm'])}.`,
     noLatinLetter: (ignored) =>
       ignored.length === 0
         ? 'No Latin letters to trace. Write the intention with the letters A to Z (accents are fine).'
         : `No Latin letters to trace: ${quoted(ignored)} cannot be traced. Write the intention with the letters A to Z (accents are fine).`,
+    multipleWords: `One word only, without spaces: beyond one word, the sigil becomes unreadable. Keep the word that carries your intention, for example ${quoted(['Calm'])}.`,
+    tooLong: (letterCount, maxLetters) =>
+      `This word gives ${counted(letterCount, 'letter', 'letters')}, ${String(maxLetters)} at most: beyond that, the sigil becomes unreadable. Choose a shorter word.`,
     tooFewLetters: 'A single letter makes no path. Write at least two letters.',
     singleCell: (number, planet) =>
       `Every letter lands on cell ${String(number)} of the square ${PLANET_OF[planet]}: the trace would be a single dot. Choose another square or add letters.`,

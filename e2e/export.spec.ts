@@ -10,8 +10,8 @@ import { pathToFileURL } from 'node:url';
 
 import { expect, test, type Download, type Page, type TestInfo } from '@playwright/test';
 
-/** Intention of the F1 scenario. */
-const INTENTION = 'Je suis calme';
+/** Intention of the F1 scenario, one word (D18). */
+const INTENTION = 'Calme';
 
 /** Neutral file name of an export (decision D8). */
 const FILE_NAME = /^sigil-(kamea|spare)-\d{8}-\d{6}\.(svg|png)$/;

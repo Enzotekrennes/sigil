@@ -1,6 +1,6 @@
 /**
  * Chains the business steps behind the "Trace" button: normalisation of the
- * typed intention, then the sigil of the chosen method (kamea or Spare), and
+ * typed intention, the single-word rule (decision D18), then the sigil of the chosen method (kamea or Spare), and
  * turns their errors into the message shown under the field.
  *
  * Exposes `traceKamea`, `traceSpare`, their result and error types, and
@@ -8,8 +8,8 @@
  * intention stays in memory). The rules themselves live in
  * `features/intention`, `features/kamea` and `features/spare`.
  */
-import { normalizeIntention } from '../features/intention/index.ts';
-import type { NormalizeIntentionResult } from '../features/intention/index.ts';
+import { checkSingleWord, normalizeIntention } from '../features/intention/index.ts';
+import type { Intention } from '../features/intention/index.ts';
 import { buildKameaSigil } from '../features/kamea/index.ts';
 import type { KameaError } from '../features/kamea/index.ts';
 import type { Planet, Sigil } from '../features/sigil/types.ts';
@@ -17,10 +17,12 @@ import { buildSpareSigil } from '../features/spare/index.ts';
 import type { SpareError, SpareOptions } from '../features/spare/index.ts';
 import type { AppStrings } from './strings.fr.ts';
 
-/** Why the typed text gives no letter at all, whatever the method. */
+/** Why the typed text cannot be traced, whatever the method. */
 type IntentionError =
   | { readonly code: 'EMPTY_INTENTION' }
-  | { readonly code: 'NO_LATIN_LETTER'; readonly ignored: readonly string[] };
+  | { readonly code: 'NO_LATIN_LETTER'; readonly ignored: readonly string[] }
+  | { readonly code: 'MULTIPLE_WORDS' }
+  | { readonly code: 'TOO_LONG'; readonly letterCount: number; readonly maxLetters: number };
 
 /** Why nothing could be traced, from any step of either method. */
 export type TraceError = IntentionError | (KameaError & { readonly planet: Planet }) | SpareError;
@@ -56,7 +58,8 @@ export type TraceResult<T extends Trace = Trace> =
   ({ readonly ok: true } & T) | { readonly ok: false; readonly error: TraceError };
 
 /**
- * Normalises the intention and draws its kamea sigil on the planet's square.
+ * Normalises the intention, checks it is a single word, and draws its kamea
+ * sigil on the planet's square.
  *
  * @param source - The intention as typed; any text.
  * @param planet - Square to draw on.
@@ -64,10 +67,10 @@ export type TraceResult<T extends Trace = Trace> =
  *   met. Never throws. Same arguments, same sigil (deep equality).
  */
 export function traceKamea(source: string, planet: Planet): TraceResult<KameaTrace> {
-  const normalized = normalizeIntention(source);
-  if (!normalized.ok) return { ok: false, error: intentionError(normalized) };
+  const read = readIntention(source);
+  if (!read.ok) return read;
 
-  const { letters, ignored } = normalized.intention;
+  const { letters, ignored } = read.intention;
   const built = buildKameaSigil(letters, planet);
   if (!built.ok) return { ok: false, error: { ...built.error, planet } };
 
@@ -82,7 +85,8 @@ export function traceKamea(source: string, planet: Planet): TraceResult<KameaTra
 }
 
 /**
- * Normalises the intention and draws its Spare sigil.
+ * Normalises the intention, checks it is a single word, and draws its Spare
+ * sigil.
  *
  * @param source - The intention as typed; any text.
  * @param options - Vowel setting (decision D4) and variant number (integer ≥ 0).
@@ -92,10 +96,10 @@ export function traceKamea(source: string, planet: Planet): TraceResult<KameaTra
  *   normalise to the same letters give the same sigil (decision D6).
  */
 export function traceSpare(source: string, options: SpareOptions): TraceResult<SpareTrace> {
-  const normalized = normalizeIntention(source);
-  if (!normalized.ok) return { ok: false, error: intentionError(normalized) };
+  const read = readIntention(source);
+  if (!read.ok) return read;
 
-  const { letters, ignored } = normalized.intention;
+  const { letters, ignored } = read.intention;
   const built = buildSpareSigil(letters, options);
   if (!built.ok) return { ok: false, error: built.error };
 
@@ -111,15 +115,36 @@ export function traceSpare(source: string, options: SpareOptions): TraceResult<S
 }
 
 /**
- * Turns a failed normalisation into a trace error.
+ * Turns the typed text into the intention both methods trace, or the first
+ * reason it cannot be traced. The normalisation runs first, so a text with no
+ * letter at all (« 123 ! ») is told so rather than asked to be one word.
  *
- * @param failure - Failed result of `normalizeIntention`.
- * @returns `EMPTY_INTENTION`, or `NO_LATIN_LETTER` with the characters dropped.
+ * @param source - The intention as typed; any text.
+ * @returns The normalised intention, or `EMPTY_INTENTION`, `NO_LATIN_LETTER`
+ *   (with the characters dropped), `MULTIPLE_WORDS` or `TOO_LONG` (with the
+ *   letter count and the limit), in that order of precedence.
  */
-function intentionError(failure: Extract<NormalizeIntentionResult, { ok: false }>): IntentionError {
-  return failure.error === 'EMPTY_INTENTION'
-    ? { code: 'EMPTY_INTENTION' }
-    : { code: 'NO_LATIN_LETTER', ignored: failure.ignored };
+function readIntention(
+  source: string,
+): { ok: true; intention: Intention } | { ok: false; error: IntentionError } {
+  const normalized = normalizeIntention(source);
+  if (!normalized.ok) {
+    return normalized.error === 'EMPTY_INTENTION'
+      ? { ok: false, error: { code: 'EMPTY_INTENTION' } }
+      : { ok: false, error: { code: 'NO_LATIN_LETTER', ignored: normalized.ignored } };
+  }
+
+  const word = checkSingleWord(source);
+  if (!word.ok) {
+    return word.error === 'MULTIPLE_WORDS'
+      ? { ok: false, error: { code: 'MULTIPLE_WORDS' } }
+      : {
+          ok: false,
+          error: { code: 'TOO_LONG', letterCount: word.letterCount, maxLetters: word.maxLetters },
+        };
+  }
+
+  return { ok: true, intention: normalized.intention };
 }
 
 /**
@@ -135,6 +160,10 @@ export function traceErrorMessage(error: TraceError, strings: AppStrings): strin
       return strings.errors.empty;
     case 'NO_LATIN_LETTER':
       return strings.errors.noLatinLetter(error.ignored);
+    case 'MULTIPLE_WORDS':
+      return strings.errors.multipleWords;
+    case 'TOO_LONG':
+      return strings.errors.tooLong(error.letterCount, error.maxLetters);
     case 'TOO_FEW_LETTERS':
       return strings.errors.tooFewLetters;
     case 'SINGLE_CELL':

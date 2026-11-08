@@ -39,11 +39,11 @@ const EVIDENCE_DIR = resolve(process.env.F7_EVIDENCE_DIR ?? 'test-results/f7-evi
 /** GitHub Pages base path every site URL must start with. */
 const BASE_PATH = '/sigil/';
 
-/** Unusual intention: unique words so that any leak is recognisable. */
-const INTENTION = 'Zéphyr Xylophone Quasar';
+/** Unusual intention, one word (D18) with an accent, so that any leak is recognisable. */
+const INTENTION = 'Zéphyr';
 
 /** Fragments that identify the intention anywhere, searched case-insensitively. */
-const LEAK_NEEDLES = ['zéphyr', 'zephyr', 'z%c3%a9phyr', 'xylophone', 'quasar', 'zphyr'] as const;
+const LEAK_NEEDLES = ['zéphyr', 'zephyr', 'z%c3%a9phyr', 'zphyr'] as const;
 
 /** Keys the app may write to `localStorage` (language and theme choices only). */
 const ALLOWED_STORAGE_KEYS = ['sigil.language', 'sigil.theme'];
@@ -480,7 +480,7 @@ test('S3c: going back and forward does not put the intention in the history', as
   await trace(page, 'spare');
   await page.goto('./index.html');
   await page.goBack();
-  expect(page.url()).not.toMatch(/zephyr|z%C3%A9phyr|xylophone|quasar/i);
+  expect(page.url()).not.toMatch(/z[eé]phyr|z%C3%A9phyr/i);
   expect(new URL(page.url()).search).toBe('');
   expect(new URL(page.url()).hash).toBe('');
   await expect(page.getByRole('heading', { level: 1, name: 'Sigil' })).toBeVisible();

@@ -49,11 +49,14 @@ const MAX_DIFF_RATIO = 0.003;
 /** Pixels around the square ignored when comparing with the scene (its rounded corners). */
 const COMPARE_MARGIN = 8;
 
-/** Intention of the F1 scenario. */
-const CALM = 'Je suis calme';
+/** Intention of the F1 scenario, one word (D18). */
+const CALM = 'Calme';
 
-/** Unusual intention: unique letters so that any leak is recognisable. */
-const RARE = 'Zéphyr Xylophone Quasar';
+/** Unusual intention: rare letters so that any leak is recognisable. */
+const RARE = 'Xylophone';
+
+/** One word with two doubled letters, so the kamea draws loops. */
+const DOUBLED = 'Rassemblée';
 
 /** Chunk types a PNG may carry textual metadata in. */
 const TEXT_CHUNKS = ['tEXt', 'iTXt', 'zTXt', 'eXIf'];
@@ -87,7 +90,7 @@ const CASES: readonly ExportCase[] = [
     id: 'kamea-moon-thick-frame-dark',
     method: 'kamea',
     planet: 'Lune',
-    intention: 'Belle allée',
+    intention: DOUBLED,
     width: 2.4,
     round: true,
     frame: true,
@@ -107,7 +110,7 @@ const CASES: readonly ExportCase[] = [
     id: 'kamea-moon-thin-butt-frame-dark',
     method: 'kamea',
     planet: 'Lune',
-    intention: 'Belle allée',
+    intention: DOUBLED,
     width: 0.4,
     round: false,
     frame: true,
@@ -117,7 +120,7 @@ const CASES: readonly ExportCase[] = [
     id: 'kamea-moon-thick-butt-light',
     method: 'kamea',
     planet: 'Lune',
-    intention: 'Belle allée',
+    intention: DOUBLED,
     width: 2.4,
     round: false,
     frame: false,
@@ -1083,10 +1086,11 @@ test('two sigils in a row give two different exports; the same sigil gives the s
 
 test.describe('odd intentions', () => {
   const odd = [
-    ['markup and quotes', '<script>alert(1)</script> & "quote" \' ]]> <!-- x -->'],
-    ['accents and non-latin', 'Éléphant été ñandú 漢字 😀 ß'],
+    // One word each (D18): the odd characters sit inside the word, without spaces.
+    ['markup and quotes', '<script>alert(1)</script>&"quote"\']]><!--x-->'],
+    ['accents and non-latin', 'Éléphantñandú漢字😀ß'],
     ['two letters', 'Lm'],
-    ['long', 'Je suis calme et serein. '.repeat(24)],
+    ['longest word', 'Désinstitutionnalisation'],
   ] as const;
   for (const [label, intention] of odd) {
     for (const method of ['kamea', 'spare'] as const) {
@@ -1099,11 +1103,7 @@ test.describe('odd intentions', () => {
         const bytes = await readFile(svg.path);
         const tool = await toolPage(context);
         await expectStandalone(tool, bytes.toString('utf8'));
-        expectNoIntention(
-          intention.length > 40 ? 'je suis calme et serein' : intention,
-          svg.name,
-          bytes,
-        );
+        expectNoIntention(intention, svg.name, bytes);
         if (intention.length > 1) {
           // The markup of the intention never reaches the file, however it is spelt.
           expect(bytes.toString('utf8')).not.toMatch(/alert|ñandú|漢字|😀/);

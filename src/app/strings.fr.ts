@@ -15,6 +15,7 @@ import type {
 import type { ExportStrings } from '../features/export/index.ts';
 import { countNoun, formatDecimal } from '../features/i18n/index.ts';
 import type { LanguageToggleStrings } from '../features/i18n/index.ts';
+import { MAX_INTENTION_LETTERS } from '../features/intention/index.ts';
 import type { StrokeWidthLevel } from '../features/sigil/index.ts';
 import type { Planet } from '../features/sigil/types.ts';
 import type { PrivacyNoteStrings } from './PrivacyNote.tsx';
@@ -278,11 +279,14 @@ export const STRINGS_FR = {
 
   intention: {
     label: 'Intention',
-    help: 'Une phrase courte, au présent. Elle reste dans ce navigateur : rien n’est envoyé ni enregistré.',
-    letterCount: (count: number): string =>
-      count === 0
-        ? 'Aucune lettre à tracer pour l’instant'
-        : `${counted(count, 'lettre', 'lettres')} à tracer`,
+    help: `Un seul mot, de ${String(MAX_INTENTION_LETTERS)} lettres au plus. Il reste dans ce navigateur : rien n’est envoyé ni enregistré.`,
+    letterCount: (count: number): string => {
+      if (count === 0) return 'Aucune lettre à tracer pour l’instant';
+      if (count > MAX_INTENTION_LETTERS) {
+        return `${counted(count, 'lettre', 'lettres')} : ${String(count - MAX_INTENTION_LETTERS)} de trop, ${String(MAX_INTENTION_LETTERS)} au plus`;
+      }
+      return `${counted(count, 'lettre', 'lettres')} à tracer`;
+    },
   },
 
   method: {
@@ -350,11 +354,14 @@ export const STRINGS_FR = {
   },
 
   errors: {
-    empty: 'Écrivez une intention avant de tracer, par exemple « Je suis calme ».',
+    empty: `Écrivez une intention avant de tracer, en un seul mot, par exemple ${quoted(['Calme'])}.`,
     noLatinLetter: (ignored: readonly string[]): string =>
       ignored.length === 0
         ? 'Aucune lettre latine à tracer. Écrivez l’intention avec les lettres A à Z (les accents sont acceptés).'
         : `Aucune lettre latine à tracer : ${quoted(ignored)} ne se ${ignored.length > 1 ? 'tracent' : 'trace'} pas. Écrivez l’intention avec les lettres A à Z (les accents sont acceptés).`,
+    multipleWords: `Un seul mot, sans espace : au-delà d’un mot, le sigil devient illisible. Gardez le mot qui porte votre intention, par exemple ${quoted(['Calme'])}.`,
+    tooLong: (letterCount: number, maxLetters: number): string =>
+      `Ce mot donne ${counted(letterCount, 'lettre', 'lettres')}, ${String(maxLetters)} au plus : au-delà, le sigil devient illisible. Choisissez un mot plus court.`,
     tooFewLetters: 'Une seule lettre ne trace aucun chemin. Écrivez au moins deux lettres.',
     singleCell: (number: number, planet: Planet): string =>
       `Toutes les lettres tombent sur la case ${String(number)} du carré ${PLANET_OF[planet]} : le tracé serait un simple point. Choisissez un autre carré ou ajoutez des lettres.`,

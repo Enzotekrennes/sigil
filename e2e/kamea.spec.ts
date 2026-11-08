@@ -5,8 +5,8 @@
  */
 import { expect, test, type Page } from '@playwright/test';
 
-/** Intention of the F1 scenario. */
-const INTENTION = 'Je suis calme';
+/** Intention of the F1 scenario, one word (D18). */
+const INTENTION = 'Calme';
 
 /**
  * Types the intention and presses the "Tracer" button.
@@ -33,7 +33,7 @@ async function sigilMarkup(page: Page): Promise<string> {
   return markup.replace(/data-run="[^"]*"/g, '');
 }
 
-test('traces "Je suis calme" on Saturn with its explanation, identically after a reload', async ({
+test('traces "Calme" on Saturn with its explanation, identically after a reload', async ({
   page,
 }) => {
   // The screen sets custom properties through React's `style` prop: the strict CSP (D12) must allow it.
@@ -56,7 +56,7 @@ test('traces "Je suis calme" on Saturn with its explanation, identically after a
   await expect(page.getByText('nombre = ((rang − 1) mod 9) + 1')).toBeVisible();
   await expect(
     page.getByRole('img', {
-      name: 'Carré de Saturne, 3 × 3, avec le chemin : 1, 5, 1, 3, 9, 1, 3, 1, 3, 4, 5',
+      name: 'Carré de Saturne, 3 × 3, avec le chemin : 3, 1, 3, 4, 5',
     }),
   ).toBeVisible();
   const first = await sigilMarkup(page);

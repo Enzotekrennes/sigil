@@ -15,8 +15,8 @@ import { decodePDFRawStream, PDFDict, PDFDocument, PDFRawStream } from 'pdf-lib'
 
 import { waitForServiceWorkerControl } from './service-worker.ts';
 
-/** Intention of the F1 scenario. */
-const INTENTION = 'Je suis calme';
+/** Intention of the F1 scenario, one word (D18). */
+const INTENTION = 'Calme';
 
 /** PDF points per millimetre. */
 const PT_PER_MM = 72 / 25.4;
