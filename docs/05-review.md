@@ -3,13 +3,13 @@ Statut : brouillon
 Périmètre : tout le dépôt versionné hors `docs/` au commit a444eaf — `src/` (app, components/ui, features/*, lib, styles), `scripts/`, `public/`, `index.html`, `vite.config.ts`, configs (eslint, tsconfig, playwright), `package.json` et lockfile, `.github/workflows/deploy.yml`, `e2e/`, README, NOTICE, LICENSE ; plus le build `dist/`.
 
 ## Verdicts
-- Review code : NO-GO (1 bloquant : R1)
+- Review code : GO après correction de R1 (relecture du 2026-11-08)
 - Sécurité : GO (aucun bloquant)
 
 ## Bloquants
 | ID | Constat | Où | Rôle | Allers-retours | État |
 |---|---|---|---|---|---|
-| R1 + S3 | Mentions de licence absentes du site déployé : attribution Hershey supprimée par le minifieur (condition de la licence), NOTICE/LICENSE et avis des dépendances non servis ; LICENSE laisse croire que Hershey est sous MIT | `hersheyConversion.ts`, `hersheyRomanSimplex.ts`, `vite.config.ts`, `LICENSE`, `README.md` | dev | 1 | corrigé (5ec499e), relecture en cours |
+| R1 + S3 | Mentions de licence absentes du site déployé : attribution Hershey supprimée par le minifieur (condition de la licence), NOTICE/LICENSE et avis des dépendances non servis ; LICENSE laisse croire que Hershey est sous MIT | `hersheyConversion.ts`, `hersheyRomanSimplex.ts`, `vite.config.ts`, `LICENSE`, `README.md` | dev | 1 | corrigé (5ec499e), GO à la relecture |
 
 ## À corriger avant livraison
 | ID | Constat | Où | Décision (corriger / reporter / recommander) |
@@ -33,6 +33,7 @@ Périmètre : tout le dépôt versionné hors `docs/` au commit a444eaf — `src
 | S10 | Empreinte SHA-256 du fichier Hershey vérifiée par le script de génération | corriger |
 | R6–R9, R11 | Duplications (marques SVG ×3, boîtes englobantes ×5, stockage tolérant ×2), dépendance méthode → rendu, code sans usage, nommage | R7, R9, R11 corriger ; R6, R8 reporter (Plus tard) |
 | R12 | `SigilScreen` à 13 états ; meta description statique en anglais | reporter (Plus tard) |
+| R13 | Licences OFL des polices non publiées sur le site (NOTICE et LICENSE pointent vers des chemins du dépôt) ; version Workbox annoncée inexacte (7.4.1 au lieu de 7.4.0) | corriger (T21) |
 | B2 (F5) | Texte du PDF non extractible avec accents (correctif sans dépendance, ~30 lignes) | corriger |
 
 ## Hors code

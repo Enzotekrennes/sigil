@@ -214,3 +214,8 @@
 - `npm run lint` vert ; `npm run typecheck` vert ; `npx vitest run` 862/862 (42 fichiers) ; `npm run build` OK (23 entrées précachées) ; `npm run test:e2e` 260/260.
 - Contrôle des traces d'outil : historique git propre ; une liste de termes interdits dans `e2e/f5-acceptance.spec.ts` contient des noms d'outil → remplacée par une vérification positive (en cours).
 - Phase 5 lancée : relecture du code et audit de sécurité en parallèle.
+
+## 2026-11-08 — Review : bloquant R1 + S3 (licences)
+- Rôle : dev ; relecture → GO.
+- Fait (5ec499e) : commentaire légal Hershey conservé dans le bundle, `LICENSE.txt`, `NOTICE.txt`, `THIRD-PARTY-LICENSES.txt` publiés et précachés, LICENSE précisée, script `glyphs:generate`.
+- Suites : OFL des polices et version Workbox (R13) confiés à T21.
