@@ -110,6 +110,10 @@ export interface SpareExplanationStrings {
 
   /** Title of step 4, the merge and simplification of the strokes. */
   readonly simplificationTitle: string;
-  /** The merge in one sentence, with the segment counts before and after (equal when nothing overlapped). */
+  /**
+   * The merge, with the segment counts before and after. The count can drop
+   * (overlaps drawn once), stay equal, or rise (a stroke covered only in part
+   * is cut around the shared part); the text must hold in all three cases.
+   */
   readonly simplificationBody: (before: number, after: number) => string;
 }

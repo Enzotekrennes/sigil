@@ -155,10 +155,17 @@ const SPARE_EXPLANATION: SpareExplanationStrings = {
     `Parmi ${String(count)} façons de poser ces lettres, toujours les mêmes pour cette intention et cette variante, la n°${NBSP}${String(number)} est la plus équilibrée : centrée, compacte, sans lettre isolée.`,
 
   simplificationTitle: 'Simplification',
-  simplificationBody: (before, after) =>
-    before === after
-      ? `Aucun trait ne se recouvre : les ${counted(before, 'segment', 'segments')} restent tels quels. Le sigil est enfin recentré sur son centre de gravité.`
-      : `Les traits qui se recouvrent sont fusionnés et tracés une seule fois : ${counted(before, 'segment', 'segments')} deviennent ${String(after)}. Le sigil est enfin recentré sur son centre de gravité.`,
+  simplificationBody: (before, after) => {
+    const merged = 'Là où des traits se recouvrent, la partie commune n’est tracée qu’une fois';
+    const recentred = 'Le sigil est enfin recentré sur son centre de gravité.';
+    if (after < before) {
+      return `${merged} : ${counted(before, 'segment', 'segments')} deviennent ${String(after)}. ${recentred}`;
+    }
+    if (after === before) {
+      return `${merged} ; le sigil compte toujours ${counted(before, 'segment', 'segments')}. ${recentred}`;
+    }
+    return `${merged}. Un trait recouvert en partie est coupé autour de la partie commune : on passe de ${String(before)} à ${counted(after, 'segment', 'segments')}. ${recentred}`;
+  },
 };
 
 /**
@@ -237,6 +244,9 @@ const THEME: ThemeToggleStrings = {
 /** All French texts of the interface. */
 export const STRINGS_FR = {
   appTitle: 'Sigil',
+  /** Meta description of the page, set by the app with the language (the page title is `appTitle`). */
+  pageDescription:
+    'Générateur de sigils déterministe : carrés magiques (kamea) et méthode de Spare, tracés en SVG dans votre navigateur.',
   language: LANGUAGE,
   theme: THEME,
 

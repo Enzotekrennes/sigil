@@ -135,9 +135,10 @@ describe('SpareExplanation', () => {
   });
 
   it.each([
-    [48, 31, /48 segments deviennent 31\./],
-    [51, 51, /Aucun trait ne se recouvre : les 51 segments restent tels quels\./],
-  ])('counts the merged segments (%i → %i)', (before, after, expected) => {
+    [48, 31, /partie commune n’est tracée qu’une fois : 48 segments deviennent 31\./],
+    [51, 51, /; le sigil compte toujours 51 segments\./],
+    [52, 53, /Un trait recouvert en partie est coupé .* on passe de 52 à 53 segments\./],
+  ])('counts the segments before and after the merge (%i → %i)', (before, after, expected) => {
     const sigil = spare(JE_SUIS_CALME);
     const merged = {
       ...sigil,

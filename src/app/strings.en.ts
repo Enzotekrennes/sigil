@@ -87,12 +87,12 @@ const KAMEA_EXPLANATION: KameaExplanationStrings = {
 
   lettersTitle: 'Letters traced',
   lettersBody:
-    'Accents removed, everything in capitals, spaces and punctuation dropped. The kamea method keeps every letter, even repeated ones.',
+    'Accents are removed, everything is capitalised, and spaces and punctuation are dropped. The kamea method keeps every letter, even repeated ones.',
   lettersLabel: (count) => `${counted(count, 'letter', 'letters')}:`,
 
   ruleTitle: 'Conversion rule',
   ruleBody: (planetOf, cellCount) =>
-    `Each letter takes its place in the alphabet (A = 1 … Z = 26). The square ${planetOf} has ${String(cellCount)} cells: past ${String(cellCount)}, counting starts again at 1.`,
+    `Each letter takes its place in the alphabet (A = 1 … Z = 26). The square ${planetOf} has ${String(cellCount)} cells: after ${String(cellCount)}, counting starts again from 1.`,
   ruleFormula: (cellCount) => `number = ((rank − 1) mod ${String(cellCount)}) + 1`,
   ruleExample: (letter, rank, cellCount, number) =>
     `Example: ${letter}, rank ${String(rank)} → ((${String(rank)} − 1) mod ${String(cellCount)}) + 1 = ${String(number)}`,
@@ -122,8 +122,8 @@ const SPARE_EXPLANATION: SpareExplanationStrings = {
   reductionTitle: 'Letters removed',
   reductionBody: (keepVowels) =>
     keepVowels
-      ? 'Accents and punctuation dropped, every letter already written is removed. The vowels stay, as requested.'
-      : 'Accents and punctuation dropped, every letter already written is removed, then the vowels A, E, I, O, U. Y stays: it often works as a consonant.',
+      ? 'Accents and punctuation are dropped, and every repeated letter is removed. The vowels stay, as requested.'
+      : 'Accents and punctuation are dropped, every repeated letter is removed, then the vowels A, E, I, O, U. Y stays, as it often works as a consonant.',
   stripLabel: (count) => `The intention’s ${counted(count, 'letter', 'letters')}`,
   letterStatus: (reason) => {
     if (reason === 'duplicate') return ', removed: duplicate';
@@ -137,8 +137,8 @@ const SPARE_EXPLANATION: SpareExplanationStrings = {
 
   skeletonsTitle: 'Letter skeletons',
   skeletonsBody:
-    'Each letter kept is reduced to a single stroke, then flipped, turned or shrunk before it is laid over the others.',
-  skeletonsLabel: 'Letters kept and how each one is transformed',
+    'Each kept letter is reduced to a single stroke, then flipped, turned or scaled down before being laid over the others.',
+  skeletonsLabel: 'Kept letters and how each one is transformed',
   upright: 'upright',
   mirrored: 'mirrored',
   turns: { 90: 'quarter turn', 180: 'half turn', 270: 'three-quarter turn' },
@@ -150,13 +150,20 @@ const SPARE_EXPLANATION: SpareExplanationStrings = {
 
   choiceTitle: 'Composition chosen',
   choiceBody: (number, count) =>
-    `Of ${String(count)} ways to lay out these letters, always the same for this intention and variant, number ${String(number)} is the best balanced: centred, compact, with no letter left on its own.`,
+    `Of ${String(count)} possible layouts (always the same for this intention and variant), number ${String(number)} is the most balanced: centred, compact, with no letter left on its own.`,
 
   simplificationTitle: 'Simplification',
-  simplificationBody: (before, after) =>
-    before === after
-      ? `No strokes overlap: the ${counted(before, 'segment', 'segments')} stay as they are. Finally, the sigil is re-centred on its centre of gravity.`
-      : `Overlapping strokes are merged and drawn only once: ${counted(before, 'segment', 'segments')} become ${String(after)}. Finally, the sigil is re-centred on its centre of gravity.`,
+  simplificationBody: (before, after) => {
+    const merged = 'Where strokes overlap, the shared part is drawn only once';
+    const recentred = 'Last, the sigil is re-centred on its centre of gravity.';
+    if (after < before) {
+      return `${merged}: ${counted(before, 'segment', 'segments')} become ${String(after)}. ${recentred}`;
+    }
+    if (after === before) {
+      return `${merged}; the sigil still has ${counted(before, 'segment', 'segments')}. ${recentred}`;
+    }
+    return `${merged}. A stroke covered only in part is cut around the shared part, so the count goes from ${String(before)} to ${counted(after, 'segment', 'segments')}. ${recentred}`;
+  },
 };
 
 /** No-break space: a number never gets separated from its unit. */
@@ -183,6 +190,19 @@ function centimetresText(centimetres: number): string {
   return `${formatDecimal(centimetres, 'en', digits)}${NBSP}cm`;
 }
 
+/**
+ * English indefinite article before a number written in digits, chosen by how
+ * the number is said: "an" before eight, eleven, eighteen, eighty…, "a" otherwise.
+ *
+ * @param value - The number that follows; only its integer part is spoken
+ *   first ("6.5" is "six point five"). Meant for values under 1,000.
+ * @returns `"an"` or `"a"`.
+ */
+function articleBefore(value: number): 'a' | 'an' {
+  const whole = Math.trunc(Math.abs(value));
+  return String(whole).startsWith('8') || whole === 11 || whole === 18 ? 'an' : 'a';
+}
+
 /** Texts of the "Export" button and dialog. */
 const EXPORT: ExportStrings = {
   open: 'Export',
@@ -203,7 +223,7 @@ const EXPORT: ExportStrings = {
       ? 'Write a size in centimetres, for example 8 or 6.5.'
       : 'The size must be between 1 and 25 cm.',
   sizeTooLarge: (max) =>
-    `Too large for an A4 page: this sigil fits at most ${centimetresText(max)}.`,
+    `Too large for an A4 page: on it, this sigil can be at most ${centimetresText(max)}.`,
   strokeLabel: 'Stroke width',
   strokeValue: millimetresText,
   strokeHelp: 'From 0.3 to 1.2 mm, kept when printed; 0.6 mm by default.',
@@ -214,7 +234,7 @@ const EXPORT: ExportStrings = {
     `The ${format} export failed. Try again; if it keeps failing, try another browser.`,
   pdf: (centimetres, millimetres) => ({
     ruler: '1 cm',
-    instruction: 'Print at 100%, without scaling or fit to page.',
+    instruction: 'Print at 100%, with no scaling and no “fit to page”.',
     details: `Sigil: ${centimetresText(centimetres)} along its largest dimension, ${millimetresText(millimetres)} stroke.`,
   }),
 };
@@ -235,6 +255,8 @@ const THEME: ThemeToggleStrings = {
 /** All English texts of the interface. */
 export const STRINGS_EN: AppStrings = {
   appTitle: 'Sigil',
+  pageDescription:
+    'Deterministic sigil generator: kamea and Spare methods, drawn in SVG in your browser.',
   language: LANGUAGE,
   theme: THEME,
 
@@ -290,7 +312,7 @@ export const STRINGS_EN: AppStrings = {
     strokeWidthHelp: 'From 0.4 to 2.4 on a 100-unit frame; 1.2 by default.',
     stencil: 'Tattoo stencil',
     stencilHelp: (printSizeCm) =>
-      `Pure black on white, a single line, no framing circle. The width is in millimetres for a ${centimetresText(printSizeCm)} print (size set in “Export”).`,
+      `Pure black on white, a single line, no framing circle. The width is in millimetres for ${articleBefore(printSizeCm)} ${centimetresText(printSizeCm)} print (size set in “Export”).`,
     strokeMmValue: millimetresText,
     strokeMmHelp: 'From 0.3 to 1.2 mm on paper; 0.6 mm by default.',
     roundEnds: 'Rounded ends',
@@ -303,7 +325,7 @@ export const STRINGS_EN: AppStrings = {
     heading: 'Sigil',
     empty: 'Write an intention, choose a square, then trace.',
     emptySpare: 'Write an intention, then trace.',
-    error: 'Nothing to trace: fix the intention as the message under the field explains.',
+    error: 'Nothing to trace yet: the message under the field says what to change.',
     label: (planet) => `Kamea sigil ${PLANET_OF[planet]}`,
     traced: (letterCount, planet) =>
       `Sigil traced: ${counted(letterCount, 'letter', 'letters')} on the square ${PLANET_OF[planet]}.`,
@@ -335,7 +357,7 @@ export const STRINGS_EN: AppStrings = {
 
   explain: {
     title: 'How it’s made',
-    empty: 'Each step of the calculation will show here once the sigil is traced.',
+    empty: 'Each step of the calculation will appear here once the sigil is traced.',
     kamea: KAMEA_EXPLANATION,
     spare: SPARE_EXPLANATION,
   },

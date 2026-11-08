@@ -531,7 +531,9 @@ describe('App', () => {
         new RegExp(`^Parmi ${String(candidateCountFor(5))} façons de poser ces lettres`),
       ),
     ).toBeInTheDocument();
-    expect(panel.getByText(/segments (deviennent|restent tels quels)/)).toBeInTheDocument();
+    expect(
+      panel.getByText(/segments deviennent|compte toujours \d+ segments|on passe de \d+ à/),
+    ).toBeInTheDocument();
   });
 
   it('draws another, reproducible sigil for each variant', () => {

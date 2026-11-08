@@ -334,6 +334,21 @@ describe('language switch', () => {
     expect(screen.getByText(/Write an intention before tracing/)).toBeInTheDocument();
   });
 
+  it('localises the page title and the meta description', () => {
+    const meta = document.createElement('meta');
+    meta.name = 'description';
+    document.head.append(meta);
+    browserLanguages('fr-FR');
+    render(<App />);
+    expect(meta.content).toMatch(/^Générateur de sigils/);
+
+    pickLanguage('English');
+
+    expect(document.title).toBe('Sigil');
+    expect(meta.content).toMatch(/^Deterministic sigil generator/);
+    meta.remove();
+  });
+
   it('writes the stroke width with the decimal separator of the language', () => {
     browserLanguages('fr-FR');
     render(<App />);

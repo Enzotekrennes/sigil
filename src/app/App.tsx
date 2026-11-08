@@ -141,6 +141,7 @@ export function App() {
 function SigilScreen() {
   const strings = useStrings();
   const { language, setLanguage } = useLanguage();
+  useDocumentTexts(strings.appTitle, strings.pageDescription);
   const { theme, setTheme } = useTheme();
   const [source, setSource] = useState('');
   const [method, setMethod] = useState<Method>(DEFAULT_METHOD);
@@ -441,6 +442,20 @@ function shownStyleOptions(
     printSizeCm * MM_PER_CM,
   );
   return { ...styleOptions, strokeWidth };
+}
+
+/**
+ * Keeps the page title and the meta description in the interface language.
+ *
+ * @param title - Text of `document.title`.
+ * @param description - Content of `<meta name="description">`.
+ * @remarks Writes to the document head; a page without that `<meta>` keeps only the title.
+ */
+function useDocumentTexts(title: string, description: string): void {
+  useEffect(() => {
+    document.title = title;
+    document.querySelector('meta[name="description"]')?.setAttribute('content', description);
+  }, [title, description]);
 }
 
 /**
