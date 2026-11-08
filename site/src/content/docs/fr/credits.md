@@ -5,7 +5,7 @@ description: Licence de Sigil, les données Hershey Fonts et leurs mentions obli
 
 ## Sigil
 
-Sigil est écrit par Enzo Abel et publié sous **licence MIT**. Cette licence ne couvre ni les
+Sigil est écrit par Enzo Monnier et publié sous **licence MIT**. Cette licence ne couvre ni les
 fichiers de polices, ni les données de glyphes Hershey Fonts, ni les paquets tiers embarqués
 dans le site, qui gardent leurs propres conditions (ci-dessous).
 

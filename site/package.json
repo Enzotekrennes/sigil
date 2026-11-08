@@ -4,7 +4,7 @@
   "private": true,
   "description": "Bilingual (English/French) documentation site of Sigil, built with Starlight.",
   "license": "MIT",
-  "author": "Enzo Abel",
+  "author": "Enzo Monnier",
   "type": "module",
   "engines": {
     "node": "^22.13.0 || >=24"

@@ -1,5 +1,7 @@
 # Sigil
 
+**English** · [Français](README.fr.md)
+
 Turn a single word into a sigil, drawn the traditional ways: on a planetary magic
 square (kamea), or with Austin Osman Spare's method composed as a bind rune. The sigil
 is traced before your eyes, every step is explained, and you can export it as SVG, PNG
@@ -123,7 +125,7 @@ the end-to-end tests run with it.
 
 ## Licence
 
-Code under the [MIT licence](LICENSE), with these exceptions, detailed in
+Code under the [MIT licence](LICENSE), © 2026 Enzo Monnier, with these exceptions, detailed in
 [NOTICE](NOTICE):
 
 - Fonts: EB Garamond and IBM Plex Mono, SIL Open Font License 1.1

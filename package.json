@@ -4,7 +4,7 @@
   "private": true,
   "description": "Deterministic sigil generator (kamea and Spare methods) rendered in SVG, entirely in the browser.",
   "license": "MIT",
-  "author": "Enzo Abel",
+  "author": "Enzo Monnier",
   "type": "module",
   "engines": {
     "node": "^22.13.0 || >=24"
