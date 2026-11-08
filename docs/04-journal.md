@@ -238,3 +238,7 @@
 - Fait : texte du panneau Spare aligné sur D13 et champs/fonctions morts retirés (R2) ; commentaires périmés corrigés, tests de non-contact kamea à la vraie borne 2,4 (R3) ; tokens morts retirés, grille kamea partagée (`kamea/grid.ts`) (R4) ; `markGeometry.ts` (R7) ; code sans usage retiré, `dialogStub` dans `src/test/` (R9) ; noms unifiés (R11).
 - Vérifications : empreinte de rendu identique (35 kamea + 60 Spare, 3 épaisseurs, SVG/PDF) ; suite complète revérifiée : lint, format:check, typecheck, 878/878, 5/5 scripts, build, e2e 269/269.
 - Points ouverts : métadonnées Hershey gardées dans le bundle (~2,5 kB) pour le test d'idempotence.
+
+## 2026-11-08 — Retour d'Enzo sur le rendu Spare
+- Constat d'Enzo sur une capture (« L'amour que je ressens pour toi », 10 lettres retenues) : rendu peu esthétique. Diagnostic : le score de lisibilité (D13) récompense les traits qui en longent d'autres à moins de 3 unités, d'où des traits parallèles décalés de 1 à 3 unités (« hachures ») trop écartés pour être fusionnés ; aucun plafond de densité.
+- Décisions d'Enzo : un seul mot (D18) pour les deux méthodes ; composition en rune liée (D19) d'après ses références ; lettres anguleuses (D20). Brief et plan mis à jour, F2 à rejouer. Livraison suspendue jusqu'à validation de la nouvelle planche.

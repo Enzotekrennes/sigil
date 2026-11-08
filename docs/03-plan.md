@@ -36,6 +36,9 @@ Statut : validé le 2026-11-07
 | D15 | Marques kamea : suivent l'épaisseur jusqu'à un plafond relatif à la case (boucle ≤ 45 %, cercle de départ ≤ 30 %, trait d'arrivée ≤ 60 %) ; boucle finale à côté du dernier segment avec un écart = épaisseur (≤ 1,2) ; épaisseur max du curseur ramenée à 2,4 | Recul porté par le point d'attache, marques non plafonnées, épaisseur jusqu'à 4 | À 4, les marques ne tiennent plus dans les cases de la Lune et le sigil devient illisible |
 | D16 | PDF : toujours en pochoir ; taille = plus grande dimension de l'encre, trait compris ; plage 1–25 cm, défaut 8 cm, limitée à 19 cm en largeur par l'A4 portrait ; métadonnées réduites à « Sigil » + date ; pdf-lib chargé à la demande ; dialogue « Exporter » unique (SVG / PNG 1024–4096 / PDF) | Taille du tracé central, plage 2–30 cm (design.md) | Ce qu'un tatoueur mesure à la règle ; contrainte physique de l'A4 |
 | D17 | Thème à trois états (Système / Encre sur papier / Or sur noir), clé `sigil.theme` écrite seulement sur choix explicite ; script `public/theme-init.js` (servi en 'self', précaché) contre le flash au chargement | Bascule ☾/☀ à deux états (design.md), script inline | Deux états empêchent de revenir au réglage du système ; la CSP interdit l'inline |
+| D18 | Intention = un seul mot (Spare et kamea) : pas d'espace après nettoyage ; apostrophe et trait d'union autorisés à l'intérieur du mot et ignorés ; 24 lettres max ; message clair sinon | Phrases libres | Décision d'Enzo : au-delà d'un mot le sigil devient illisible |
+| D19 | Spare compose en rune liée : hampe verticale centrale, lettres accrochées dessus (leur trait vertical confondu avec la hampe quand elles en ont un), réparties le long de la hampe, miroirs et symétrie gauche/droite selon la variante, plus haut que large ; remplace la superposition libre de D13 | Superposition libre (rendu jugé « gribouillis » par Enzo), style au choix | Références d'Enzo (bind runes) ; les lettres se fondent en partageant leurs traits |
+| D20 | Lettres anguleuses : chaque courbe Hershey redessinée en 2 à 4 segments droits | Courbes conservées, réglage | Références d'Enzo, traits droits |
 
 ## Architecture
 ### Flux
@@ -91,9 +94,10 @@ Voir `docs/design.md` et `src/styles/tokens.css`. Page de grimoire : beaucoup de
 - Étant donné l'intention « Je suis calme », quand je choisis Spare, alors le panneau montre les lettres retirées (doublons, voyelles) et les lettres retenues J S C L M.
 - Étant donné une même intention et des réglages identiques, quand je recommence après rechargement, alors le sigil est identique.
 - Étant donné un sigil affiché, quand je clique « autre variante », alors un sigil différent s'affiche, et la variante n est la même à chaque fois.
-- Étant donné un sigil Spare, quand il est affiché, alors il tient dans le cadre, son centre de gravité est proche du centre (écart < 10 % du côté) et aucune lettre n'est lisible isolément (jugement visuel noté par test d'acceptation).
+- Étant donné un sigil Spare, quand il est affiché, alors c'est une rune liée : une hampe verticale continue, chaque lettre retenue accrochée à elle, traits droits uniquement, plus haut que large, sans traits parallèles collés (« hachures »), et la planche de référence a été validée par Enzo.
 - Étant donné une intention dont il ne reste aucune consonne (« oui »), quand je valide, alors un message propose de garder les voyelles.
-- Test : [x] VALIDÉ (2026-11-08, passage n° 2)
+- Étant donné une phrase de plusieurs mots (« je suis calme »), quand je valide (Spare ou kamea), alors un message demande un seul mot et aucun sigil n'est tracé.
+- Test : [ ] VALIDÉ (à rejouer après D18–D20 ; validé le 2026-11-08 sur l'ancienne composition)
 
 ### F3 — Tracé animé et réglages de style
 - Étant donné un nouveau sigil, quand il s'affiche, alors il se trace progressivement dans l'ordre du chemin, puis les marques apparaissent.
@@ -154,6 +158,9 @@ Voir `docs/design.md` et `src/styles/tokens.css`. Page de grimoire : beaucoup de
 | T20 | F4/F5/F7 | Review : avertissement « kamea réversible » dans le dialogue d'export (S1), `translate="no"` (S8), note de confidentialité dans l'app (S9), texte du PDF extractible avec accents (B2), `MITER_LIMIT` du PDF via `lineEndsFor` (R4) | dev | — | `src/app/`, `src/features/export/`, `src/features/explain/` (attributs), dictionnaires | Tests unitaires + e2e existants verts ; PDF relu avec accents corrects || [x] |
 | T21 | F7 | Review : workflow aux droits minimaux (S2), actions figées par SHA + Dependabot + `npm ci --ignore-scripts` (S5), e2e de confidentialité en CI (S6), empreinte du fichier Hershey (S10), attentes fixes des e2e remplacées (R5), anti-dérive des couleurs du manifest et durées importées (R4), script `format:check` (R10) | dev | — | `.github/`, `e2e/`, `scripts/`, `vite.config.ts`, `package.json` (scripts) | Suite e2e verte 3 fois de suite ; workflow relu || [x] |
 | T22 | F2/F3 | Review : texte du panneau Spare aligné sur D13 et code mort retiré (R2), commentaires périmés (R3), constantes partagées et tokens morts (R4), dépendance méthode → rendu (R7), code sans usage (R9), nommage (R11) | dev | T20 | `src/features/{spare,kamea,sigil,intention}`, `src/lib/`, `src/styles/tokens.css`, `src/features/explain/kameaSteps.ts`, dictionnaires (texte Spare) | lint, typecheck, vitest, e2e verts ; aucune valeur de rendu changée || [x] |
+| T23 | F1/F2 | Intention en un seul mot (D18) : règle, messages FR/EN, compteur, données de test unitaires et e2e passées de phrases à des mots | dev | — | `features/intention/`, `src/app/`, dictionnaires, tests unitaires, `e2e/` | Tests et e2e verts ; phrase refusée avec message | [ ] |
+| T24 | F2 | Moteur Spare en rune liée (D19) et lettres anguleuses (D20) : hampe, accroche des lettres, répartition, miroirs/symétrie, fusion stricte, pénalité de hachure, score ; planche de 16 mots pour validation par Enzo | dev | — | `features/spare/` (+ types d'étapes dans `sigil/types.ts`) | Tests verts ; planche validée par Enzo | [ ] |
+| T25 | F2 | Panneau « comment c'est fait » de Spare adapté à la rune liée (hampe, accroches, symétrie) et textes FR/EN | design | T23, T24 | `features/explain/`, dictionnaires | Captures, tests verts | [ ] |
 
 Ordre : T1 → (T2, T3, T5, T6 en parallèle, 3 max) → T4 → T7 → test F1 (J2) → T8 → T9 → T10 → test F2 (J3) → T11 → test F3 → T12 → test F4 → test F7 → T13, T14, T15 → tests F5, F6 (J4).
 

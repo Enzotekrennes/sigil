@@ -65,6 +65,11 @@ Aucune collectée. L'intention saisie peut être intime : elle ne quitte jamais 
   documentation en site bilingue EN/FR, aucune trace d'outillage dans le code ni les commits.
 - Licence du projet : MIT. Licence des polices à trait unique à vérifier.
 
+## Évolution décidée par Enzo (2026-11-08)
+- L'intention est **un seul mot** (Spare et kamea) : au-delà, le sigil devient illisible.
+- La méthode de Spare compose en **rune liée** (références fournies : lettres accrochées à une hampe verticale centrale, souvent symétriques, plus hautes que larges, traits droits) au lieu d'une superposition libre.
+- Les courbes des lettres sont redessinées en **segments droits**.
+
 ## Hypothèses
 - Décidé : TypeScript + React + Vite.
 - Hypothèse : rendu 100 % SVG, sans canvas (PNG produit par rastérisation du SVG côté client).
