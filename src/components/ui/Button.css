@@ -1,5 +1,7 @@
 /*
- * Styles of Button.tsx: shared box, three variants and their states.
+ * Styles of Button.tsx: shared box, three variants and their states,
+ * loading included (a small ring turning at the right of the label, still
+ * under reduced motion where it only shows as a broken ring).
  * Every value comes from tokens.css.
  */
 
@@ -85,4 +87,32 @@
   border-color: var(--color-border-subtle);
   color: var(--color-text-disabled);
   text-decoration: none;
+}
+
+/* Loading: the label stays, a ring turns at its right, the pointer says "wait". */
+.button--loading {
+  cursor: progress;
+}
+
+.button__spinner {
+  flex: none;
+  box-sizing: border-box;
+  width: var(--font-size-14);
+  height: var(--font-size-14);
+  border: var(--focus-ring-width) solid currentcolor;
+  border-right-color: transparent;
+  border-radius: var(--radius-pill);
+  animation: button-spin var(--duration-frame) linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button__spinner {
+    animation: none;
+  }
+}
+
+@keyframes button-spin {
+  to {
+    transform: rotate(1turn);
+  }
 }

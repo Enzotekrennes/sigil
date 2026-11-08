@@ -110,14 +110,14 @@ test('works with the keyboard alone', async ({ page }) => {
   await expect(page.getByRole('img', { name: 'Sigil kamea de Jupiter' })).toBeVisible();
   await page.keyboard.press('Tab');
   await expect(page.getByRole('button', { name: 'Rejouer' })).toBeFocused();
-  // Then the two export buttons, beside replay under the scene.
+  // Then the export button (its dialog has its own keyboard test), beside replay under the scene.
   await page.keyboard.press('Tab');
-  await expect(page.getByRole('button', { name: 'SVG' })).toBeFocused();
-  await page.keyboard.press('Tab');
-  await expect(page.getByRole('button', { name: 'PNG' })).toBeFocused();
+  await expect(page.getByRole('button', { name: 'Exporter' })).toBeFocused();
   // Then the style section, open on this wide screen, before the explanation panel.
   await page.keyboard.press('Tab');
   await expect(page.locator('summary', { hasText: 'Style' })).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('switch', { name: 'Pochoir tatouage' })).toBeFocused();
   await page.keyboard.press('Tab');
   await expect(page.getByRole('slider', { name: 'Épaisseur' })).toBeFocused();
   await page.keyboard.press('Tab');

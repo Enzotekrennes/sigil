@@ -5,7 +5,8 @@
  *
  * Exposes `SigilStage`. Wraps `SigilRenderer` without adding any behaviour
  * to it; the accessible name of the sigil is given by the parent and never
- * contains the intention.
+ * contains the intention. In tattoo stencil mode the scene turns pure white,
+ * whatever the theme, under the pure black line.
  */
 import { FRAME_CIRCLE_RADIUS, SigilRenderer } from '../features/sigil/index.ts';
 import type { Sigil, StyleOptions } from '../features/sigil/types.ts';
@@ -46,8 +47,11 @@ export function SigilStage({
   replayToken,
   revealedSteps,
 }: SigilStageProps) {
+  const classNames = ['sigil-stage'];
+  if (styleOptions.mode === 'stencil') classNames.push('sigil-stage--stencil');
+
   return (
-    <div className="sigil-stage">
+    <div className={classNames.join(' ')}>
       {sigil === undefined ? (
         <div className="sigil-stage__empty">
           <svg

@@ -158,13 +158,64 @@ const SPARE_EXPLANATION: SpareExplanationStrings = {
       : `Overlapping strokes are merged and drawn only once: ${counted(before, 'segment', 'segments')} become ${String(after)}. Finally, the sigil is re-centred on its centre of gravity.`,
 };
 
-/** Texts of the export buttons under the scene. */
+/** No-break space: a number never gets separated from its unit. */
+const NBSP = ' ';
+
+/**
+ * Writes a length in millimetres the English way, with one decimal.
+ *
+ * @param millimetres - Length.
+ * @returns For instance `"0.6 mm"`, with a no-break space before the unit.
+ */
+function millimetresText(millimetres: number): string {
+  return `${formatDecimal(millimetres, 'en', 1)}${NBSP}mm`;
+}
+
+/**
+ * Writes a length in centimetres the English way, decimals only when needed.
+ *
+ * @param centimetres - Length.
+ * @returns For instance `"8 cm"` or `"6.5 cm"`, with a no-break space before the unit.
+ */
+function centimetresText(centimetres: number): string {
+  const digits = Number.isInteger(centimetres) ? 0 : 1;
+  return `${formatDecimal(centimetres, 'en', digits)}${NBSP}cm`;
+}
+
+/** Texts of the "Export" button and dialog. */
 const EXPORT: ExportStrings = {
-  label: 'Export',
-  svg: 'SVG',
-  png: 'PNG',
+  open: 'Export',
+  title: 'Export the sigil',
+  formatLegend: 'Format',
+  formats: { svg: 'SVG', png: 'PNG', pdf: 'PDF' },
+  formatHelp: {
+    svg: 'Vector drawing, sharp at any size, for an editor or the web.',
+    png: 'Square image, on the theme background (white in stencil mode).',
+    pdf: 'Tattoo stencil on an A4 page: pure black on white, at actual size, with a 1 cm control ruler.',
+  },
+  resolutionLegend: 'Resolution',
+  resolution: (pixels) => `${String(pixels)} px`,
+  sizeLabel: 'Actual size (cm)',
+  sizeHelp: 'Largest dimension of the printed sigil, from 1 to 25 cm.',
+  sizeError: (error) =>
+    error === 'not-a-number'
+      ? 'Write a size in centimetres, for example 8 or 6.5.'
+      : 'The size must be between 1 and 25 cm.',
+  sizeTooLarge: (max) =>
+    `Too large for an A4 page: this sigil fits at most ${centimetresText(max)}.`,
+  strokeLabel: 'Stroke width',
+  strokeValue: millimetresText,
+  strokeHelp: 'From 0.3 to 1.2 mm, kept when printed; 0.6 mm by default.',
+  preview: (format) => `Preview of the ${format} file`,
+  cancel: 'Cancel',
+  download: 'Download',
   error: (format) =>
     `The ${format} export failed. Try again; if it keeps failing, try another browser.`,
+  pdf: (centimetres, millimetres) => ({
+    ruler: '1 cm',
+    instruction: 'Print at 100%, without scaling or fit to page.',
+    details: `Sigil: ${centimetresText(centimetres)} along its largest dimension, ${millimetresText(millimetres)} stroke.`,
+  }),
 };
 
 /** Texts of the language selector; the language names match the French dictionary. */
@@ -229,6 +280,11 @@ export const STRINGS_EN: AppStrings = {
     strokeWidthSpoken: (width, level) =>
       `${strokeWidthNumber(width)}, ${STROKE_WIDTH_LEVELS[level]}`,
     strokeWidthHelp: 'From 0.4 to 2.4 on a 100-unit frame; 1.2 by default.',
+    stencil: 'Tattoo stencil',
+    stencilHelp: (printSizeCm) =>
+      `Pure black on white, a single line, no framing circle. The width is in millimetres for a ${centimetresText(printSizeCm)} print (size set in “Export”).`,
+    strokeMmValue: millimetresText,
+    strokeMmHelp: 'From 0.3 to 1.2 mm on paper; 0.6 mm by default.',
     roundEnds: 'Rounded ends',
     frameCircle: 'Framing circle',
     on: 'on',

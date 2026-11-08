@@ -160,13 +160,61 @@ const SPARE_EXPLANATION: SpareExplanationStrings = {
       : `Les traits qui se recouvrent sont fusionnés et tracés une seule fois : ${counted(before, 'segment', 'segments')} deviennent ${String(after)}. Le sigil est enfin recentré sur son centre de gravité.`,
 };
 
-/** Texts of the export buttons under the scene. */
+/**
+ * Writes a length in millimetres the French way, with one decimal.
+ *
+ * @param millimetres - Length.
+ * @returns For instance `"0,6 mm"`, with a no-break space before the unit.
+ */
+function millimetresText(millimetres: number): string {
+  return `${formatDecimal(millimetres, 'fr', 1)}${NBSP}mm`;
+}
+
+/**
+ * Writes a length in centimetres the French way, decimals only when needed.
+ *
+ * @param centimetres - Length.
+ * @returns For instance `"8 cm"` or `"6,5 cm"`, with a no-break space before the unit.
+ */
+function centimetresText(centimetres: number): string {
+  const digits = Number.isInteger(centimetres) ? 0 : 1;
+  return `${formatDecimal(centimetres, 'fr', digits)}${NBSP}cm`;
+}
+
+/** Texts of the "Export" button and dialog. */
 const EXPORT: ExportStrings = {
-  label: 'Exporter',
-  svg: 'SVG',
-  png: 'PNG',
+  open: 'Exporter',
+  title: 'Exporter le sigil',
+  formatLegend: 'Format',
+  formats: { svg: 'SVG', png: 'PNG', pdf: 'PDF' },
+  formatHelp: {
+    svg: 'Dessin vectoriel, net à toute taille, pour un éditeur ou le web.',
+    png: 'Image carrée, sur le fond du thème (blanc en mode pochoir).',
+    pdf: 'Pochoir de tatouage sur une page A4 : noir pur sur blanc, à taille réelle, avec une règle de contrôle de 1 cm.',
+  },
+  resolutionLegend: 'Résolution',
+  resolution: (pixels) => `${String(pixels)} px`,
+  sizeLabel: 'Taille réelle (cm)',
+  sizeHelp: 'Plus grande dimension du sigil imprimé, de 1 à 25 cm.',
+  sizeError: (error) =>
+    error === 'not-a-number'
+      ? 'Écrivez une taille en centimètres, par exemple 8 ou 6,5.'
+      : 'La taille doit être comprise entre 1 et 25 cm.',
+  sizeTooLarge: (max) =>
+    `Trop grand pour une page A4 : ce sigil tient au plus sur ${centimetresText(max)}.`,
+  strokeLabel: 'Épaisseur du trait',
+  strokeValue: millimetresText,
+  strokeHelp: 'De 0,3 à 1,2 mm, respectée à l’impression ; 0,6 mm par défaut.',
+  preview: (format) => `Aperçu du fichier ${format}`,
+  cancel: 'Annuler',
+  download: 'Télécharger',
   error: (format) =>
     `L’export ${format} a échoué. Réessayez ; si l’échec persiste, essayez un autre navigateur.`,
+  pdf: (centimetres, millimetres) => ({
+    ruler: '1 cm',
+    instruction: 'Imprimer à 100 %, sans mise à l’échelle ni ajustement à la page.',
+    details: `Sigil : ${centimetresText(centimetres)} dans sa plus grande dimension, trait de ${millimetresText(millimetres)}.`,
+  }),
 };
 
 /**
@@ -236,6 +284,11 @@ export const STRINGS_FR = {
     strokeWidthSpoken: (width: number, level: StrokeWidthLevel): string =>
       `${strokeWidthNumber(width)}, ${STROKE_WIDTH_LEVELS[level]}`,
     strokeWidthHelp: 'De 0,4 à 2,4 sur un cadre de 100 ; 1,2 par défaut.',
+    stencil: 'Pochoir tatouage',
+    stencilHelp: (printSizeCm: number): string =>
+      `Noir pur sur blanc, trait unique, sans cercle d’encadrement. L’épaisseur est en millimètres pour une impression de ${centimetresText(printSizeCm)} (taille réglable dans «${NBSP}Exporter${NBSP}»).`,
+    strokeMmValue: millimetresText,
+    strokeMmHelp: 'De 0,3 à 1,2 mm sur le papier ; 0,6 mm par défaut.',
     roundEnds: 'Extrémités arrondies',
     frameCircle: 'Cercle d’encadrement',
     on: 'oui',

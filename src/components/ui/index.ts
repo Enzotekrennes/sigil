@@ -6,6 +6,8 @@ export { Button } from './Button.tsx';
 export type { ButtonProps, ButtonVariant } from './Button.tsx';
 export { ChoiceCards } from './ChoiceCards.tsx';
 export type { ChoiceCard, ChoiceCardsProps } from './ChoiceCards.tsx';
+export { Dialog } from './Dialog.tsx';
+export type { DialogProps } from './Dialog.tsx';
 export { Disclosure } from './Disclosure.tsx';
 export type { DisclosureProps } from './Disclosure.tsx';
 export { SegmentedControl } from './SegmentedControl.tsx';

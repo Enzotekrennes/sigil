@@ -1,6 +1,7 @@
 /*
  * Styles of SigilStage.tsx: a square on the surface colour, the only element
- * of the page that leaves the page background (docs/design.md, layout).
+ * of the page that leaves the page background (docs/design.md, layout);
+ * pure white in tattoo stencil mode, whatever the theme.
  * Every value comes from tokens.css.
  */
 
@@ -13,6 +14,11 @@
   margin-inline: auto;
   border-radius: var(--radius-panel);
   background: var(--color-surface);
+}
+
+/* Tattoo stencil: no coloured background, only the paper white. */
+.sigil-stage--stencil {
+  background: var(--stencil-bg);
 }
 
 .sigil-stage__empty {

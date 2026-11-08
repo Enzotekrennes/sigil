@@ -50,6 +50,43 @@ describe('Button', () => {
     expect(button).toBeDisabled();
     expect(onClick).not.toHaveBeenCalled();
   });
+
+  it('keeps its label and the focus while loading, and ignores clicks', () => {
+    const onClick = vi.fn();
+    const { rerender } = render(
+      <Button variant="primary" onClick={onClick}>
+        Télécharger
+      </Button>,
+    );
+    const button = screen.getByRole('button', { name: 'Télécharger' });
+    button.focus();
+
+    rerender(
+      <Button variant="primary" loading onClick={onClick}>
+        Télécharger
+      </Button>,
+    );
+    fireEvent.click(button);
+
+    expect(button).toHaveFocus();
+    expect(button).toBeEnabled();
+    expect(button).toHaveAttribute('aria-busy', 'true');
+    expect(button).toHaveAttribute('aria-disabled', 'true');
+    expect(button).toHaveAccessibleName('Télécharger');
+    expect(button.querySelector('.button__spinner')).toHaveAttribute('aria-hidden', 'true');
+    expect(onClick).not.toHaveBeenCalled();
+
+    rerender(
+      <Button variant="primary" onClick={onClick}>
+        Télécharger
+      </Button>,
+    );
+    fireEvent.click(button);
+
+    expect(button).not.toHaveAttribute('aria-busy');
+    expect(button).not.toHaveAttribute('aria-disabled');
+    expect(onClick).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('TextField', () => {

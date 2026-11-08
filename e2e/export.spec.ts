@@ -1,6 +1,6 @@
 /**
  * End-to-end journey of feature F4 (SVG and PNG exports) on the production
- * build: buttons disabled without a sigil, downloads under a neutral name,
+ * build, through the "Exporter" dialog: its button disabled without a sigil, downloads under a neutral name,
  * an SVG that opens on its own with the style and colours shown, a square
  * 2048 px PNG on the theme background, no trace of the intention, and no
  * Content Security Policy violation along the way.
@@ -58,17 +58,19 @@ async function trace(page: Page): Promise<void> {
 }
 
 /**
- * Clicks an export button and waits for the file.
+ * Opens the export dialog, picks a format and downloads the file.
  *
  * @param page - Page showing a sigil.
- * @param format - Label of the button, `SVG` or `PNG`.
+ * @param format - Label of the format, `SVG` or `PNG` (PNG at its default 2048 px).
  * @returns The download.
  */
 async function exportAs(page: Page, format: 'SVG' | 'PNG'): Promise<Download> {
-  const exports = page.getByRole('group', { name: 'Exporter' });
+  await page.getByRole('button', { name: 'Exporter' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Exporter le sigil' });
+  await dialog.getByRole('radio', { name: format }).check({ force: true });
   const [download] = await Promise.all([
     page.waitForEvent('download'),
-    exports.getByRole('button', { name: format }).click(),
+    dialog.getByRole('button', { name: 'Télécharger' }).click(),
   ]);
   return download;
 }
@@ -126,16 +128,14 @@ async function samplePng(page: Page, png: Buffer): Promise<{ corner: number[]; i
   }, png.toString('base64'));
 }
 
-test('the export buttons are disabled until a sigil is shown (F4)', async ({ page }) => {
+test('the export button is disabled until a sigil is shown (F4)', async ({ page }) => {
   await page.goto('./');
-  const exports = page.getByRole('group', { name: 'Exporter' });
+  const exportButton = page.getByRole('button', { name: 'Exporter' });
 
-  await expect(exports.getByRole('button', { name: 'SVG' })).toBeDisabled();
-  await expect(exports.getByRole('button', { name: 'PNG' })).toBeDisabled();
+  await expect(exportButton).toBeDisabled();
 
   await trace(page);
-  await expect(exports.getByRole('button', { name: 'SVG' })).toBeEnabled();
-  await expect(exports.getByRole('button', { name: 'PNG' })).toBeEnabled();
+  await expect(exportButton).toBeEnabled();
 });
 
 test('exports an SVG that opens on its own with the style shown, without the intention (F4)', async ({
@@ -228,9 +228,9 @@ for (const theme of ['light', 'dark'] as const) {
     expect(corner).toEqual([...SURFACE[theme]]);
     // The sigil is drawn: a fine line covers well over a thousand pixels at 2048 px.
     expect(inked).toBeGreaterThan(1000);
-    await expect(
-      page.getByRole('group', { name: 'Exporter' }).getByRole('button', { name: 'PNG' }),
-    ).toBeEnabled();
+    // The dialog closes once the file is handed over, the focus back on its button.
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Exporter' })).toBeFocused();
     expect(await cspViolations(page)).toEqual([]);
   });
 }

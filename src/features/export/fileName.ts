@@ -6,8 +6,8 @@
  * Exposes `exportFileName`, `ExportFormat` and `SigilMethod`. Pure.
  */
 
-/** File formats offered by the export buttons. */
-export type ExportFormat = 'svg' | 'png';
+/** File formats offered by the export dialog. */
+export type ExportFormat = 'svg' | 'png' | 'pdf';
 
 /** Method that produced the exported sigil. */
 export type SigilMethod = 'kamea' | 'spare';

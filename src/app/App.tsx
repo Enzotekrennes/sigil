@@ -3,10 +3,16 @@
  *
  * Assembles the header (title and FR | EN selector), the trace controls
  * (intention, method, then the planet for kamea or the vowel option for
- * Spare), the sigil scene with its
- * actions (replay, another Spare variant, SVG and PNG export), the "Style"
- * section (stroke width, ends, framing circle) and the "how it is made" panel of the method
- * used. Owns the screen state only; normalisation and sigil construction live
+ * Spare), the sigil scene with its actions (replay, another Spare variant,
+ * the "Export" dialog for SVG, PNG and the real-size stencil PDF), the
+ * "Style" section (tattoo stencil, stroke width, ends, framing circle) and
+ * the "how it is made" panel of the method used.
+ *
+ * Owns the tattoo stencil settings shared by the "Style" section and the
+ * export dialog: the stroke in millimetres and the print size typed. In
+ * stencil mode the sigil is drawn with the stroke width that prints at those
+ * millimetres for that size (`stencilScale`); the last valid size is used
+ * while the field holds an invalid one. Owns the screen state only; normalisation and sigil construction live
  * in the features, chained by `trace.ts`, and the replay (animated, or step
  * by step under reduced motion) in `useTraceReplay`.
  *
@@ -34,10 +40,21 @@ import type { SegmentedOption } from '../components/ui/index.ts';
 // The hidden headings and live region use the shared `visually-hidden` class.
 import '../components/ui/VisuallyHidden.css';
 import { KameaExplanation, SpareExplanation } from '../features/explain/index.ts';
-import { ExportActions } from '../features/export/index.ts';
+import {
+  ExportDialog,
+  MM_PER_CM,
+  parsePrintSize,
+  PRINT_SIZE_DEFAULT_CM,
+} from '../features/export/index.ts';
 import { LanguageProvider, LanguageToggle, useLanguage } from '../features/i18n/index.ts';
 import { normalizeIntention } from '../features/intention/index.ts';
-import { DEFAULT_STYLE_OPTIONS, useTraceReplay } from '../features/sigil/index.ts';
+import {
+  DEFAULT_STYLE_OPTIONS,
+  STENCIL_STROKE_MM_DEFAULT,
+  stencilScale,
+  useTraceReplay,
+} from '../features/sigil/index.ts';
+import type { Sigil } from '../features/sigil/types.ts';
 import type { Planet, StyleOptions } from '../features/sigil/types.ts';
 import './App.css';
 import { PlanetPicker } from './PlanetPicker.tsx';
@@ -126,6 +143,9 @@ function SigilScreen() {
   const [keepVowels, setKeepVowels] = useState(DEFAULT_KEEP_VOWELS);
   const [request, setRequest] = useState<TraceRequest | null>(null);
   const [styleOptions, setStyleOptions] = useState<StyleOptions>(DEFAULT_STYLE_OPTIONS);
+  const [stencilStrokeMm, setStencilStrokeMm] = useState(STENCIL_STROKE_MM_DEFAULT);
+  const [printSizeText, setPrintSizeText] = useState(String(PRINT_SIZE_DEFAULT_CM));
+  const [printSizeCm, setPrintSizeCm] = useState(PRINT_SIZE_DEFAULT_CM);
   const [styleOpen, setStyleOpen] = useState(startsWide);
   // null until the user opens or closes the panel: it then follows the result.
   const [explainToggled, setExplainToggled] = useState<boolean | null>(null);
@@ -143,6 +163,10 @@ function SigilScreen() {
   const traced = result?.ok === true ? result : undefined;
   const replay = useTraceReplay(traced?.sigil);
   const error = result?.ok === false ? traceErrorMessage(result.error, strings) : undefined;
+  const shownStyle = useMemo(
+    () => shownStyleOptions(traced?.sigil, styleOptions, stencilStrokeMm, printSizeCm),
+    [traced?.sigil, styleOptions, stencilStrokeMm, printSizeCm],
+  );
   const explainOpen = explainToggled ?? traced !== undefined;
   const offersKeepVowels =
     result?.ok === false &&
@@ -188,6 +212,17 @@ function SigilScreen() {
   function handleIntentionChange(value: string) {
     setSource(value);
     if (result?.ok === false) setRequest(null);
+  }
+
+  /**
+   * Keeps the print size typed, and the last valid one for the stencil stroke.
+   *
+   * @param text - New content of the size field.
+   */
+  function handlePrintSizeChange(text: string) {
+    setPrintSizeText(text);
+    const size = parsePrintSize(text);
+    if (size.ok) setPrintSizeCm(size.centimetres);
   }
 
   /** Draws the next variant of the Spare sigil shown, with its own intention and option. */
@@ -284,7 +319,7 @@ function SigilScreen() {
             sigil={traced?.sigil}
             label={traced === undefined ? '' : sigilLabel(traced, strings)}
             emptyText={emptyText(method, error !== undefined, strings)}
-            styleOptions={styleOptions}
+            styleOptions={shownStyle}
             replayToken={replay.replayToken}
             revealedSteps={replay.step}
           />
@@ -307,10 +342,14 @@ function SigilScreen() {
                 {strings.otherVariant}
               </Button>
             )}
-            <ExportActions
+            <ExportDialog
               sigil={traced?.sigil}
               method={traced?.method}
-              styleOptions={styleOptions}
+              styleOptions={shownStyle}
+              strokeMm={stencilStrokeMm}
+              onStrokeMmChange={setStencilStrokeMm}
+              sizeText={printSizeText}
+              onSizeTextChange={handlePrintSizeChange}
               strings={strings.export}
             />
           </div>
@@ -336,7 +375,14 @@ function SigilScreen() {
 
         <section className="app-layout__style">
           <Disclosure title={strings.style.title} open={styleOpen} onOpenChange={setStyleOpen}>
-            <StylePanel value={styleOptions} onChange={setStyleOptions} strings={strings.style} />
+            <StylePanel
+              value={styleOptions}
+              onChange={setStyleOptions}
+              strokeMm={stencilStrokeMm}
+              onStrokeMmChange={setStencilStrokeMm}
+              printSizeCm={printSizeCm}
+              strings={strings.style}
+            />
           </Disclosure>
         </section>
 
@@ -360,6 +406,33 @@ function SigilScreen() {
       </main>
     </div>
   );
+}
+
+/**
+ * Style settings the sigil is drawn and exported with: the settings chosen,
+ * except in stencil mode where the stroke width is the one that prints at the
+ * chosen millimetres for the chosen size.
+ *
+ * @param sigil - Sigil shown, if any.
+ * @param styleOptions - Settings chosen in the "Style" section.
+ * @param strokeMm - Stencil stroke on paper, in millimetres.
+ * @param printSizeCm - Print size, in centimetres (a valid one).
+ * @returns The settings to draw with; `styleOptions` itself outside stencil mode or without a sigil.
+ */
+function shownStyleOptions(
+  sigil: Sigil | undefined,
+  styleOptions: StyleOptions,
+  strokeMm: number,
+  printSizeCm: number,
+): StyleOptions {
+  if (sigil === undefined || styleOptions.mode !== 'stencil') return styleOptions;
+  const { strokeWidth } = stencilScale(
+    sigil,
+    styleOptions.roundEnds,
+    strokeMm,
+    printSizeCm * MM_PER_CM,
+  );
+  return { ...styleOptions, strokeWidth };
 }
 
 /**

@@ -2,13 +2,15 @@
  * Component tests of the main screen, through what a user sees and does:
  * empty state, tracing a kamea or a Spare sigil, Spare variants and vowel
  * option, the explanation panels, business errors under the field, replay
- * (animated, or step by step under reduced motion), the style settings, and
+ * (animated, or step by step under reduced motion), the style settings and
+ * the tattoo stencil mode, and
  * the privacy guarantees (decision D8). The browser is set to French; the
  * language switch has its own tests in `App.i18n.test.tsx`.
  */
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { stubNativeDialog } from '../components/ui/dialogStub.ts';
 import { candidateCountFor } from '../features/spare/index.ts';
 import { App } from './App.tsx';
 
@@ -365,6 +367,62 @@ describe('App', () => {
     clickTrace();
 
     expect(kameaInk()).toHaveAttribute('stroke-width', '2');
+  });
+
+  it('draws the tattoo stencil in pure black on white, without circle, its width in millimetres (F5)', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('switch', { name: 'Cercle d’encadrement' }));
+    typeIntention(INTENTION);
+    clickTrace();
+    const shape = kameaPath();
+    const firstRun = currentRun();
+
+    fireEvent.click(screen.getByRole('switch', { name: 'Pochoir tatouage' }));
+
+    expect(kameaSigil()).toHaveClass('sigil-renderer--stencil');
+    expect(kameaSigil().closest('.sigil-stage')).toHaveClass('sigil-stage--stencil');
+    expect(kameaSigil().querySelector('.sigil-renderer__frame')).toBeNull();
+    expect(screen.queryByRole('switch', { name: 'Cercle d’encadrement' })).toBeNull();
+    const millimetres = screen.getByRole('slider', { name: 'Épaisseur' });
+    expect(millimetres).toHaveValue('0.6');
+    expect(millimetres).toHaveAttribute('aria-valuetext', '0,6 mm');
+    expect(screen.getByRole('switch', { name: 'Pochoir tatouage' })).toHaveAccessibleDescription(
+      expect.stringContaining('8 cm') as string,
+    );
+    const thin = Number(kameaInk().getAttribute('stroke-width'));
+
+    fireEvent.change(millimetres, { target: { value: '1.2' } });
+    const thick = Number(kameaInk().getAttribute('stroke-width'));
+    expect(thick / thin).toBeGreaterThan(1.9);
+    expect(thick / thin).toBeLessThan(2.1);
+    expect(kameaPath()).toBe(shape);
+    expect(currentRun()).toBe(firstRun);
+
+    fireEvent.click(screen.getByRole('switch', { name: 'Pochoir tatouage' }));
+    expect(kameaSigil()).toHaveClass('sigil-renderer--screen');
+    expect(kameaInk()).toHaveAttribute('stroke-width', '1.2');
+    expect(kameaSigil().querySelector('.sigil-renderer__frame')).not.toBeNull();
+  });
+
+  it('converts the stencil width for the print size set in the export dialog (F5)', () => {
+    stubNativeDialog();
+    render(<App />);
+    typeIntention(INTENTION);
+    clickTrace();
+    fireEvent.click(screen.getByRole('switch', { name: 'Pochoir tatouage' }));
+    const at8cm = Number(kameaInk().getAttribute('stroke-width'));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Exporter' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'PDF' }));
+    const size = screen.getByRole('textbox', { name: 'Taille réelle (cm)' });
+    fireEvent.change(size, { target: { value: '16' } });
+    const at16cm = Number(kameaInk().getAttribute('stroke-width'));
+    expect(at16cm / at8cm).toBeGreaterThan(0.45);
+    expect(at16cm / at8cm).toBeLessThan(0.55);
+
+    // An invalid size keeps the last valid one for the drawing.
+    fireEvent.change(size, { target: { value: '40' } });
+    expect(Number(kameaInk().getAttribute('stroke-width'))).toBe(at16cm);
   });
 
   it('starts the style section folded on narrow screens', () => {
