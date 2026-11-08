@@ -203,3 +203,8 @@
 - Bugs mineurs : B1 test « no flash » de `theme.spec` instable (service worker) → design ; B2 course Échap → Entrée dans le dialogue d'export → dev.
 - Remarques : actions GitHub figées par tag majeur (pas par SHA) ; `base: '/sigil/'` impose le nom de dépôt `sigil` ; e2e non lancés en CI.
 - Tests e2e : `e2e/f7-acceptance.spec.ts` (11 tests).
+
+## 2026-11-08 — Correctifs issus des tests F6 et F7
+- `ef2ca1e` : test « no flash » de `theme.spec` isolé du service worker (12/12 en répétition).
+- `3997634` : article anglais variable (« an 8 cm print »), texte de simplification juste quand le nombre de segments diminue, reste égal ou augmente, relecture de `strings.en.ts`, titre et meta description localisés. 860/860 tests.
+- En cours : specs f5/f6 à aligner sur la nouvelle consigne d'impression ; course Échap → Entrée du dialogue ; stabilisation du test clavier F4.
