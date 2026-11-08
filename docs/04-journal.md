@@ -261,3 +261,9 @@
 - Fait : panneau en 5 étapes (lettres retirées, squelettes anguleux, accroche sur la hampe avec dessin de la rune, choix de la variante, simplification), vocabulaire de l'ancienne composition retiré (test), `translate="no"` sur les lettres.
 - Vérifications : lint, format:check, typecheck, 955/955 (revérifié après les commits 0ac69bb et 1b56798) ; e2e 280/281 (échec `f5-acceptance:643`, qui supposait un Spare plus large que haut) ; 32 captures FR/EN, clair/sombre.
 - Suites : espace avant « : » en anglais (en cours) ; specs F2 sc. 4 et F5:643 à réécrire par le test (F2 passage n° 4 en cours).
+
+## 2026-11-08 — F2 Spare (rune liée) : test
+- Verdict : VALIDÉ (passage n° 4, HEAD 5b31656 en worktree)
+- Preuves : 6 scénarios OK ; 108 sigils (36 mots × 3 variantes) mesurés : traits droits uniquement, hampe continue à x≈50 sur ≥ 70 % de la hauteur, traits tous reliés, plus hauts que larges, aucune hachure ; planche conforme à celle validée par Enzo ; e2e complet 282/282.
+- Bug mineur : B1 jambe du R décollée de 0,4 unité (« Victory » v2), visible en trait fin → dev.
+- Specs : scénario 4 de `f2-acceptance` réécrit sur la structure de la rune ; `f5-acceptance:643` teste le sigil trop large avec un chemin kamea (Lune, « Paix »), plus un test Spare accepté à 25 cm.

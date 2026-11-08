@@ -98,7 +98,7 @@ Voir `docs/design.md` et `src/styles/tokens.css`. Page de grimoire : beaucoup de
 - Étant donné un sigil Spare, quand il est affiché, alors c'est une rune liée : une hampe verticale continue, chaque lettre retenue accrochée à elle, traits droits uniquement, plus haut que large, sans traits parallèles collés (« hachures »), et la planche de référence a été validée par Enzo.
 - Étant donné une intention dont il ne reste aucune consonne (« oui »), quand je valide, alors un message propose de garder les voyelles.
 - Étant donné une phrase de plusieurs mots (« Je suis calme »), quand je valide (Spare ou kamea), alors un message demande un seul mot et aucun sigil n'est tracé.
-- Test : [ ] VALIDÉ (à rejouer après D18–D20 ; validé le 2026-11-08 sur l'ancienne composition)
+- Test : [x] VALIDÉ (2026-11-08, passage n° 4, rune liée)
 
 ### F3 — Tracé animé et réglages de style
 - Étant donné un nouveau sigil, quand il s'affiche, alors il se trace progressivement dans l'ordre du chemin, puis les marques apparaissent.
